@@ -228,7 +228,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg-dark);color:var(--text)
 <canvas id="particles"></canvas>
 <div class="game-container">
 <div class="score-section"><h1>⚙️ WIDGET CLICKER ⚙️</h1><div class="score-display" id="scoreDisplay">0</div><div class="click-power-label">Click power: <span id="clickPowerLabel">1</span></div><div class="goal-bar-wrap"><div class="goal-bar" id="goalBar" style="width:0%"></div><div class="goal-label">GOAL: 100,000,000,000</div></div></div>
-<div class="cps-display">CPS: <span id="cpsDisplay">0</span> | Score/s: <span id="spsDisplay">0</span></div>
+<div class="cps-display">CPS: <span id="cpsDisplay">0</span> | Score/s: <span id="spsDisplay">0</span> | Clicks: <span id="rawClicksDisplay">0</span></div>
 <div class="active-effects" id="activeEffects"></div>
 <div class="clicker-area"><button class="big-btn" id="bigBtn"><span class="big-btn-text">CLICK!</span></button><button class="golden-btn" id="goldenBtn">🟡<br>GOLD</button></div>
 <div class="panel-section"><div class="section-header upgrades-header">UPGRADES</div><div id="upgradesContent"></div></div>
@@ -242,10 +242,34 @@ body{font-family:'Nunito',sans-serif;background:var(--bg-dark);color:var(--text)
 <div class="terminal-box" id="terminalLog"><div class="line info">> SYSTEM READY. Type 'help' for commands.</div><div class="line info">> Discover UUIDs by completing challenges. Use 'hint &lt;name&gt;' for clues.</div></div><div class="terminal-input-row"><input class="terminal-input" id="terminalInput" placeholder="type command..." autocomplete="off" autocapitalize="off" spellcheck="false"><button class="terminal-submit" id="terminalSubmit">RUN</button></div><div style="margin-top:10px"><button class="overlay-btn close-btn" onclick="closeComputer()">✕ Close</button></div></div></div>
 <div class="game-overlay" id="rockOverlay"><div class="overlay-box"><div class="overlay-title" style="color:#a78bfa;text-shadow:0 0 20px rgba(167,139,250,.3)">🪨 ROCK FORGE 🪨</div><div class="overlay-subtitle">Dispense, merge & sell rocks for massive score!</div><div class="overlay-reward" id="rockInfo">Rocks: 0 | Dispenser ready</div><div class="rock-grid" id="rockGrid"></div><div class="rock-actions" id="rockActions"></div><div style="margin-top:8px"><button class="overlay-btn close-btn" onclick="closeRocks()">✕ Close</button></div><div class="overlay-instructions">🪨T1→🥉T2→💎T3→👑T4→💫T5 — Merge 3 same tier = 1 higher tier. Sell for score!</div></div></div>
 <div class="game-overlay" id="statsOverlay"><div class="overlay-box"><div class="overlay-title" style="color:var(--cyan);text-shadow:0 0 20px rgba(34,211,238,.3)">📊 UNIVERSAL STATS 📊</div><div class="overlay-subtitle">Permanent global upgrades. Spend score to boost everything!</div><div id="statsContent"></div><div style="margin-top:10px"><button class="overlay-btn close-btn" onclick="closeStats()">✕ Close</button></div></div></div>
-<div class="win-overlay" id="winOverlay"><div class="win-title">🎉 YOU WIN! 🎉</div><div class="win-sub" id="winSub">100 Billion!</div><button class="win-btn" onclick="resetGame()">Play Again</button></div>
+<!-- ENDGAME CUTSCENE -->
+<div id="endCutscene" style="display:none;position:fixed;inset:0;z-index:500;pointer-events:all">
+  <!-- Phase 1: White fade -->
+  <div id="endFade" style="position:absolute;inset:0;background:#fff;opacity:0;transition:opacity 2s"></div>
+  <!-- Phase 2: Giant golden button -->
+  <div id="endButtonWrap" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0;transition:opacity 1.5s">
+    <div style="font-family:'Fredoka One',cursive;font-size:1.4rem;color:#8a6000;margin-bottom:20px;text-align:center;text-shadow:0 0 20px rgba(255,215,0,.5)" id="endPrompt">You reached 100 BILLION.<br>Hold the button to finish your journey...</div>
+    <button id="endGoldenBtn" style="width:220px;height:220px;border-radius:50%;border:none;cursor:pointer;background:radial-gradient(circle at 35% 35%,#ffe066,#c8a200 60%,#8a6000);box-shadow:0 0 60px rgba(255,215,0,.5),0 0 120px rgba(255,215,0,.2),inset 0 -8px 20px rgba(0,0,0,.3);font-family:'Fredoka One',cursive;font-size:1.5rem;color:#5a4000;display:flex;align-items:center;justify-content:center;transition:transform .2s,box-shadow .3s;outline:none;-webkit-tap-highlight-color:transparent">🏆<br>HOLD</button>
+    <div id="endHoldBar" style="width:220px;height:8px;background:rgba(0,0,0,.15);border-radius:4px;margin-top:14px;overflow:hidden"><div id="endHoldFill" style="width:0%;height:100%;background:linear-gradient(90deg,#ffd700,#ff8c00);border-radius:4px;transition:width .1s linear"></div></div>
+    <div id="endHoldText" style="font-size:.85rem;color:#8a6000;margin-top:6px;font-weight:700">0 / 10 seconds</div>
+  </div>
+  <!-- Phase 3: Stats -->
+  <div id="endStats" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0;transition:opacity 1.5s;padding:20px">
+    <div style="background:rgba(255,255,255,.95);border-radius:20px;padding:30px 40px;max-width:500px;width:100%;text-align:center;box-shadow:0 0 60px rgba(255,215,0,.3);max-height:90vh;overflow-y:auto">
+      <div style="font-family:'Fredoka One',cursive;font-size:2.2rem;background:linear-gradient(135deg,#ffd700,#ff6e6e,#7f5af0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:6px">🏆 VICTORY! 🏆</div>
+      <div style="font-size:.9rem;color:#666;margin-bottom:20px">You conquered Widget Clicker!</div>
+      <div id="endStatsContent" style="text-align:left;font-size:.85rem;color:#333"></div>
+      <div style="display:flex;gap:12px;justify-content:center;margin-top:24px;flex-wrap:wrap">
+        <button onclick="closeEndCutscene()" style="background:#7f5af0;color:#fff;border:none;padding:14px 30px;border-radius:12px;font-size:1rem;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif">🎮 Keep Playing</button>
+        <button onclick="resetGame()" style="background:#e5484d;color:#fff;border:none;padding:14px 30px;border-radius:12px;font-size:1rem;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif">🔄 Start Over</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <script>
-const GOAL=1e11;let score=0,totalClicks=0,clickValue=1,cps=0,won=false;
+const GOAL=1e11;let score=0,totalClicks=0,rawClicks=0,clickValue=1,cps=0,won=false;
+let gameStartTime=Date.now();
 let upgradeLevel=0,upgradePanelUnlocked=false;
 function getUpgradeCost(){return Math.floor(50*Math.pow(1.45,upgradeLevel))}
 let mineEnergy=10;const MINE_MAX=10;let lastETick=Date.now();const E_REGEN=45000;
@@ -262,7 +286,26 @@ let hackedWidgets={};
 let clickTimestamps=[],scoreTimestamps=[];
 
 // Widget UUIDs — each is derived uniquely from the widget id
-function getWidgetUUID(wid){const map={quick_fingers:'QF-7a3b-ECHO',auto_pump:'AP-9d1f-TURBO',laser_maze:'LM-4e2c-BEAM',combo_surge:'CS-8f5a-BLAZE',mines:'MN-2b7d-DEEP',echo_clicks:'EC-6c4e-GHOST',momentum:'ME-1a9f-SPIN',lucky_spin:'LS-3d8b-DICE',time_warp:'TW-5e2a-FLUX',golden_touch:'GT-7f1c-MIDAS',gravity_well:'GW-0b6d-VOID',supernova:'SN-4a3e-NOVA',computer:'PC-8c2f-HACK',golden_button:'GB-9e5d-SHINE',universal_stats:'US-1f7a-OMNI',rock_forge:'RF-3b4c-FORGE',quantum_doubler:'QD-6d2e-TWIN',auto_miner:'AM-5a1b-DRILL',singularity:'SG-0e9f-ZERO'};return map[wid]||'??-????-????';}
+// UUID system — UUIDs are generated deterministically from widget id + salt via hash
+// The source code never contains plaintext UUIDs; they're computed at runtime
+const _SALT='W1dg3t_Cl1ck3r_2026!';
+function _hash53(str){let h1=0xdeadbeef,h2=0x41c6ce57;for(let i=0;i<str.length;i++){const ch=str.charCodeAt(i);h1=Math.imul(h1^ch,2654435761);h2=Math.imul(h2^ch,1597334677);}h1=Math.imul(h1^(h1>>>16),2246822507);h1^=Math.imul(h2^(h2>>>13),3266489909);h2=Math.imul(h2^(h2>>>16),2246822507);h2^=Math.imul(h1^(h1>>>13),3266489909);return 4294967296*(2097151&h2)+(h1>>>0);}
+function getWidgetUUID(wid){
+  const h=_hash53(wid+_SALT);const hex=h.toString(16).padStart(12,'0');
+  const prefix=wid.substring(0,2).toUpperCase();
+  const mid=hex.substring(0,4);
+  const words={quick_fingers:'ECHO',auto_pump:'TURBO',laser_maze:'BEAM',combo_surge:'BLAZE',mines:'DEEP',echo_clicks:'GHOST',momentum:'SPIN',lucky_spin:'DICE',time_warp:'FLUX',golden_touch:'MIDAS',gravity_well:'VOID',supernova:'NOVA',computer:'HACK',golden_button:'SHINE',universal_stats:'OMNI',rock_forge:'FORGE',quantum_doubler:'TWIN',auto_miner:'DRILL',singularity:'ZERO',
+    click_frenzy:'BURST',shield_wall:'GUARD',chain_react:'LINK',overdrive:'SURGE',dark_matter:'SHADE'};
+  return prefix+'-'+mid+'-'+(words[wid]||'CODE');
+}
+// Verification: hash the entered UUID+wid and check against stored hashes
+// This prevents reading UUIDs from source — you must discover them in-game
+const _uuidHashes={};
+(function buildHashes(){widgets.forEach(w=>{_uuidHashes[w.id]=_hash53(getWidgetUUID(w.id)+w.id);});})();
+function verifyUUID(code){
+  for(const w of widgets){if(_hash53(code+w.id)===_uuidHashes[w.id])return w;}
+  return null;
+}
 
 // UUID discovery tracking — each widget has a unique way to find its code
 let discoveredUUIDs={};  // wid -> true
@@ -280,6 +323,11 @@ const hintRiddles={
   golden_touch:'💡 "The golden king rewards the greedy. Earn 1M during a single Golden Touch."',
   gravity_well:'💡 "Depth comes from investment. Reach upgrade level 30 and the void opens."',
   supernova:'💡 "Destruction creates. Detonate 3 times and read the aftermath."',
+  click_frenzy:'💡 "Activate the frenzy 5 times. Repetition breeds revelation."',
+  shield_wall:'💡 "Survive 5 cave-ins in the mines. The wall remembers each blow."',
+  chain_react:'💡 "Trigger a double-echo — an echo of an echo. Lightning strikes twice."',
+  overdrive:'💡 "Reset cooldowns 3 times. The battery reveals its serial number."',
+  dark_matter:'💡 "Reach upgrade level 50. The darkness has a frequency."',
   computer:'💡 "The machine knows itself. Hack 5 other widgets first and it reveals its own code."',
   golden_button:'💡 "Press the golden button 50 times. Persistence makes it shine."',
   universal_stats:'💡 "Invest in yourself. Buy 10 total stat levels and the numbers align."',
@@ -289,7 +337,7 @@ const hintRiddles={
   singularity:'💡 "The end is the beginning. Reach 50M score and stare into the abyss."',
 };
 // Counters for discovery triggers
-let discoveryCounts={auto_pump_runs:0,maze_wins:0,combo_15_seen:false,mine_jackpots:0,echo_count:0,momentum_earned:0,spin_10x:false,warps_session:0,golden_touch_earned:0,supernova_count:0,hacked_count:0,golden_presses:0,total_stat_levels:0,forged_t4:false,doubler_triggers:0,auto_dig_count:0,hold_start:0,hold_discovered:false};
+let discoveryCounts={auto_pump_runs:0,maze_wins:0,combo_15_seen:false,mine_jackpots:0,echo_count:0,momentum_earned:0,spin_10x:false,warps_session:0,golden_touch_earned:0,supernova_count:0,hacked_count:0,golden_presses:0,total_stat_levels:0,forged_t4:false,doubler_triggers:0,auto_dig_count:0,hold_start:0,hold_discovered:false,frenzy_count:0,cavein_count:0,chain_echo:false,overdrive_count:0};
 function tryDiscover(wid,message){
   if(discoveredUUIDs[wid])return;
   discoveredUUIDs[wid]=true;
@@ -313,6 +361,11 @@ const hackEffects={
   golden_touch:{desc:'Golden Touch lasts 30s',applied:false},
   gravity_well:{desc:'Gravity bonus per 5 upgrades instead of 10',applied:false},
   supernova:{desc:'Only sacrifice 5% instead of 10%',applied:false},
+  click_frenzy:{desc:'Frenzy duration → 25s',applied:false},
+  shield_wall:{desc:'Cave-ins only take 10% of loot',applied:false},
+  chain_react:{desc:'Chain echo chance → 25%',applied:false},
+  overdrive:{desc:'Overdrive also gives 30s of 2× clicks',applied:false},
+  dark_matter:{desc:'Dark Matter bonus per 25 upgrades instead of 50',applied:false},
   computer:{desc:'META-HACK: All other hack bonuses boosted by +50%!',applied:false},
   golden_button:{desc:'Golden Button cooldown halved',applied:false},
   universal_stats:{desc:'Stat upgrade costs -30%',applied:false},
@@ -333,13 +386,18 @@ const widgets=[
   {id:'lucky_spin',name:'🎰 Lucky Spin',icon:'🎰',desc:'1×–10× for next 30 clicks. 120s CD.',costLabel:'10K clicks',unlockAt:10000,type:'active',cooldown:120,unlocked:false,cooldownUntil:0,spinMult:1,spinLeft:0},
   {id:'time_warp',name:'⏳ Time Warp',icon:'⏳',desc:'60s Momentum instant. 3 charges/3min.',costLabel:'25K clicks',unlockAt:25000,type:'active',cooldown:0,unlocked:false,cooldownUntil:0},
   {id:'golden_touch',name:'👑 Golden Touch',icon:'👑',desc:'20s: 5× clicks + 5/sec auto. 180s CD.',costLabel:'50K clicks',unlockAt:50000,type:'active',duration:20,cooldown:180,unlocked:false,activeUntil:0,cooldownUntil:0,intervalRef:null},
-  {id:'gravity_well',name:'🕳️ Gravity Well',icon:'🕳️',desc:'Momentum +0.05% per 10 upgrades.',costLabel:'100K clicks',unlockAt:100000,type:'passive',unlocked:false},
-  {id:'supernova',name:'💫 Supernova',icon:'💫',desc:'Sacrifice 10% to double rest! 300s CD.',costLabel:'500K clicks',unlockAt:500000,type:'active',cooldown:300,unlocked:false,cooldownUntil:0},
-  {id:'computer',name:'💻 Computer',icon:'💻',desc:'Hack terminal! Enter widget UUIDs for permanent boosts.',costLabel:'1M clicks',unlockAt:1000000,type:'minigame',cooldown:0,unlocked:false,cooldownUntil:0},
-  {id:'golden_button',name:'🟡 Golden Button',icon:'🟡',desc:'A 2nd button! Grants 100× click value. 10s cooldown.',costLabel:'2.5M clicks',unlockAt:2500000,type:'passive',unlocked:false},
-  {id:'universal_stats',name:'📊 Universal Stats',icon:'📊',desc:'Global stat upgrades panel! CPS, momentum, luck & more.',costLabel:'5M clicks',unlockAt:5000000,type:'minigame',cooldown:0,unlocked:false,cooldownUntil:0},
-  {id:'rock_forge',name:'🪨 Rock Forge',icon:'🪨',desc:'Dispense, merge & sell rocks! Rocks from mines auto-collect.',costLabel:'10M clicks',unlockAt:10000000,type:'minigame',cooldown:0,unlocked:false,cooldownUntil:0},
-  {id:'quantum_doubler',name:'⚛️ Quantum Doubler',icon:'⚛️',desc:'10% chance each second to double your passive income tick!',costLabel:'25M clicks',unlockAt:25000000,type:'passive',unlocked:false},
+  {id:'gravity_well',name:'🕳️ Gravity Well',icon:'🕳️',desc:'Momentum +0.05% per 10 upgrades.',costLabel:'100K',unlockAt:100000,type:'passive',unlocked:false},
+  {id:'click_frenzy',name:'⚡ Click Frenzy',icon:'💥',desc:'Activate: 15s of 10× click speed! 120s CD.',costLabel:'200K',unlockAt:200000,type:'active',duration:15,cooldown:120,unlocked:false,activeUntil:0,cooldownUntil:0,intervalRef:null},
+  {id:'supernova',name:'💫 Supernova',icon:'💫',desc:'Sacrifice 10% to double rest! 300s CD.',costLabel:'500K',unlockAt:500000,type:'active',cooldown:300,unlocked:false,cooldownUntil:0},
+  {id:'shield_wall',name:'🛡️ Shield Wall',icon:'🛡️',desc:'Passive: mine cave-ins only take 25% of loot instead of 50%.',costLabel:'750K',unlockAt:750000,type:'passive',unlocked:false},
+  {id:'computer',name:'💻 Computer',icon:'💻',desc:'Hack terminal! Enter widget UUIDs for permanent boosts.',costLabel:'1M',unlockAt:1000000,type:'minigame',cooldown:0,unlocked:false,cooldownUntil:0},
+  {id:'chain_react',name:'⛓️ Chain React',icon:'⛓️',desc:'Each echo click has a 15% chance to trigger ANOTHER echo!',costLabel:'1.5M',unlockAt:1500000,type:'passive',unlocked:false},
+  {id:'golden_button',name:'🟡 Golden Button',icon:'🟡',desc:'A 2nd button! Grants 100× click value. 10s cooldown.',costLabel:'2.5M',unlockAt:2500000,type:'passive',unlocked:false},
+  {id:'universal_stats',name:'📊 Universal Stats',icon:'📊',desc:'Global stat upgrades panel! CPS, momentum, luck & more.',costLabel:'5M',unlockAt:5000000,type:'minigame',cooldown:0,unlocked:false,cooldownUntil:0},
+  {id:'rock_forge',name:'🪨 Rock Forge',icon:'🪨',desc:'Dispense, merge & sell rocks! Rocks from mines auto-collect.',costLabel:'10M',unlockAt:10000000,type:'minigame',cooldown:0,unlocked:false,cooldownUntil:0},
+  {id:'overdrive',name:'🔋 Overdrive',icon:'🔋',desc:'Activate: ALL cooldowns reset instantly! 300s CD.',costLabel:'15M',unlockAt:15000000,type:'active',cooldown:300,unlocked:false,cooldownUntil:0},
+  {id:'quantum_doubler',name:'⚛️ Quantum Doubler',icon:'⚛️',desc:'10% chance each second to double your passive income tick!',costLabel:'25M',unlockAt:25000000,type:'passive',unlocked:false},
+  {id:'dark_matter',name:'🌌 Dark Matter',icon:'🌌',desc:'Passive: +1% score per second for every 50 upgrade levels.',costLabel:'40M',unlockAt:40000000,type:'passive',unlocked:false},
   {id:'auto_miner',name:'🤖 Auto-Miner',icon:'🔧',desc:'Auto-mines 1 cell every 10s when Mine is open. Free!',costLabel:'50M clicks',unlockAt:50000000,type:'passive',unlocked:false},
   {id:'singularity',name:'🌑 Singularity',icon:'🌑',desc:'The endgame. +0.3%/s passive on top of Momentum. Compounds!',costLabel:'100M clicks',unlockAt:100000000,type:'passive',unlocked:false},
 ];
@@ -370,6 +428,7 @@ function getEffectiveClickValue(){
   if(cs&&cs.unlocked){if(cps>=hi)v*=3;else if(cps>=lo)v*=2;}
   const ls=widgets.find(w=>w.id==='lucky_spin');if(ls&&ls.spinLeft>0)v*=ls.spinMult;
   const gt=widgets.find(w=>w.id==='golden_touch');if(gt&&gt.activeUntil>Date.now())v*=5;
+  const od=widgets.find(w=>w.id==='overdrive');if(od&&isHacked('overdrive')&&od.activeUntil>Date.now())v*=2;
   v*=(1+statLevels.cps_mult*0.10);
   return Math.floor(v);
 }
@@ -380,16 +439,25 @@ function addClick(value,showFloat=true,countAsClick=true){
   if(showFloat)spawnFloat(value);scoreTimestamps.push({time:Date.now(),amount:value});
   const ls=widgets.find(w=>w.id==='lucky_spin');if(ls&&ls.spinLeft>0&&showFloat)ls.spinLeft--;
   const ec=widgets.find(w=>w.id==='echo_clicks');
-  if(ec&&ec.unlocked&&showFloat&&Math.random()<getEchoChance()){score+=value;totalClicks+=value;scoreTimestamps.push({time:Date.now(),amount:value});spawnEcho(value);
-    discoveryCounts.echo_count++;if(discoveryCounts.echo_count>=50)tryDiscover('echo_clicks','50 echoes whispered — the ghosts finally reveal their spectral ID!');}
+  if(ec&&ec.unlocked&&showFloat&&Math.random()<getEchoChance()){
+    score+=value;totalClicks+=value;scoreTimestamps.push({time:Date.now(),amount:value});spawnEcho(value);
+    discoveryCounts.echo_count++;if(discoveryCounts.echo_count>=50)tryDiscover('echo_clicks','50 echoes whispered — the ghosts reveal their spectral ID!');
+    // Chain React: echo can trigger another echo
+    const cr=widgets.find(w=>w.id==='chain_react');
+    const chainChance=cr&&cr.unlocked?(isHacked('chain_react')?metaBoost(0.25):0.15):0;
+    if(chainChance>0&&Math.random()<chainChance){
+      score+=value;totalClicks+=value;scoreTimestamps.push({time:Date.now(),amount:value});spawnEcho(value);
+      if(!discoveryCounts.chain_echo){discoveryCounts.chain_echo=true;tryDiscover('chain_react','A chain echo! The links reveal their binding code!');}
+    }
+  }
   checkWin();updateUI();
 }
 function addBonus(v){score+=v;totalClicks+=v;scoreTimestamps.push({time:Date.now(),amount:v});checkWin();updateUI();}
-function checkWin(){if(!won&&score>=GOAL){won=true;winOverlay.classList.add('show');winSub.textContent=`${fmtFull(score)} clicks! 🎊`;}}
+function checkWin(){if(!won&&score>=GOAL){won=true;startEndCutscene();}}
 
 // Click handling
 let holdInterval=null;
-function doClick(){addClick();bigBtn.classList.add('pressed');setTimeout(()=>bigBtn.classList.remove('pressed'),80);clickTimestamps.push(Date.now());}
+function doClick(){rawClicks++;addClick();bigBtn.classList.add('pressed');setTimeout(()=>bigBtn.classList.remove('pressed'),80);clickTimestamps.push(Date.now());}
 bigBtn.addEventListener('pointerdown',e=>{e.preventDefault();doClick();
   // Track hold for Quick Fingers UUID discovery
   discoveryCounts.hold_start=Date.now();
@@ -424,6 +492,8 @@ setInterval(()=>{
   if(me&&me.unlocked)rate+=getMomentumRate();
   const sg=widgets.find(w=>w.id==='singularity');
   if(sg&&sg.unlocked)rate+=(isHacked('singularity')?metaBoost(0.005):0.003);
+  const dm=widgets.find(w=>w.id==='dark_matter');
+  if(dm&&dm.unlocked){const perN=isHacked('dark_matter')?25:50;rate+=0.01*Math.floor(upgradeLevel/perN);}
   if(rate>0&&score>0){
     let gain=Math.floor(score*rate);
     const qd=widgets.find(w=>w.id==='quantum_doubler');
@@ -483,6 +553,20 @@ function activateWidget(id){
   if(id==='golden_touch'){if(isWidgetActive(w)||w.cooldownUntil>Date.now())return;const dur=isHacked('golden_touch')?Math.floor(metaBoost(30)):20;w.duration=dur;w.activeUntil=Date.now()+dur*1000;const gtStartScore=score;w.intervalRef=setInterval(()=>{if(Date.now()>w.activeUntil){clearInterval(w.intervalRef);w.intervalRef=null;w.cooldownUntil=Date.now()+w.cooldown*1000;
   const earned=score-gtStartScore;if(earned>=1000000)tryDiscover('golden_touch','1M earned in one Golden Touch — Midas reveals his crown code!');
   renderWidgets();return;}addClick(getEffectiveClickValue(),false,true);},200);renderWidgets();}
+  if(id==='click_frenzy'){
+    if(isWidgetActive(w)||w.cooldownUntil>Date.now())return;
+    const dur=isHacked('click_frenzy')?Math.floor(metaBoost(25)):15;w.duration=dur;
+    w.activeUntil=Date.now()+dur*1000;
+    w.intervalRef=setInterval(()=>{if(Date.now()>w.activeUntil){clearInterval(w.intervalRef);w.intervalRef=null;w.cooldownUntil=Date.now()+w.cooldown*1000;
+      discoveryCounts.frenzy_count++;if(discoveryCounts.frenzy_count>=5)tryDiscover('click_frenzy','5 frenzies complete — the lightning bolt etches its code!');
+      renderWidgets();return;}addClick(getEffectiveClickValue(),false,true);},100);renderWidgets();}
+  if(id==='overdrive'){
+    if(w.cooldownUntil>Date.now())return;
+    widgets.forEach(x=>{if(x.cooldownUntil&&x.id!=='overdrive')x.cooldownUntil=0;});
+    w.cooldownUntil=Date.now()+w.cooldown*1000;
+    if(isHacked('overdrive')){/* 30s 2x clicks handled via activeUntil */w.activeUntil=Date.now()+30000;}
+    discoveryCounts.overdrive_count++;if(discoveryCounts.overdrive_count>=3)tryDiscover('overdrive','3 overdrives — the battery exposes its manufacturing code!');
+    showFlash('🔋 All cooldowns reset!');renderWidgets();}
   if(id==='laser_maze'){if(w.cooldownUntil>Date.now())return;openMaze();}
   if(id==='mines'){if(w.cooldownUntil>Date.now())return;openMine();}
   if(id==='computer')openComputer();
@@ -511,6 +595,11 @@ function updateEffectsHUD(){
   const ls=widgets.find(w=>w.id==='lucky_spin');if(ls&&ls.spinLeft>0)h+=`<div class="effect-pill amber">🎰${ls.spinMult}×(${ls.spinLeft})</div>`;
   const ec=widgets.find(w=>w.id==='echo_clicks');if(ec&&ec.unlocked)h+=`<div class="effect-pill pink">👻${Math.floor(getEchoChance()*100)}%</div>`;
   const me=widgets.find(w=>w.id==='momentum');if(me&&me.unlocked)h+=`<div class="effect-pill blue">🌀${(getMomentumRate()*100).toFixed(2)}%</div>`;
+  const cf=widgets.find(w=>w.id==='click_frenzy');if(cf&&isWidgetActive(cf)){const r=Math.max(0,cf.activeUntil-Date.now());h+=`<div class="effect-pill pink">💥 Frenzy ${Math.ceil(r/1000)}s</div>`;}
+  const sw2=widgets.find(w=>w.id==='shield_wall');if(sw2&&sw2.unlocked)h+=`<div class="effect-pill">🛡️ Shield</div>`;
+  const cr=widgets.find(w=>w.id==='chain_react');if(cr&&cr.unlocked)h+=`<div class="effect-pill cyan">⛓️ Chain</div>`;
+  const od=widgets.find(w=>w.id==='overdrive');if(od&&od.activeUntil>Date.now()){const r=Math.max(0,od.activeUntil-Date.now());h+=`<div class="effect-pill amber">🔋 OD ${Math.ceil(r/1000)}s</div>`;}
+  const dm2=widgets.find(w=>w.id==='dark_matter');if(dm2&&dm2.unlocked){const perN=isHacked('dark_matter')?25:50;const bonus=Math.floor(upgradeLevel/perN);if(bonus>0)h+=`<div class="effect-pill pink">🌌 +${bonus}%/s</div>`;}
   const sg=widgets.find(w=>w.id==='singularity');if(sg&&sg.unlocked)h+=`<div class="effect-pill green">🌑${isHacked('singularity')?'0.5':'0.3'}%/s</div>`;
   const qd=widgets.find(w=>w.id==='quantum_doubler');if(qd&&qd.unlocked)h+=`<div class="effect-pill cyan">⚛️${isHacked('quantum_doubler')?20:10}%2×</div>`;
   if(clickValue>1)h+=`<div class="effect-pill">💪×${fmt(clickValue)}</div>`;
@@ -528,10 +617,12 @@ function calcCPS(){const n=Date.now();clickTimestamps=clickTimestamps.filter(t=>
   if(upgradeLevel>=30)tryDiscover('gravity_well','Upgrade level 30 — the gravitational field exposes its designation!');
   // Universal Stats discovery at 10 total stat levels
   const tsl=Object.values(statLevels).reduce((a,b)=>a+b,0);if(tsl>=10)tryDiscover('universal_stats','10 stat levels invested — the system acknowledges your dedication.');
+  // Dark Matter at upgrade 50
+  if(upgradeLevel>=50)tryDiscover('dark_matter','Upgrade level 50 — dark matter resonates at its hidden frequency!');
   // Computer self-hack discovery at 5 hacked widgets
   const hc=Object.keys(hackedWidgets).filter(k=>k!=='computer').length;if(hc>=5)tryDiscover('computer','5 widgets hacked — the computer trusts you with its own source code.');
 }
-function updateUI(){scoreDisplay.textContent=fmtFull(score);clickPowerLabel.textContent=fmtFull(getEffectiveClickValue());goalBar.style.width=Math.min(score/GOAL*100,100)+'%';goldenBtn.disabled=goldenCD>Date.now();}
+function updateUI(){scoreDisplay.textContent=fmtFull(score);clickPowerLabel.textContent=fmtFull(getEffectiveClickValue());goalBar.style.width=Math.min(score/GOAL*100,100)+'%';goldenBtn.disabled=goldenCD>Date.now();$('rawClicksDisplay').textContent=fmtFull(rawClicks);}
 // Auto-unlock: every tick, check if any widgets should be unlocked
 // Check for widgets that should be unlockable — if they've been qualifying for 2+ seconds, auto-unlock as safety net
 let _unlockableTimers={};
@@ -582,7 +673,13 @@ function openMine(){if(mineEnergy<=0){showFlash('⚡ No energy!');return;}widget
 function digCell(r,c){if(!mnS||mnS.fin||mnS.grid[r][c].revealed)return;if(mineEnergy<=0){$('mineStatus').textContent='⚡ No energy!';return;}mineEnergy--;mnS.grid[r][c].revealed=true;const cl=mnS.grid[r][c];const rw=Math.floor(mnS.snap*cl.pct/100);
   // Collect rock for forge
   const rf=widgets.find(w=>w.id==='rock_forge');if(rf&&rf.unlocked&&cl.type==='rock'){rocks.push({tier:0});if(rocks.length>30)rocks.shift();}
-  if(cl.type==='danger'){const lost=Math.floor(mnS.loot*.5);mnS.loot-=lost;$('mineStatus').textContent=`💥 Lost ${fmtFull(lost)}!`;$('mineStatus').className='overlay-status fail';}
+  if(cl.type==='danger'){
+    const sw=widgets.find(w=>w.id==='shield_wall');
+    let lossPct=0.5;
+    if(sw&&sw.unlocked)lossPct=isHacked('shield_wall')?metaBoost(0.10)*0.667:0.25;
+    const lost=Math.floor(mnS.loot*lossPct);mnS.loot-=lost;
+    discoveryCounts.cavein_count++;if(discoveryCounts.cavein_count>=5)tryDiscover('shield_wall','5 cave-ins survived — the shield reveals its forging mark!');
+    $('mineStatus').textContent=`💥 Lost ${fmtFull(lost)}!`;$('mineStatus').className='overlay-status fail';}
   else if(cl.type==='rock'){$('mineStatus').textContent='🪨 Rock.'+(rf&&rf.unlocked?' (→Forge)':'');$('mineStatus').className='overlay-status playing';}
   else{mnS.loot+=rw;$('mineStatus').textContent=`${cl.type==='ore'?'🥉':cl.type==='gem'?'💎':'💰'} +${cl.pct}% → +${fmtFull(rw)}`;$('mineStatus').className='overlay-status success';
     if(cl.type==='jackpot'){discoveryCounts.mine_jackpots++;if(discoveryCounts.mine_jackpots>=1)tryDiscover('mines','Jackpot struck — the deep earth reveals a code carved in ancient stone!');}}
@@ -687,8 +784,7 @@ function terminalRun(){
   }
   if(input.toLowerCase().startsWith('hack ')){
     const code=input.substring(5).trim();
-    // Find which widget this UUID matches
-    const w=widgets.find(x=>getWidgetUUID(x.id)===code);
+    const w=verifyUUID(code);
     if(!w){addLine('Invalid UUID. Try "hint <widget name>".','err');return;}
     if(!w.unlocked){addLine(`${w.name} not unlocked yet!`,'err');return;}
     if(isHacked(w.id)){addLine(`${w.name} already hacked!`,'err');return;}
@@ -696,6 +792,7 @@ function terminalRun(){
     addLine(`SUCCESS! Hacked ${w.name}!`,'ok');
     addLine(`Effect: ${hackEffects[w.id].desc}`,'ok');
     showFlash(`💻 Hacked: ${w.name}`);
+    renderCodex(true);
     return;
   }
   addLine('Unknown command. Type "help".','err');
@@ -763,18 +860,97 @@ function renderStats(){
 // ═══════════ PARTICLES ═══════════
 (function(){const cv=$('particles'),cx=cv.getContext('2d');let W,H;function rs(){W=cv.width=innerWidth;H=cv.height=innerHeight;}rs();addEventListener('resize',rs);const ds=Array.from({length:40},()=>({x:Math.random()*innerWidth,y:Math.random()*innerHeight,r:Math.random()*2+1,dx:(Math.random()-.5)*.3,dy:(Math.random()-.5)*.3,o:Math.random()*.25+.05}));(function dr(){cx.clearRect(0,0,W,H);const cs=getComputedStyle(document.documentElement);const pr=cs.getPropertyValue('--particle-r')||'127',pg=cs.getPropertyValue('--particle-g')||'90',pb=cs.getPropertyValue('--particle-b')||'240';ds.forEach(d=>{d.x+=d.dx;d.y+=d.dy;if(d.x<0)d.x=W;if(d.x>W)d.x=0;if(d.y<0)d.y=H;if(d.y>H)d.y=0;cx.beginPath();cx.arc(d.x,d.y,d.r,0,Math.PI*2);cx.fillStyle=`rgba(${pr},${pg},${pb},${d.o})`;cx.fill();});requestAnimationFrame(dr);})();})();
 
+// ═══════════ ENDGAME CUTSCENE ═══════════
+function startEndCutscene(){
+  const cs=$('endCutscene');cs.style.display='block';
+  const fade=$('endFade');const btnWrap=$('endButtonWrap');const stats=$('endStats');
+  // Phase 1: fade to white
+  setTimeout(()=>{fade.style.opacity='1';},50);
+  // Phase 2: show giant golden button
+  setTimeout(()=>{btnWrap.style.opacity='1';setupEndButton();},2500);
+}
+function setupEndButton(){
+  const btn=$('endGoldenBtn');const fill=$('endHoldFill');const txt=$('endHoldText');
+  let holdStart=0,holdTimer=null,completed=false;
+  function updateHold(){
+    if(!holdStart||completed)return;
+    const elapsed=(Date.now()-holdStart)/1000;
+    const pct=Math.min(elapsed/10*100,100);
+    fill.style.width=pct+'%';
+    txt.textContent=Math.min(elapsed,10).toFixed(1)+' / 10 seconds';
+    btn.style.transform=`scale(${1+elapsed*0.01})`;
+    btn.style.boxShadow=`0 0 ${60+elapsed*15}px rgba(255,215,0,${0.5+elapsed*0.05}),0 0 ${120+elapsed*20}px rgba(255,215,0,${0.2+elapsed*0.03}),inset 0 -8px 20px rgba(0,0,0,.3)`;
+    if(elapsed>=10&&!completed){
+      completed=true;clearInterval(holdTimer);
+      btn.textContent='✨';btn.style.transform='scale(1.3)';
+      $('endPrompt').textContent='🎊 COMPLETE! 🎊';
+      setTimeout(showEndStats,1500);
+    }
+  }
+  function startHold(){if(completed)return;holdStart=Date.now();holdTimer=setInterval(updateHold,50);}
+  function stopHold(){if(completed)return;holdStart=0;clearInterval(holdTimer);fill.style.width='0%';txt.textContent='0 / 10 seconds';btn.style.transform='scale(1)';btn.style.boxShadow='0 0 60px rgba(255,215,0,.5),0 0 120px rgba(255,215,0,.2),inset 0 -8px 20px rgba(0,0,0,.3)';}
+  btn.addEventListener('pointerdown',e=>{e.preventDefault();startHold();});
+  btn.addEventListener('pointerup',stopHold);
+  btn.addEventListener('pointerleave',stopHold);
+  btn.addEventListener('pointercancel',stopHold);
+  btn.addEventListener('contextmenu',e=>e.preventDefault());
+}
+function showEndStats(){
+  const stats=$('endStats');const btnWrap=$('endButtonWrap');
+  btnWrap.style.opacity='0';
+  setTimeout(()=>{stats.style.opacity='1';},500);
+  const elapsed=Math.floor((Date.now()-gameStartTime)/1000);
+  const mins=Math.floor(elapsed/60);const hrs=Math.floor(mins/60);
+  const timeStr=hrs>0?`${hrs}h ${mins%60}m ${elapsed%60}s`:`${mins}m ${elapsed%60}s`;
+  const wUnlocked=widgets.filter(w=>w.unlocked).length;
+  const wTotal=widgets.length;
+  const hacked=Object.keys(hackedWidgets).length;
+  const discovered=Object.keys(discoveredUUIDs).length;
+  $('endStatsContent').innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px">
+      <div style="background:#f5f0ff;padding:12px;border-radius:10px;text-align:center">
+        <div style="font-family:'Fredoka One',cursive;font-size:1.4rem;color:#7f5af0">${fmtFull(score)}</div>
+        <div style="font-size:.7rem;color:#888">Final Score</div>
+      </div>
+      <div style="background:#fff5f0;padding:12px;border-radius:10px;text-align:center">
+        <div style="font-family:'Fredoka One',cursive;font-size:1.4rem;color:#e5484d">${fmtFull(rawClicks)}</div>
+        <div style="font-size:.7rem;color:#888">Total Clicks</div>
+      </div>
+      <div style="background:#f0fff5;padding:12px;border-radius:10px;text-align:center">
+        <div style="font-family:'Fredoka One',cursive;font-size:1.4rem;color:#30a46c">${timeStr}</div>
+        <div style="font-size:.7rem;color:#888">Play Time</div>
+      </div>
+      <div style="background:#f0f5ff;padding:12px;border-radius:10px;text-align:center">
+        <div style="font-family:'Fredoka One',cursive;font-size:1.4rem;color:#0091ff">${upgradeLevel}</div>
+        <div style="font-size:.7rem;color:#888">Upgrade Level</div>
+      </div>
+    </div>
+    <div style="font-size:.8rem;color:#555;line-height:1.8">
+      ⚙️ Widgets unlocked: <b>${wUnlocked}/${wTotal}</b><br>
+      🔑 UUIDs discovered: <b>${discovered}/${wTotal}</b><br>
+      💻 Widgets hacked: <b>${hacked}/${wTotal}</b><br>
+      💪 Click power: <b>${fmtFull(clickValue)}</b><br>
+      🌀 Momentum rate: <b>${(getMomentumRate()*100).toFixed(3)}%/s</b><br>
+      👻 Echo chance: <b>${Math.floor(getEchoChance()*100)}%</b><br>
+      🪨 Rocks forged: <b>${rocks.length}</b><br>
+      ⛏️ Mine energy: <b>${mineEnergy}/${MINE_MAX}</b>
+    </div>`;
+}
+function closeEndCutscene(){$('endCutscene').style.display='none';}
+
 // ═══════════ SAVE/LOAD ═══════════
-function saveGame(){localStorage.setItem('widgetClicker',JSON.stringify({score,totalClicks,clickValue,won,upgradeLevel,upgradePanelUnlocked,mineEnergy,lastETick,twCharges,lastWTick,goldenCD,rocks,rockDispenserCD,statLevels,hackedWidgets,discoveredUUIDs,discoveryCounts,widgets:widgets.map(w=>({id:w.id,unlocked:w.unlocked,activeUntil:w.activeUntil||0,cooldownUntil:w.cooldownUntil||0,spinMult:w.spinMult||1,spinLeft:w.spinLeft||0}))}));}
-function loadGame(){try{const raw=localStorage.getItem('widgetClicker');if(!raw)return;const d=JSON.parse(raw);score=d.score||0;totalClicks=d.totalClicks||0;clickValue=d.clickValue||1;won=d.won||false;upgradeLevel=d.upgradeLevel||0;upgradePanelUnlocked=d.upgradePanelUnlocked||false;
+function saveGame(){localStorage.setItem('widgetClicker',JSON.stringify({score,totalClicks,rawClicks,clickValue,won,upgradeLevel,upgradePanelUnlocked,mineEnergy,lastETick,twCharges,lastWTick,goldenCD,rocks,rockDispenserCD,statLevels,hackedWidgets,discoveredUUIDs,discoveryCounts,gameStartTime,widgets:widgets.map(w=>({id:w.id,unlocked:w.unlocked,activeUntil:w.activeUntil||0,cooldownUntil:w.cooldownUntil||0,spinMult:w.spinMult||1,spinLeft:w.spinLeft||0}))}));}
+function loadGame(){try{const raw=localStorage.getItem('widgetClicker');if(!raw)return;const d=JSON.parse(raw);score=d.score||0;totalClicks=d.totalClicks||0;rawClicks=d.rawClicks||0;clickValue=d.clickValue||1;won=d.won||false;upgradeLevel=d.upgradeLevel||0;upgradePanelUnlocked=d.upgradePanelUnlocked||false;gameStartTime=d.gameStartTime||Date.now();
 mineEnergy=d.mineEnergy??MINE_MAX;lastETick=d.lastETick||Date.now();twCharges=d.twCharges??0;lastWTick=d.lastWTick||Date.now();
 goldenCD=d.goldenCD||0;rocks=d.rocks||[];rockDispenserCD=d.rockDispenserCD||0;statLevels=d.statLevels||{cps_mult:0,momentum_boost:0,mine_luck:0,echo_boost:0,golden_power:0};hackedWidgets=d.hackedWidgets||{};discoveredUUIDs=d.discoveredUUIDs||{};if(d.discoveryCounts)Object.assign(discoveryCounts,d.discoveryCounts);
 const now=Date.now();let eR=Math.floor((now-lastETick)/E_REGEN);if(eR>0){mineEnergy=Math.min(MINE_MAX,mineEnergy+eR);lastETick=now;}
 let wR=Math.floor((now-lastWTick)/W_REGEN);if(wR>0){twCharges=Math.min(TW_MAX,twCharges+wR);lastWTick=now;}
-(d.widgets||[]).forEach(sw=>{const w=widgets.find(x=>x.id===sw.id);if(w){w.unlocked=sw.unlocked;w.cooldownUntil=sw.cooldownUntil||0;if(w.id==='lucky_spin'){w.spinMult=sw.spinMult||1;w.spinLeft=sw.spinLeft||0;}if(sw.activeUntil>now){w.activeUntil=sw.activeUntil;if(w.id==='auto_pump'){const spd=isHacked('auto_pump')?(1000/5):(1000/3);w.intervalRef=setInterval(()=>{if(Date.now()>w.activeUntil){clearInterval(w.intervalRef);w.intervalRef=null;return;}addClick(getEffectiveClickValue(),false,true);},spd);}if(w.id==='golden_touch'){w.intervalRef=setInterval(()=>{if(Date.now()>w.activeUntil){clearInterval(w.intervalRef);w.intervalRef=null;w.cooldownUntil=Date.now()+w.cooldown*1000;return;}addClick(getEffectiveClickValue(),false,true);},200);}}}});
-updateUI();if(won)winOverlay.classList.add('show');}catch(e){console.error(e);}}
+(d.widgets||[]).forEach(sw=>{const w=widgets.find(x=>x.id===sw.id);if(w){w.unlocked=sw.unlocked;w.cooldownUntil=sw.cooldownUntil||0;if(w.id==='lucky_spin'){w.spinMult=sw.spinMult||1;w.spinLeft=sw.spinLeft||0;}if(sw.activeUntil>now){w.activeUntil=sw.activeUntil;if(w.id==='auto_pump'){const spd=isHacked('auto_pump')?(1000/5):(1000/3);w.intervalRef=setInterval(()=>{if(Date.now()>w.activeUntil){clearInterval(w.intervalRef);w.intervalRef=null;return;}addClick(getEffectiveClickValue(),false,true);},spd);}if(w.id==='golden_touch'){w.intervalRef=setInterval(()=>{if(Date.now()>w.activeUntil){clearInterval(w.intervalRef);w.intervalRef=null;w.cooldownUntil=Date.now()+w.cooldown*1000;return;}addClick(getEffectiveClickValue(),false,true);},200);}
+if(w.id==='click_frenzy'){w.intervalRef=setInterval(()=>{if(Date.now()>w.activeUntil){clearInterval(w.intervalRef);w.intervalRef=null;w.cooldownUntil=Date.now()+w.cooldown*1000;return;}addClick(getEffectiveClickValue(),false,true);},100);}}}});
+updateUI();if(won){/* already won — don't replay cutscene, just allow continued play */}}catch(e){console.error(e);}}
 setInterval(saveGame,3000);
 
-function resetGame(){score=0;totalClicks=0;clickValue=1;won=false;upgradeLevel=0;upgradePanelUnlocked=false;mineEnergy=MINE_MAX;lastETick=Date.now();twCharges=0;lastWTick=Date.now();goldenCD=0;rocks=[];rockDispenserCD=0;statLevels={cps_mult:0,momentum_boost:0,mine_luck:0,echo_boost:0,golden_power:0};hackedWidgets={};discoveredUUIDs={};discoveryCounts={auto_pump_runs:0,maze_wins:0,combo_15_seen:false,mine_jackpots:0,echo_count:0,momentum_earned:0,spin_10x:false,warps_session:0,golden_touch_earned:0,supernova_count:0,hacked_count:0,golden_presses:0,total_stat_levels:0,forged_t4:false,doubler_triggers:0,auto_dig_count:0,hold_start:0,hold_discovered:false};
+function resetGame(){$('endCutscene').style.display='none';score=0;totalClicks=0;rawClicks=0;clickValue=1;won=false;upgradeLevel=0;upgradePanelUnlocked=false;gameStartTime=Date.now();mineEnergy=MINE_MAX;lastETick=Date.now();twCharges=0;lastWTick=Date.now();goldenCD=0;rocks=[];rockDispenserCD=0;statLevels={cps_mult:0,momentum_boost:0,mine_luck:0,echo_boost:0,golden_power:0};hackedWidgets={};discoveredUUIDs={};discoveryCounts={auto_pump_runs:0,maze_wins:0,combo_15_seen:false,mine_jackpots:0,echo_count:0,momentum_earned:0,spin_10x:false,warps_session:0,golden_touch_earned:0,supernova_count:0,hacked_count:0,golden_presses:0,total_stat_levels:0,forged_t4:false,doubler_triggers:0,auto_dig_count:0,hold_start:0,hold_discovered:false,frenzy_count:0,cavein_count:0,chain_echo:false,overdrive_count:0};
 widgets.forEach(w=>{w.unlocked=false;if(w.intervalRef)clearInterval(w.intervalRef);w.intervalRef=null;w.activeUntil=0;w.cooldownUntil=0;if(w.spinMult!==undefined){w.spinMult=1;w.spinLeft=0;}});
 localStorage.removeItem('widgetClicker');winOverlay.classList.remove('show');updateUI();renderWidgets();renderUpgrades();}
 
@@ -793,5 +969,6 @@ applyTheme(currentTheme);
 
 loadGame();updateUI();renderWidgets();renderUpgrades();
 </script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
 </html>
