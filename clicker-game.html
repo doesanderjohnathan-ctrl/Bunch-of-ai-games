@@ -227,8 +227,8 @@ body{font-family:'Nunito',sans-serif;background:var(--bg-dark);color:var(--text)
 </div>
 <canvas id="particles"></canvas>
 <div class="game-container">
-<div class="score-section"><h1>⚙️ WIDGET CLICKER ⚙️</h1><div class="score-display" id="scoreDisplay">0</div><div class="click-power-label">Click power: <span id="clickPowerLabel">1</span></div><div class="goal-bar-wrap"><div class="goal-bar" id="goalBar" style="width:0%"></div><div class="goal-label">GOAL: 100,000,000,000</div></div></div>
-<div class="cps-display">CPS: <span id="cpsDisplay">0</span> | Score/s: <span id="spsDisplay">0</span> | Clicks: <span id="rawClicksDisplay">0</span></div>
+<div class="score-section"><h1>⚙️ WIDGET CLICKER ⚙️</h1><div class="score-display" id="scoreDisplay">0</div><div class="click-power-label">Click power: <span id="clickPowerLabel">1</span></div><div class="goal-bar-wrap"><div class="goal-bar" id="goalBar" style="width:0%"></div><div class="goal-label" id="goalLabel">0.000% — GOAL: 100B</div></div></div>
+<div class="cps-display">CPS: <span id="cpsDisplay">0</span> | Score/s: <span id="spsDisplay">0</span> | Total earned: <span id="totalEarnedDisplay">0</span></div>
 <div class="active-effects" id="activeEffects"></div>
 <div class="clicker-area"><button class="big-btn" id="bigBtn"><span class="big-btn-text">CLICK!</span></button><button class="golden-btn" id="goldenBtn">🟡<br>GOLD</button></div>
 <div class="panel-section"><div class="section-header upgrades-header">UPGRADES</div><div id="upgradesContent"></div></div>
@@ -301,7 +301,8 @@ function getWidgetUUID(wid){
 // Verification: hash the entered UUID+wid and check against stored hashes
 // This prevents reading UUIDs from source — you must discover them in-game
 const _uuidHashes={};
-(function buildHashes(){widgets.forEach(w=>{_uuidHashes[w.id]=_hash53(getWidgetUUID(w.id)+w.id);});})();
+// buildHashes is called after widgets array is defined (below)
+function buildHashes(){widgets.forEach(w=>{_uuidHashes[w.id]=_hash53(getWidgetUUID(w.id)+w.id);});}
 function verifyUUID(code){
   for(const w of widgets){if(_hash53(code+w.id)===_uuidHashes[w.id])return w;}
   return null;
@@ -401,6 +402,7 @@ const widgets=[
   {id:'auto_miner',name:'🤖 Auto-Miner',icon:'🔧',desc:'Auto-mines 1 cell every 10s when Mine is open. Free!',costLabel:'50M clicks',unlockAt:50000000,type:'passive',unlocked:false},
   {id:'singularity',name:'🌑 Singularity',icon:'🌑',desc:'The endgame. +0.3%/s passive on top of Momentum. Compounds!',costLabel:'100M clicks',unlockAt:100000000,type:'passive',unlocked:false},
 ];
+buildHashes();
 
 // DOM
 const $=id=>document.getElementById(id);
@@ -622,7 +624,7 @@ function calcCPS(){const n=Date.now();clickTimestamps=clickTimestamps.filter(t=>
   // Computer self-hack discovery at 5 hacked widgets
   const hc=Object.keys(hackedWidgets).filter(k=>k!=='computer').length;if(hc>=5)tryDiscover('computer','5 widgets hacked — the computer trusts you with its own source code.');
 }
-function updateUI(){scoreDisplay.textContent=fmtFull(score);clickPowerLabel.textContent=fmtFull(getEffectiveClickValue());goalBar.style.width=Math.min(score/GOAL*100,100)+'%';goldenBtn.disabled=goldenCD>Date.now();$('rawClicksDisplay').textContent=fmtFull(rawClicks);}
+function updateUI(){scoreDisplay.textContent=fmtFull(score);clickPowerLabel.textContent=fmtFull(getEffectiveClickValue());const pct=Math.min(score/GOAL*100,100);goalBar.style.width=pct+'%';$('goalLabel').textContent=pct.toFixed(3)+'% — GOAL: 100B';goldenBtn.disabled=goldenCD>Date.now();$('totalEarnedDisplay').textContent=fmt(totalClicks);}
 // Auto-unlock: every tick, check if any widgets should be unlocked
 // Check for widgets that should be unlockable — if they've been qualifying for 2+ seconds, auto-unlock as safety net
 let _unlockableTimers={};
@@ -969,6 +971,5 @@ applyTheme(currentTheme);
 
 loadGame();updateUI();renderWidgets();renderUpgrades();
 </script>
-<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
 </html>
