@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Widget Clicker</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+/* ═══ DEFAULT / ORIGINAL THEME ═══ */
+:root,html[data-theme="original"]{--bg-dark:#0f0e17;--bg-card:#1a1932;--bg-card-hover:#232248;--accent:#ff6e6e;--accent2:#7f5af0;--accent3:#2cb67d;--gold:#ffd700;--text:#fffffe;--text-dim:#94a1b2;--glow:rgba(127,90,240,.4);--laser-red:#ff2244;--laser-glow:rgba(255,34,68,.5);--mine-amber:#f59e0b;--mine-glow:rgba(245,158,11,.4);--cyan:#22d3ee;--pink:#ec4899;--green:#10b981;--terminal:#00ff41;--btn-bg:radial-gradient(circle at 35% 35%,#9b6dff,#5b2ecf 70%);--btn-shadow:rgba(127,90,240,.45);--particle-r:127;--particle-g:90;--particle-b:240}
+/* ═══ CYBERPUNK HACKER ═══ */
+html[data-theme="cyberpunk"]{--bg-dark:#050a0e;--bg-card:#0c1a1f;--bg-card-hover:#132a30;--accent:#ff003c;--accent2:#00ffcc;--accent3:#39ff14;--gold:#ffea00;--text:#e0ffe0;--text-dim:#5a8a7a;--glow:rgba(0,255,204,.35);--laser-red:#ff003c;--laser-glow:rgba(255,0,60,.5);--mine-amber:#ffea00;--mine-glow:rgba(255,234,0,.4);--cyan:#00ffcc;--pink:#ff2d95;--green:#39ff14;--terminal:#39ff14;--btn-bg:radial-gradient(circle at 35% 35%,#00ffcc,#00886a 70%);--btn-shadow:rgba(0,255,204,.4);--particle-r:0;--particle-g:255;--particle-b:204}
+/* ═══ VAPORWAVE ═══ */
+html[data-theme="vaporwave"]{--bg-dark:#1a0a2e;--bg-card:#2d1b4e;--bg-card-hover:#3d2a6e;--accent:#ff71ce;--accent2:#b967ff;--accent3:#01cdfe;--gold:#fffb96;--text:#fff;--text-dim:#a888cc;--glow:rgba(185,103,255,.4);--laser-red:#ff71ce;--laser-glow:rgba(255,113,206,.5);--mine-amber:#fffb96;--mine-glow:rgba(255,251,150,.3);--cyan:#01cdfe;--pink:#ff71ce;--green:#05ffa1;--terminal:#01cdfe;--btn-bg:radial-gradient(circle at 35% 35%,#ff71ce,#b967ff 70%);--btn-shadow:rgba(255,113,206,.4);--particle-r:185;--particle-g:103;--particle-b:255}
+/* ═══ LIGHT MODE ═══ */
+html[data-theme="light"]{--bg-dark:#f0f0f5;--bg-card:#ffffff;--bg-card-hover:#eeeef5;--accent:#e5484d;--accent2:#6e56cf;--accent3:#30a46c;--gold:#d4a012;--text:#1c1c22;--text-dim:#6f6f7f;--glow:rgba(110,86,207,.25);--laser-red:#e5484d;--laser-glow:rgba(229,72,77,.4);--mine-amber:#d4a012;--mine-glow:rgba(212,160,18,.3);--cyan:#0091ff;--pink:#d6409f;--green:#30a46c;--terminal:#18794e;--btn-bg:radial-gradient(circle at 35% 35%,#8b7ae8,#6e56cf 70%);--btn-shadow:rgba(110,86,207,.35);--particle-r:110;--particle-g:86;--particle-b:207}
+html[data-theme="light"] .maze-cell.wall{background:#d8d8e0}
+html[data-theme="light"] .maze-cell.path{background:#e8e8f0}
+html[data-theme="light"] .maze-cell.path.adjacent{background:#ddd8f0;border-color:rgba(110,86,207,.3)}
+html[data-theme="light"] .mine-cell{background:#f0efe8;border-color:#d0c8a0}
+html[data-theme="light"] .terminal-box{background:#f5f5fa;border-color:#c0d0c0;color:#18794e}
+html[data-theme="light"] .terminal-input{background:#fff;border-color:#c0d0c0;color:#18794e}
+html[data-theme="light"] .overlay-box{background:#f5f5fa;border-color:#d0d0e0}
+html[data-theme="light"] .codex-row{background:#f0f0f8;border-color:#d0d0e0}
+html[data-theme="light"] .codex-row.discovered{background:#f0f8f0;border-color:#a0d0a0}
+html[data-theme="light"] .codex-row.hacked{background:#e8f8e8;border-color:#18794e}
+html[data-theme="light"] .codex-uuid{background:#f8f0e0;border-color:#d0c080;color:#8a6000}
+html[data-theme="light"] .codex-uuid.hidden-uuid{color:#bbb;border-color:#ddd;background:#f5f5f5}
+html[data-theme="light"] .upgrades-locked-msg{background:#fff;border-color:#d0d0e0}
+html[data-theme="light"] .upgrade-icon,html[data-theme="light"] .widget-icon{background:#eeeef5}
+html[data-theme="light"] .upgrade-price-tag{background:#eeeef5}
+html[data-theme="light"] .goal-bar-wrap{background:#e0e0ea;border-color:#c0c0d0}
+html[data-theme="light"] .stat-row{background:#f0f0f8;border-color:#d0d0e0}
+html[data-theme="light"] .mine-energy-bar .bar-bg{background:#e0e0ea;border-color:#c0c0d0}
+body{font-family:'Nunito',sans-serif;background:var(--bg-dark);color:var(--text);min-height:100vh;overflow-x:hidden;user-select:none}
+#particles{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0}
+.game-container{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;padding:20px;max-width:800px;margin:0 auto}
+.score-section{text-align:center;margin-bottom:10px;width:100%}
+.score-section h1{font-family:'Fredoka One',cursive;font-size:1.6rem;color:var(--accent2);letter-spacing:2px;margin-bottom:4px;text-shadow:0 0 20px var(--glow)}
+.score-display{font-family:'Fredoka One',cursive;font-size:3.2rem;line-height:1.1;background:linear-gradient(135deg,var(--accent),var(--accent2),var(--accent3));background-size:300% 300%;animation:gradShift 4s ease infinite;-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.click-power-label{font-size:.8rem;color:var(--text-dim);margin-top:2px}
+.click-power-label span{color:var(--accent2);font-weight:700}
+@keyframes gradShift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+.goal-bar-wrap{width:100%;max-width:500px;margin:8px auto 0;background:#1a1932;border-radius:12px;height:22px;overflow:hidden;border:2px solid #2a2950;position:relative}
+.goal-bar{height:100%;border-radius:10px;background:linear-gradient(90deg,var(--accent2),var(--accent3));transition:width .3s;min-width:2px}
+.goal-label{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.6)}
+.clicker-area{margin:18px 0;position:relative;display:flex;gap:16px;align-items:center;justify-content:center;flex-wrap:wrap}
+.big-btn{width:190px;height:190px;border-radius:50%;border:none;cursor:pointer;position:relative;background:var(--btn-bg);box-shadow:0 8px 30px var(--btn-shadow),inset 0 -6px 12px rgba(0,0,0,.3);transition:transform .08s,box-shadow .08s;display:flex;align-items:center;justify-content:center;outline:none;-webkit-tap-highlight-color:transparent}
+.big-btn:hover{box-shadow:0 8px 40px var(--btn-shadow),inset 0 -6px 12px rgba(0,0,0,.3)}
+.big-btn:active,.big-btn.pressed{transform:scale(.92);box-shadow:0 4px 18px rgba(127,90,240,.4),inset 0 4px 12px rgba(0,0,0,.4)}
+.big-btn-text{font-family:'Fredoka One',cursive;font-size:1.5rem;color:#fff;text-shadow:0 2px 6px rgba(0,0,0,.4);pointer-events:none}
+/* Golden Button */
+.golden-btn{width:100px;height:100px;border-radius:50%;border:none;cursor:pointer;background:radial-gradient(circle at 35% 35%,#ffe066,#c8a200 70%);box-shadow:0 6px 20px rgba(255,215,0,.4),inset 0 -4px 8px rgba(0,0,0,.3);transition:transform .08s,box-shadow .08s;display:none;align-items:center;justify-content:center;outline:none;-webkit-tap-highlight-color:transparent;font-family:'Fredoka One',cursive;font-size:.7rem;color:#5a4000;text-shadow:0 1px 2px rgba(255,255,255,.3)}
+.golden-btn.show{display:flex}
+.golden-btn:active,.golden-btn.pressed{transform:scale(.88)}
+.golden-btn:disabled{opacity:.4;cursor:default;filter:grayscale(.6)}
+.click-float{position:absolute;pointer-events:none;font-family:'Fredoka One',cursive;font-size:1.4rem;color:var(--gold);text-shadow:0 0 6px rgba(255,215,0,.6);animation:floatUp .85s ease-out forwards;z-index:10}
+@keyframes floatUp{0%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-90px) scale(.6)}}
+.cps-display{font-size:.85rem;color:var(--text-dim);margin-bottom:10px;text-align:center}
+.cps-display span{color:var(--accent3);font-weight:700}
+.active-effects{width:100%;max-width:600px;margin-bottom:14px;display:flex;flex-wrap:wrap;gap:6px;justify-content:center;min-height:10px}
+.effect-pill{display:flex;align-items:center;gap:5px;background:var(--bg-card);border:1px solid var(--accent3);border-radius:20px;padding:3px 12px;font-size:.72rem;font-weight:700;color:var(--accent3);box-shadow:0 0 8px rgba(44,182,125,.2)}
+.effect-pill.amber{border-color:var(--mine-amber);color:var(--mine-amber)}
+.effect-pill.blue{border-color:#38bdf8;color:#38bdf8}
+.effect-pill.pink{border-color:var(--pink);color:var(--pink)}
+.effect-pill.cyan{border-color:var(--cyan);color:var(--cyan)}
+.effect-pill.green{border-color:var(--green);color:var(--green)}
+.effect-pill .timer-bar-bg{width:40px;height:5px;background:#2a2950;border-radius:3px;overflow:hidden}
+.effect-pill .timer-bar{height:100%;background:var(--accent3);border-radius:3px;transition:width .25s linear}
+.section-header{font-family:'Fredoka One',cursive;font-size:1.2rem;margin-bottom:10px;text-align:center;display:flex;align-items:center;justify-content:center;gap:10px;width:100%;max-width:560px}
+.section-header::before,.section-header::after{content:'';flex:1;height:2px}
+.section-header.widgets-header{color:var(--accent)}.section-header.widgets-header::before,.section-header.widgets-header::after{background:linear-gradient(90deg,transparent,var(--accent),transparent)}
+.section-header.upgrades-header{color:var(--accent2)}.section-header.upgrades-header::before,.section-header.upgrades-header::after{background:linear-gradient(90deg,transparent,var(--accent2),transparent)}
+.panel-section{width:100%;max-width:560px;margin-bottom:18px}
+.widget-list,.upgrade-list{display:flex;flex-direction:column;gap:10px}
+.widget-card,.upgrade-card{background:var(--bg-card);border-radius:14px;padding:14px 18px;display:flex;align-items:center;gap:14px;border:2px solid transparent;transition:all .3s;position:relative;overflow:hidden}
+.widget-card.locked{opacity:.55;filter:grayscale(.5);border-color:#2a2950}
+.widget-card.unlockable{border-color:var(--accent2);box-shadow:0 0 18px var(--glow);animation:pulse-border 2s ease infinite;opacity:1;filter:none;cursor:pointer}
+@keyframes pulse-border{0%,100%{box-shadow:0 0 12px var(--glow)}50%{box-shadow:0 0 28px rgba(127,90,240,.6)}}
+.widget-card.unlocked{border-color:var(--accent3);opacity:1;filter:none}
+.widget-card.active-widget{border-color:var(--gold);box-shadow:0 0 16px rgba(255,215,0,.3)}
+.widget-icon{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0;background:#232248}
+.upgrade-icon{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0;background:#232248}
+.widget-info,.upgrade-info{flex:1;min-width:0}
+.widget-name,.upgrade-name{font-weight:800;font-size:.95rem;margin-bottom:2px}
+.widget-desc,.upgrade-desc{font-size:.78rem;color:var(--text-dim);line-height:1.3}
+.widget-cost{font-size:.72rem;font-weight:700;margin-top:3px}
+.widget-card.locked .widget-cost{color:var(--accent)}
+.widget-card.unlockable .widget-cost{color:var(--accent2)}
+.widget-card.unlocked .widget-cost{color:var(--accent3)}
+.widget-extra-info{font-size:.68rem;color:var(--mine-amber);font-weight:700;margin-top:2px}
+.widget-status{flex-shrink:0;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1rem}
+.widget-card.locked .widget-status{background:#2a2950}
+.widget-card.unlockable .widget-status{background:var(--accent2);cursor:pointer}
+.widget-card.unlocked .widget-status,.widget-card.active-widget .widget-status{background:var(--accent3)}
+.activate-btn{background:var(--accent2);color:#fff;border:none;border-radius:8px;padding:5px 12px;font-weight:700;font-size:.75rem;cursor:pointer;flex-shrink:0;transition:background .2s;font-family:'Nunito',sans-serif;white-space:nowrap}
+.activate-btn:hover{background:#6a4bd4}
+.activate-btn:disabled{background:#2a2950;color:#555;cursor:default}
+.upgrade-card{border-color:#2a2950;cursor:pointer;transition:all .2s}
+.upgrade-card:hover:not(.locked):not(.too-expensive){border-color:var(--accent2);background:var(--bg-card-hover)}
+.upgrade-card.affordable{border-color:var(--accent2);opacity:1;filter:none;box-shadow:0 0 14px var(--glow)}
+.upgrade-card.too-expensive{opacity:.7;filter:none;border-color:#2a2950;cursor:default}
+.upgrade-price-tag{flex-shrink:0;text-align:center;background:#232248;border-radius:10px;padding:6px 12px;font-family:'Fredoka One',cursive;font-size:.8rem}
+.upgrade-card.affordable .upgrade-price-tag{color:var(--accent3)}
+.upgrade-card.too-expensive .upgrade-price-tag{color:var(--accent)}
+.upgrade-price-tag .price-label{font-size:.55rem;color:var(--text-dim);font-family:'Nunito',sans-serif}
+.upgrade-level{font-size:.68rem;color:var(--accent2);font-weight:700;margin-top:2px}
+.upgrades-locked-msg{text-align:center;color:var(--text-dim);font-size:.9rem;padding:20px;background:var(--bg-card);border-radius:14px;border:2px dashed #2a2950}
+.upgrades-locked-msg .lock-icon{font-size:2rem;margin-bottom:6px}
+.upgrades-locked-msg .lock-req{color:var(--accent2);font-weight:700}
+.win-overlay{display:none;position:fixed;inset:0;z-index:100;background:rgba(15,14,23,.92);flex-direction:column;align-items:center;justify-content:center}
+.win-overlay.show{display:flex}
+.win-title{font-family:'Fredoka One',cursive;font-size:3rem;color:var(--gold);text-shadow:0 0 40px rgba(255,215,0,.6);margin-bottom:10px;animation:gradShift 3s ease infinite;background:linear-gradient(135deg,var(--gold),#ff6e6e,var(--gold));background-size:300% 300%;-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.win-sub{font-size:1.1rem;color:var(--text-dim);margin-bottom:30px}
+.win-btn{background:var(--accent2);color:#fff;border:none;padding:14px 36px;border-radius:12px;font-size:1.1rem;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif}
+/* Overlay */
+.game-overlay{display:none;position:fixed;inset:0;z-index:200;background:rgba(5,4,12,.96);flex-direction:column;align-items:center;justify-content:center;padding:16px;overflow-y:auto}
+.game-overlay.show{display:flex}
+.overlay-box{background:#0a0918;border:2px solid #2a2950;border-radius:16px;padding:18px;text-align:center;max-width:500px;width:100%;max-height:90vh;overflow-y:auto}
+.overlay-title{font-family:'Fredoka One',cursive;font-size:1.3rem;margin-bottom:4px}
+.overlay-subtitle{font-size:.78rem;color:var(--text-dim);margin-bottom:4px}
+.overlay-reward{font-size:.82rem;color:var(--gold);font-weight:700;margin-bottom:10px}
+.overlay-status{font-family:'Fredoka One',cursive;font-size:.95rem;margin-bottom:8px;min-height:24px}
+.overlay-status.success{color:var(--accent3)}
+.overlay-status.fail{color:var(--accent)}
+.overlay-status.playing{color:var(--text-dim)}
+.overlay-btn{background:var(--accent2);color:#fff;border:none;border-radius:10px;padding:9px 24px;font-weight:700;font-size:.85rem;cursor:pointer;margin:4px;font-family:'Nunito',sans-serif;transition:background .2s}
+.overlay-btn:hover{background:#6a4bd4}
+.overlay-btn.close-btn{background:#3a3860}
+.overlay-btn.close-btn:hover{background:#4a4878}
+.overlay-instructions{font-size:.72rem;color:var(--text-dim);margin-top:8px;line-height:1.4}
+/* Maze */
+.maze-grid-wrap{display:flex;justify-content:center;margin-bottom:12px}
+.maze-grid{display:inline-grid;gap:2px;background:#0d0b1e;border-radius:8px;padding:4px;border:1px solid #1e1c3a}
+.maze-cell{border-radius:4px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .12s;border:1px solid transparent;position:relative}
+.maze-cell.wall{background:#1a1832;cursor:default}.maze-cell.path{background:#1e1d40}.maze-cell.path:hover{background:#2d2b5a;border-color:#4a48a0}.maze-cell.path.adjacent{background:#28265a;border-color:rgba(127,90,240,.4)}.maze-cell.player{background:var(--accent2);box-shadow:0 0 12px var(--glow)}.maze-cell.goal{background:#1e3a1e;border-color:var(--accent3);animation:goalPulse 1.5s ease infinite}
+@keyframes goalPulse{0%,100%{box-shadow:0 0 6px rgba(44,182,125,.3)}50%{box-shadow:0 0 18px rgba(44,182,125,.6)}}
+.maze-cell.laser-h::after,.maze-cell.laser-hv::after{content:'';position:absolute;width:100%;height:3px;background:var(--laser-red);box-shadow:0 0 8px var(--laser-glow);border-radius:2px;top:50%;transform:translateY(-50%);pointer-events:none}
+.maze-cell.laser-v::before,.maze-cell.laser-hv::before{content:'';position:absolute;height:100%;width:3px;background:var(--laser-red);box-shadow:0 0 8px var(--laser-glow);border-radius:2px;left:50%;transform:translateX(-50%);pointer-events:none}
+.maze-cell.hit{background:var(--laser-red)!important;animation:hitFlash .3s ease}
+@keyframes hitFlash{0%{transform:scale(1.3)}100%{transform:scale(1)}}
+.maze-cell.emitter{background:#2a1020}
+.dpad-container{display:none;margin:8px auto 4px;width:fit-content}.dpad-row{display:flex;justify-content:center;gap:4px}.dpad-btn{width:48px;height:48px;border:none;border-radius:10px;background:var(--accent2);color:#fff;font-size:1.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent}.dpad-btn:active{background:#5b2ecf;transform:scale(.92)}.dpad-btn.blank{background:transparent;cursor:default}
+.mine-grid-wrap{display:flex;justify-content:center;margin-bottom:12px}
+.mine-grid{display:inline-grid;gap:3px;background:#0d0b1e;border-radius:8px;padding:6px;border:1px solid #2a2010}
+.mine-cell{border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;border:2px solid #3a3520;background:#1c1a0e;font-weight:800}
+.mine-cell:hover:not(.revealed){background:#2a2818;border-color:var(--mine-amber)}
+.mine-cell.revealed{cursor:default}.mine-cell.revealed.ore{background:#2a2510;border-color:var(--mine-amber)}.mine-cell.revealed.gem{background:#1a2a20;border-color:var(--accent3)}.mine-cell.revealed.rock{background:#1a1820;border-color:#2a2840}.mine-cell.revealed.danger{background:#2a1015;border-color:var(--accent)}.mine-cell.revealed.jackpot{background:#2a2a10;border-color:var(--gold);animation:goalPulse 1s ease infinite}
+.mine-energy-bar{display:flex;align-items:center;gap:8px;justify-content:center;margin-bottom:8px}
+.mine-energy-bar .bar-bg{width:160px;height:12px;background:#1a1832;border-radius:6px;overflow:hidden;border:1px solid #2a2950}
+.mine-energy-bar .bar-fill{height:100%;background:linear-gradient(90deg,var(--mine-amber),#fbbf24);border-radius:5px;transition:width .3s}
+.mine-energy-bar .bar-label{font-size:.78rem;font-weight:700;color:var(--mine-amber)}
+/* UUID Codex */
+.codex-grid{display:flex;flex-direction:column;gap:4px;max-height:220px;overflow-y:auto;padding:2px}
+.codex-row{display:flex;align-items:center;gap:8px;padding:5px 10px;background:#080820;border-radius:8px;border:1px solid #1a1a3a;font-size:.72rem;transition:all .15s}
+.codex-row.discovered{border-color:#1a3a1a;background:#0a1a0a}
+.codex-row.hacked{border-color:var(--terminal);background:#0a1a0a;box-shadow:0 0 6px rgba(0,255,65,.15)}
+.codex-row.hidden{opacity:.5}
+.codex-icon{font-size:1rem;width:24px;text-align:center;flex-shrink:0}
+.codex-name{flex:1;font-weight:700;color:var(--text-dim);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.codex-row.discovered .codex-name,.codex-row.hacked .codex-name{color:var(--text)}
+.codex-uuid{font-family:'Courier New',monospace;font-size:.72rem;color:var(--gold);letter-spacing:1px;cursor:pointer;flex-shrink:0;padding:2px 8px;background:#1a1a10;border-radius:4px;border:1px solid #3a3a20;transition:all .15s}
+.codex-uuid:hover{background:#2a2a15;border-color:var(--gold)}
+.codex-uuid.hidden-uuid{color:#333;cursor:default;border-color:#1a1a2a;background:#0a0a15}
+.codex-uuid.hidden-uuid:hover{background:#0a0a15;border-color:#1a1a2a}
+.codex-status{font-size:.65rem;font-weight:700;flex-shrink:0;width:52px;text-align:center}
+.codex-status.s-hacked{color:var(--terminal)}
+.codex-status.s-found{color:var(--gold)}
+.codex-status.s-hidden{color:#444}
+.codex-hack-btn{background:var(--terminal);color:#000;border:none;border-radius:4px;padding:2px 8px;font-size:.65rem;font-weight:800;cursor:pointer;flex-shrink:0;font-family:'Nunito',sans-serif}
+.codex-hack-btn:hover{background:#33ff66}
+/* Terminal */
+.terminal-box{background:#050510;border:1px solid #1a3a1a;border-radius:8px;padding:12px;text-align:left;margin:10px 0;font-family:'Courier New',monospace;font-size:.75rem;color:var(--terminal);max-height:200px;overflow-y:auto}
+.terminal-box .line{margin-bottom:3px;word-break:break-all}
+.terminal-box .line.err{color:var(--accent)}
+.terminal-box .line.ok{color:var(--accent3)}
+.terminal-box .line.info{color:var(--cyan)}
+.terminal-input-row{display:flex;gap:6px;margin-top:8px}
+.terminal-input{flex:1;background:#0a0a20;border:1px solid #1a3a1a;border-radius:6px;padding:8px;font-family:'Courier New',monospace;font-size:.8rem;color:var(--terminal);outline:none}
+.terminal-input:focus{border-color:var(--terminal)}
+.terminal-submit{background:#1a3a1a;color:var(--terminal);border:1px solid var(--terminal);border-radius:6px;padding:8px 16px;font-weight:700;cursor:pointer;font-family:'Courier New',monospace;font-size:.8rem}
+/* Rock system */
+.rock-grid{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:10px 0}
+.rock-item{width:52px;height:52px;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:1.2rem;border:2px solid #2a2950;background:#1a1832;cursor:pointer;transition:all .15s;position:relative}
+.rock-item:hover{border-color:var(--accent2);background:#232248}
+.rock-item.selected{border-color:var(--gold);box-shadow:0 0 12px rgba(255,215,0,.3)}
+.rock-item .rock-tier{font-size:.5rem;color:var(--text-dim);font-weight:700;position:absolute;bottom:2px}
+.rock-actions{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin:8px 0}
+.rock-actions button{background:var(--accent2);color:#fff;border:none;border-radius:8px;padding:6px 14px;font-weight:700;font-size:.75rem;cursor:pointer;font-family:'Nunito',sans-serif}
+.rock-actions button:hover{background:#6a4bd4}
+.rock-actions button:disabled{background:#2a2950;color:#555;cursor:default}
+/* Stats Panel */
+.stat-row{display:flex;align-items:center;gap:12px;padding:8px 12px;background:#12112a;border-radius:10px;margin-bottom:6px;border:1px solid #2a2950;cursor:pointer;transition:all .2s}
+.stat-row:hover{border-color:var(--accent2);background:var(--bg-card-hover)}
+.stat-row.cant{opacity:.6;cursor:default}
+.stat-row .stat-info{flex:1}
+.stat-row .stat-name{font-weight:800;font-size:.85rem}
+.stat-row .stat-desc{font-size:.7rem;color:var(--text-dim)}
+.stat-row .stat-level{font-size:.65rem;color:var(--accent2);font-weight:700}
+.stat-row .stat-cost{font-family:'Fredoka One',cursive;font-size:.8rem;color:var(--accent3);white-space:nowrap}
+.stat-row.cant .stat-cost{color:var(--accent)}
+/* Theme picker */
+.theme-picker{position:fixed;top:12px;right:12px;z-index:50;display:flex;gap:6px;align-items:center}
+.theme-btn{width:28px;height:28px;border-radius:50%;border:2px solid rgba(255,255,255,.2);cursor:pointer;transition:all .2s;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.theme-btn:hover{transform:scale(1.15);border-color:rgba(255,255,255,.5)}
+.theme-btn.active{border-color:var(--gold);box-shadow:0 0 12px rgba(255,215,0,.4)}
+.theme-btn[data-theme="original"]{background:linear-gradient(135deg,#7f5af0,#0f0e17)}
+.theme-btn[data-theme="cyberpunk"]{background:linear-gradient(135deg,#00ffcc,#050a0e)}
+.theme-btn[data-theme="vaporwave"]{background:linear-gradient(135deg,#ff71ce,#1a0a2e)}
+.theme-btn[data-theme="light"]{background:linear-gradient(135deg,#fff,#6e56cf)}
+.theme-label{font-size:.6rem;color:var(--text-dim);font-weight:700;letter-spacing:.5px}
+@media(max-width:520px){
+  .theme-picker{top:8px;right:8px;gap:4px}
+  .theme-btn{width:22px;height:22px}
+  .theme-label{font-size:.5rem}.score-display{font-size:2.2rem}.big-btn{width:150px;height:150px}.golden-btn{width:80px;height:80px}.widget-card,.upgrade-card{padding:10px 12px;gap:10px}.dpad-container{display:block!important}}
+@media(pointer:coarse){.dpad-container{display:block!important}}
+</style>
+</head>
+<body>
+<div class="theme-picker">
+  <span class="theme-label">THEME</span>
+  <div class="theme-btn active" data-theme="original" title="Original"></div>
+  <div class="theme-btn" data-theme="cyberpunk" title="Cyberpunk Hacker"></div>
+  <div class="theme-btn" data-theme="vaporwave" title="Vaporwave"></div>
+  <div class="theme-btn" data-theme="light" title="Light Mode"></div>
+</div>
+<canvas id="particles"></canvas>
+<div class="game-container">
+<div class="score-section"><h1>⚙️ WIDGET CLICKER ⚙️</h1><div class="score-display" id="scoreDisplay">0</div><div class="click-power-label">Click power: <span id="clickPowerLabel">1</span></div><div class="goal-bar-wrap"><div class="goal-bar" id="goalBar" style="width:0%"></div><div class="goal-label">GOAL: 100,000,000,000</div></div></div>
+<div class="cps-display">CPS: <span id="cpsDisplay">0</span> | Score/s: <span id="spsDisplay">0</span></div>
+<div class="active-effects" id="activeEffects"></div>
+<div class="clicker-area"><button class="big-btn" id="bigBtn"><span class="big-btn-text">CLICK!</span></button><button class="golden-btn" id="goldenBtn">🟡<br>GOLD</button></div>
+<div class="panel-section"><div class="section-header upgrades-header">UPGRADES</div><div id="upgradesContent"></div></div>
+<div class="panel-section"><div class="section-header widgets-header">WIDGETS</div><div class="widget-list" id="widgetList"></div></div>
+</div>
+<!-- Overlays inserted by JS -->
+<div class="game-overlay" id="mazeOverlay"><div class="overlay-box"><div class="overlay-title" style="color:var(--laser-red);text-shadow:0 0 20px var(--laser-glow)">🔴 LASER MAZE 🔴</div><div class="overlay-subtitle">Navigate 🟣→🟢 — avoid lasers!</div><div class="overlay-reward" id="mazeRewardPreview"></div><div class="overlay-status playing" id="mazeStatus">Tap adjacent cells or D-pad</div><div class="maze-grid-wrap"><div class="maze-grid" id="mazeGrid"></div></div><div class="dpad-container" id="mazeDpad"><div class="dpad-row"><div class="dpad-btn blank"></div><div class="dpad-btn" data-dir="up">▲</div><div class="dpad-btn blank"></div></div><div class="dpad-row"><div class="dpad-btn" data-dir="left">◀</div><div class="dpad-btn blank" style="opacity:.3">✦</div><div class="dpad-btn" data-dir="right">▶</div></div><div class="dpad-row"><div class="dpad-btn blank"></div><div class="dpad-btn" data-dir="down">▼</div><div class="dpad-btn blank"></div></div></div><div id="mazeButtons"><button class="overlay-btn close-btn" onclick="closeMaze()">✕ Abandon</button></div><div class="overlay-instructions">Lasers toggle — time your moves! Reach 🟢 = +50% score.</div></div></div>
+<div class="game-overlay" id="mineOverlay"><div class="overlay-box"><div class="overlay-title" style="color:var(--mine-amber);text-shadow:0 0 20px var(--mine-glow)">⛏️ THE MINES ⛏️</div><div class="overlay-subtitle">Dig for %-based riches! 1 energy/dig.</div><div class="mine-energy-bar"><div class="bar-label" id="mineEnergyLabel">⚡ 10/10</div><div class="bar-bg"><div class="bar-fill" id="mineEnergyBar" style="width:100%"></div></div></div><div class="overlay-reward" id="mineRewardDisplay">Loot: 0</div><div class="overlay-status playing" id="mineStatus">Tap to dig!</div><div class="mine-grid-wrap"><div class="mine-grid" id="mineGrid"></div></div><div id="mineButtons"></div><div class="overlay-instructions">🪨0% 🥉+2% 💎+5% 💰+15% 💥-50% loot</div></div></div>
+<div class="game-overlay" id="computerOverlay"><div class="overlay-box"><div class="overlay-title" style="color:var(--terminal);text-shadow:0 0 20px rgba(0,255,65,.3)">💻 HACK TERMINAL 💻</div><div class="overlay-subtitle">Each widget has a hidden UUID. Discover them in-game, then hack them here!</div><div class="overlay-status playing" id="computerStatus">Use 'hint &lt;name&gt;' for clues on how to discover UUIDs</div>
+<div id="uuidCodex" style="margin:10px 0"></div>
+<div class="terminal-box" id="terminalLog"><div class="line info">> SYSTEM READY. Type 'help' for commands.</div><div class="line info">> Discover UUIDs by completing challenges. Use 'hint &lt;name&gt;' for clues.</div></div><div class="terminal-input-row"><input class="terminal-input" id="terminalInput" placeholder="type command..." autocomplete="off" autocapitalize="off" spellcheck="false"><button class="terminal-submit" id="terminalSubmit">RUN</button></div><div style="margin-top:10px"><button class="overlay-btn close-btn" onclick="closeComputer()">✕ Close</button></div></div></div>
+<div class="game-overlay" id="rockOverlay"><div class="overlay-box"><div class="overlay-title" style="color:#a78bfa;text-shadow:0 0 20px rgba(167,139,250,.3)">🪨 ROCK FORGE 🪨</div><div class="overlay-subtitle">Dispense, merge & sell rocks for massive score!</div><div class="overlay-reward" id="rockInfo">Rocks: 0 | Dispenser ready</div><div class="rock-grid" id="rockGrid"></div><div class="rock-actions" id="rockActions"></div><div style="margin-top:8px"><button class="overlay-btn close-btn" onclick="closeRocks()">✕ Close</button></div><div class="overlay-instructions">🪨T1→🥉T2→💎T3→👑T4→💫T5 — Merge 3 same tier = 1 higher tier. Sell for score!</div></div></div>
+<div class="game-overlay" id="statsOverlay"><div class="overlay-box"><div class="overlay-title" style="color:var(--cyan);text-shadow:0 0 20px rgba(34,211,238,.3)">📊 UNIVERSAL STATS 📊</div><div class="overlay-subtitle">Permanent global upgrades. Spend score to boost everything!</div><div id="statsContent"></div><div style="margin-top:10px"><button class="overlay-btn close-btn" onclick="closeStats()">✕ Close</button></div></div></div>
+<div class="win-overlay" id="winOverlay"><div class="win-title">🎉 YOU WIN! 🎉</div><div class="win-sub" id="winSub">100 Billion!</div><button class="win-btn" onclick="resetGame()">Play Again</button></div>
+
+<script>
+const GOAL=1e11;let score=0,totalClicks=0,clickValue=1,cps=0,won=false;
+let upgradeLevel=0,upgradePanelUnlocked=false;
+function getUpgradeCost(){return Math.floor(50*Math.pow(1.45,upgradeLevel))}
+let mineEnergy=10;const MINE_MAX=10;let lastETick=Date.now();const E_REGEN=45000;
+let twCharges=0;const TW_MAX=3;let lastWTick=Date.now();const W_REGEN=180000;
+let goldenCD=0;
+// Rocks
+let rocks=[];const ROCK_TIERS=['🪨','🥉','💎','👑','💫'];const ROCK_NAMES=['Stone','Bronze','Crystal','Crown','Star'];
+let rockDispenserCD=0;const ROCK_DISP_CD=30000;
+// Stats
+let statLevels={cps_mult:0,momentum_boost:0,mine_luck:0,echo_boost:0,golden_power:0};
+function statCost(id,lv){return Math.floor({cps_mult:5e6,momentum_boost:8e6,mine_luck:1e7,echo_boost:7e6,golden_power:1.5e7}[id]*Math.pow(2,lv));}
+// Hacks
+let hackedWidgets={};
+let clickTimestamps=[],scoreTimestamps=[];
+
+// Widget UUIDs — each is derived uniquely from the widget id
+function getWidgetUUID(wid){const map={quick_fingers:'QF-7a3b-ECHO',auto_pump:'AP-9d1f-TURBO',laser_maze:'LM-4e2c-BEAM',combo_surge:'CS-8f5a-BLAZE',mines:'MN-2b7d-DEEP',echo_clicks:'EC-6c4e-GHOST',momentum:'ME-1a9f-SPIN',lucky_spin:'LS-3d8b-DICE',time_warp:'TW-5e2a-FLUX',golden_touch:'GT-7f1c-MIDAS',gravity_well:'GW-0b6d-VOID',supernova:'SN-4a3e-NOVA',computer:'PC-8c2f-HACK',golden_button:'GB-9e5d-SHINE',universal_stats:'US-1f7a-OMNI',rock_forge:'RF-3b4c-FORGE',quantum_doubler:'QD-6d2e-TWIN',auto_miner:'AM-5a1b-DRILL',singularity:'SG-0e9f-ZERO'};return map[wid]||'??-????-????';}
+
+// UUID discovery tracking — each widget has a unique way to find its code
+let discoveredUUIDs={};  // wid -> true
+// In-game hint riddles for the terminal 'hint' command
+const hintRiddles={
+  quick_fingers:'💡 "Hold the main button for 10 seconds straight. Patience reveals speed."',
+  auto_pump:'💡 "Let the machine run its course 3 times. Repetition builds trust."',
+  laser_maze:'💡 "Victory in the maze speaks volumes. Win 3 times and listen."',
+  combo_surge:'💡 "Push beyond the limits — reach 15 CPS and feel the heat."',
+  mines:'💡 "Fortune favors the bold. Strike jackpot gold and the earth whispers."',
+  echo_clicks:'💡 "Ghosts accumulate. Let 50 echoes haunt you before they share their name."',
+  momentum:'💡 "Patience compounds. Let the engine run until you\'ve earned 10M from momentum alone."',
+  lucky_spin:'💡 "Chase the perfect roll. Only a 10× spin reveals the dice\'s true face."',
+  time_warp:'💡 "Bend time thrice in a single session. Three warps, one truth."',
+  golden_touch:'💡 "The golden king rewards the greedy. Earn 1M during a single Golden Touch."',
+  gravity_well:'💡 "Depth comes from investment. Reach upgrade level 30 and the void opens."',
+  supernova:'💡 "Destruction creates. Detonate 3 times and read the aftermath."',
+  computer:'💡 "The machine knows itself. Hack 5 other widgets first and it reveals its own code."',
+  golden_button:'💡 "Press the golden button 50 times. Persistence makes it shine."',
+  universal_stats:'💡 "Invest in yourself. Buy 10 total stat levels and the numbers align."',
+  rock_forge:'💡 "Creation from nothing. Forge a T4 Crown rock and the anvil speaks."',
+  quantum_doubler:'💡 "Twins emerge from chance. Let the doubler trigger 20 times."',
+  auto_miner:'💡 "Let the drill do its work. Watch it auto-dig 30 cells."',
+  singularity:'💡 "The end is the beginning. Reach 50M score and stare into the abyss."',
+};
+// Counters for discovery triggers
+let discoveryCounts={auto_pump_runs:0,maze_wins:0,combo_15_seen:false,mine_jackpots:0,echo_count:0,momentum_earned:0,spin_10x:false,warps_session:0,golden_touch_earned:0,supernova_count:0,hacked_count:0,golden_presses:0,total_stat_levels:0,forged_t4:false,doubler_triggers:0,auto_dig_count:0,hold_start:0,hold_discovered:false};
+function tryDiscover(wid,message){
+  if(discoveredUUIDs[wid])return;
+  discoveredUUIDs[wid]=true;
+  const uuid=getWidgetUUID(wid);
+  // Show a special notification
+  const f=document.createElement('div');f.style.cssText=`position:fixed;top:20%;left:50%;transform:translateX(-50%);background:#0a1a0a;border:2px solid var(--terminal);border-radius:16px;padding:18px 30px;text-align:center;z-index:310;box-shadow:0 0 40px rgba(0,255,65,.3);max-width:92vw;animation:floatUp 4s ease-out forwards;`;
+  f.innerHTML=`<div style="font-size:1.5rem;margin-bottom:4px">💻🔓</div><div style="font-family:'Courier New',monospace;font-size:.85rem;color:#00ff41;margin-bottom:4px">UUID DISCOVERED!</div><div style="font-size:.75rem;color:#94a1b2;margin-bottom:6px">${message}</div><div style="font-family:'Courier New',monospace;font-size:1.1rem;color:#ffd700;letter-spacing:2px;background:#0a0a20;padding:6px 16px;border-radius:8px;border:1px solid #ffd700;display:inline-block">${uuid}</div><div style="font-size:.65rem;color:#94a1b2;margin-top:6px">Use: hack ${uuid} in the terminal</div>`;
+  document.body.appendChild(f);setTimeout(()=>f.remove(),4000);
+}
+// Hack effects
+const hackEffects={
+  quick_fingers:{desc:'Hold speed doubled (60ms)',applied:false},
+  auto_pump:{desc:'Auto Pump speed → 5 clicks/sec',applied:false},
+  laser_maze:{desc:'Laser toggle slowed to 2.5s',applied:false},
+  combo_surge:{desc:'Combo thresholds lowered: 5+=2×, 12+=3×',applied:false},
+  mines:{desc:'Cave-in chance halved',applied:false},
+  echo_clicks:{desc:'Echo chance → 40%',applied:false},
+  momentum:{desc:'Momentum rate doubled',applied:false},
+  lucky_spin:{desc:'Spin outcomes improved (min 2×)',applied:false},
+  time_warp:{desc:'Warp gives 120s of Momentum',applied:false},
+  golden_touch:{desc:'Golden Touch lasts 30s',applied:false},
+  gravity_well:{desc:'Gravity bonus per 5 upgrades instead of 10',applied:false},
+  supernova:{desc:'Only sacrifice 5% instead of 10%',applied:false},
+  computer:{desc:'META-HACK: All other hack bonuses boosted by +50%!',applied:false},
+  golden_button:{desc:'Golden Button cooldown halved',applied:false},
+  universal_stats:{desc:'Stat upgrade costs -30%',applied:false},
+  rock_forge:{desc:'Dispenser gives T2 rocks',applied:false},
+  quantum_doubler:{desc:'Doubler chance → 20%',applied:false},
+  auto_miner:{desc:'Auto-Miner speed doubled',applied:false},
+  singularity:{desc:'Singularity rate → 0.5%/s',applied:false},
+};
+
+const widgets=[
+  {id:'quick_fingers',name:'⚡ Quick Fingers',icon:'⚡',desc:'Hold for rapid-fire clicking!',costLabel:'50 clicks',unlockAt:50,type:'passive',unlocked:false},
+  {id:'auto_pump',name:'🤖 Auto Pump',icon:'🤖',desc:'60s auto-clicking at 3/sec.',costLabel:'100 clicks',unlockAt:100,type:'active',duration:60,cooldown:0,unlocked:false,activeUntil:0,cooldownUntil:0,intervalRef:null},
+  {id:'laser_maze',name:'🔴 Laser Maze',icon:'🔴',desc:'+50% score on success. 60s CD.',costLabel:'250 clicks',unlockAt:250,type:'minigame',cooldown:60,unlocked:false,cooldownUntil:0},
+  {id:'combo_surge',name:'🔥 Combo Surge',icon:'🔥',desc:'10+ CPS=2×, 20+=3× multiplier.',costLabel:'500 clicks',unlockAt:500,type:'passive',unlocked:false},
+  {id:'mines',name:'⛏️ The Mines',icon:'⛏️',desc:'Dig for % of score! Energy 10max.',costLabel:'1K clicks',unlockAt:1000,type:'minigame',cooldown:90,unlocked:false,cooldownUntil:0},
+  {id:'echo_clicks',name:'👻 Echo Clicks',icon:'👻',desc:'25% chance for free bonus click!',costLabel:'2.5K clicks',unlockAt:2500,type:'passive',unlocked:false},
+  {id:'momentum',name:'🌀 Momentum',icon:'🌀',desc:'+0.1%/s passive compounding.',costLabel:'5K clicks',unlockAt:5000,type:'passive',unlocked:false},
+  {id:'lucky_spin',name:'🎰 Lucky Spin',icon:'🎰',desc:'1×–10× for next 30 clicks. 120s CD.',costLabel:'10K clicks',unlockAt:10000,type:'active',cooldown:120,unlocked:false,cooldownUntil:0,spinMult:1,spinLeft:0},
+  {id:'time_warp',name:'⏳ Time Warp',icon:'⏳',desc:'60s Momentum instant. 3 charges/3min.',costLabel:'25K clicks',unlockAt:25000,type:'active',cooldown:0,unlocked:false,cooldownUntil:0},
+  {id:'golden_touch',name:'👑 Golden Touch',icon:'👑',desc:'20s: 5× clicks + 5/sec auto. 180s CD.',costLabel:'50K clicks',unlockAt:50000,type:'active',duration:20,cooldown:180,unlocked:false,activeUntil:0,cooldownUntil:0,intervalRef:null},
+  {id:'gravity_well',name:'🕳️ Gravity Well',icon:'🕳️',desc:'Momentum +0.05% per 10 upgrades.',costLabel:'100K clicks',unlockAt:100000,type:'passive',unlocked:false},
+  {id:'supernova',name:'💫 Supernova',icon:'💫',desc:'Sacrifice 10% to double rest! 300s CD.',costLabel:'500K clicks',unlockAt:500000,type:'active',cooldown:300,unlocked:false,cooldownUntil:0},
+  {id:'computer',name:'💻 Computer',icon:'💻',desc:'Hack terminal! Enter widget UUIDs for permanent boosts.',costLabel:'1M clicks',unlockAt:1000000,type:'minigame',cooldown:0,unlocked:false,cooldownUntil:0},
+  {id:'golden_button',name:'🟡 Golden Button',icon:'🟡',desc:'A 2nd button! Grants 100× click value. 10s cooldown.',costLabel:'2.5M clicks',unlockAt:2500000,type:'passive',unlocked:false},
+  {id:'universal_stats',name:'📊 Universal Stats',icon:'📊',desc:'Global stat upgrades panel! CPS, momentum, luck & more.',costLabel:'5M clicks',unlockAt:5000000,type:'minigame',cooldown:0,unlocked:false,cooldownUntil:0},
+  {id:'rock_forge',name:'🪨 Rock Forge',icon:'🪨',desc:'Dispense, merge & sell rocks! Rocks from mines auto-collect.',costLabel:'10M clicks',unlockAt:10000000,type:'minigame',cooldown:0,unlocked:false,cooldownUntil:0},
+  {id:'quantum_doubler',name:'⚛️ Quantum Doubler',icon:'⚛️',desc:'10% chance each second to double your passive income tick!',costLabel:'25M clicks',unlockAt:25000000,type:'passive',unlocked:false},
+  {id:'auto_miner',name:'🤖 Auto-Miner',icon:'🔧',desc:'Auto-mines 1 cell every 10s when Mine is open. Free!',costLabel:'50M clicks',unlockAt:50000000,type:'passive',unlocked:false},
+  {id:'singularity',name:'🌑 Singularity',icon:'🌑',desc:'The endgame. +0.3%/s passive on top of Momentum. Compounds!',costLabel:'100M clicks',unlockAt:100000000,type:'passive',unlocked:false},
+];
+
+// DOM
+const $=id=>document.getElementById(id);
+const scoreDisplay=$('scoreDisplay'),clickPowerLabel=$('clickPowerLabel'),goalBar=$('goalBar'),cpsDisplay=$('cpsDisplay'),spsDisplay=$('spsDisplay'),bigBtn=$('bigBtn'),goldenBtn=$('goldenBtn'),widgetList=$('widgetList'),activeEffects=$('activeEffects'),upgradesContent=$('upgradesContent'),winOverlay=$('winOverlay'),winSub=$('winSub');
+
+function fmt(n){if(n<1e3)return Math.floor(n).toString();const u=['','K','M','B','T'];const t=Math.min(Math.floor(Math.log10(Math.abs(n))/3),u.length-1);const s=n/Math.pow(10,t*3);return s.toFixed(s<10?2:s<100?1:0)+u[t]}
+function fmtFull(n){return Math.floor(n).toLocaleString('en-US')}
+
+// Scoring
+function getMomentumRate(){
+  let r=0.001;const gw=widgets.find(w=>w.id==='gravity_well');
+  const perN=isHacked('gravity_well')?5:10;
+  if(gw&&gw.unlocked)r+=0.0005*Math.floor(upgradeLevel/perN);
+  if(isHacked('momentum'))r*=metaBoost(2);
+  r*=(1+statLevels.momentum_boost*0.15);
+  return r;
+}
+function isHacked(wid){return!!hackedWidgets[wid];}
+// Computer meta-hack: boosts numeric values of other hacks by 50%
+function metaBoost(val){return isHacked('computer')?val*1.5:val;}
+function getEchoChance(){let c=0.25;if(isHacked('echo_clicks'))c=metaBoost(0.40);c+=(statLevels.echo_boost*0.05);return Math.min(c,0.85);}
+function getComboThresholds(){return isHacked('combo_surge')?[5,12]:[10,20];}
+function getEffectiveClickValue(){
+  let v=clickValue;const[lo,hi]=getComboThresholds();const cs=widgets.find(w=>w.id==='combo_surge');
+  if(cs&&cs.unlocked){if(cps>=hi)v*=3;else if(cps>=lo)v*=2;}
+  const ls=widgets.find(w=>w.id==='lucky_spin');if(ls&&ls.spinLeft>0)v*=ls.spinMult;
+  const gt=widgets.find(w=>w.id==='golden_touch');if(gt&&gt.activeUntil>Date.now())v*=5;
+  v*=(1+statLevels.cps_mult*0.10);
+  return Math.floor(v);
+}
+
+function addClick(value,showFloat=true,countAsClick=true){
+  if(value===undefined)value=getEffectiveClickValue();
+  score+=value;if(countAsClick)totalClicks+=value;
+  if(showFloat)spawnFloat(value);scoreTimestamps.push({time:Date.now(),amount:value});
+  const ls=widgets.find(w=>w.id==='lucky_spin');if(ls&&ls.spinLeft>0&&showFloat)ls.spinLeft--;
+  const ec=widgets.find(w=>w.id==='echo_clicks');
+  if(ec&&ec.unlocked&&showFloat&&Math.random()<getEchoChance()){score+=value;totalClicks+=value;scoreTimestamps.push({time:Date.now(),amount:value});spawnEcho(value);
+    discoveryCounts.echo_count++;if(discoveryCounts.echo_count>=50)tryDiscover('echo_clicks','50 echoes whispered — the ghosts finally reveal their spectral ID!');}
+  checkWin();updateUI();
+}
+function addBonus(v){score+=v;totalClicks+=v;scoreTimestamps.push({time:Date.now(),amount:v});checkWin();updateUI();}
+function checkWin(){if(!won&&score>=GOAL){won=true;winOverlay.classList.add('show');winSub.textContent=`${fmtFull(score)} clicks! 🎊`;}}
+
+// Click handling
+let holdInterval=null;
+function doClick(){addClick();bigBtn.classList.add('pressed');setTimeout(()=>bigBtn.classList.remove('pressed'),80);clickTimestamps.push(Date.now());}
+bigBtn.addEventListener('pointerdown',e=>{e.preventDefault();doClick();
+  // Track hold for Quick Fingers UUID discovery
+  discoveryCounts.hold_start=Date.now();
+  const qf=widgets.find(w=>w.id==='quick_fingers');if(qf&&qf.unlocked){const spd=isHacked('quick_fingers')?Math.max(30,Math.floor(60/metaBoost(1))):120;holdInterval=setTimeout(()=>{holdInterval=setInterval(()=>{
+    doClick();
+    // Check 10 second hold
+    if(!discoveryCounts.hold_discovered&&Date.now()-discoveryCounts.hold_start>=10000){discoveryCounts.hold_discovered=true;tryDiscover('quick_fingers','Held for 10 seconds — your fingers revealed their secret!');}
+  },spd);},300);}});
+const stopH=()=>{clearInterval(holdInterval);clearTimeout(holdInterval);holdInterval=null;};
+bigBtn.addEventListener('pointerup',stopH);bigBtn.addEventListener('pointerleave',stopH);bigBtn.addEventListener('pointercancel',stopH);bigBtn.addEventListener('contextmenu',e=>e.preventDefault());
+
+// Golden Button
+goldenBtn.addEventListener('click',e=>{
+  e.preventDefault();if(goldenCD>Date.now())return;
+  const gp=100*(1+statLevels.golden_power*0.5);
+  const val=Math.floor(getEffectiveClickValue()*gp);
+  score+=val;totalClicks+=val;spawnFloat(val);scoreTimestamps.push({time:Date.now(),amount:val});
+  const cd=isHacked('golden_button')?5000:10000;
+  goldenCD=Date.now()+cd;
+  discoveryCounts.golden_presses++;if(discoveryCounts.golden_presses>=50)tryDiscover('golden_button','50 golden presses — the button reveals the code engraved beneath it!');
+  goldenBtn.classList.add('pressed');setTimeout(()=>goldenBtn.classList.remove('pressed'),100);
+  checkWin();updateUI();
+});
+
+function spawnFloat(v){const el=document.createElement('div');el.className='click-float';el.textContent='+'+fmt(v);const r=bigBtn.getBoundingClientRect();el.style.left=(r.width/2+(Math.random()-.5)*80)+'px';el.style.top=(r.height/2-20)+'px';bigBtn.parentElement.appendChild(el);el.addEventListener('animationend',()=>el.remove());}
+function spawnEcho(v){const el=document.createElement('div');el.className='click-float';el.textContent='👻+'+fmt(v);el.style.color='#c084fc';const r=bigBtn.getBoundingClientRect();el.style.left=(r.width/2+(Math.random()-.5)*80)+'px';el.style.top=(r.height/2+10)+'px';bigBtn.parentElement.appendChild(el);el.addEventListener('animationend',()=>el.remove());}
+
+// Momentum + Singularity
+setInterval(()=>{
+  const me=widgets.find(w=>w.id==='momentum');
+  let rate=0;
+  if(me&&me.unlocked)rate+=getMomentumRate();
+  const sg=widgets.find(w=>w.id==='singularity');
+  if(sg&&sg.unlocked)rate+=(isHacked('singularity')?metaBoost(0.005):0.003);
+  if(rate>0&&score>0){
+    let gain=Math.floor(score*rate);
+    const qd=widgets.find(w=>w.id==='quantum_doubler');
+    const qdChance=isHacked('quantum_doubler')?metaBoost(0.20):0.10;
+    let doubled=false;
+    if(qd&&qd.unlocked&&Math.random()<qdChance){gain*=2;doubled=true;discoveryCounts.doubler_triggers++;if(discoveryCounts.doubler_triggers>=20)tryDiscover('quantum_doubler','20 quantum doubles — the twin particles reveal their entangled key!');}
+    if(gain>0){score+=gain;totalClicks+=gain;scoreTimestamps.push({time:Date.now(),amount:gain});
+      discoveryCounts.momentum_earned+=gain;if(discoveryCounts.momentum_earned>=10000000)tryDiscover('momentum','10M earned from momentum — the engine inscribes its serial code!');
+      checkWin();updateUI();}
+  }
+},1000);
+
+// Energy & Warp regen
+setInterval(()=>{const n=Date.now();if(mineEnergy<MINE_MAX){const g=Math.floor((n-lastETick)/E_REGEN);if(g>0){mineEnergy=Math.min(MINE_MAX,mineEnergy+g);lastETick=n;}}else lastETick=n;if(twCharges<TW_MAX){const g=Math.floor((n-lastWTick)/W_REGEN);if(g>0){twCharges=Math.min(TW_MAX,twCharges+g);lastWTick=n;}}else lastWTick=n;},1000);
+
+// Upgrades
+function renderUpgrades(){
+  if(!upgradePanelUnlocked&&totalClicks<500){upgradesContent.innerHTML=`<div class="upgrades-locked-msg"><div class="lock-icon">🔒</div><div>Upgrades at <span class="lock-req">500 clicks</span></div><div style="margin-top:4px;font-size:.75rem">${fmtFull(totalClicks)}/500</div></div>`;return;}
+  upgradePanelUnlocked=true;const cost=getUpgradeCost();const can=score>=cost;
+  upgradesContent.innerHTML=`<div class="upgrade-list"><div class="upgrade-card ${can?'affordable':'too-expensive'}" id="upgCP"><div class="upgrade-icon">💪</div><div class="upgrade-info"><div class="upgrade-name">Click Power Up</div><div class="upgrade-desc">Base click +1</div><div class="upgrade-level">Lv${upgradeLevel}→${upgradeLevel+1} (${fmtFull(clickValue)})</div></div><div class="upgrade-price-tag"><div>${fmt(cost)}</div><div class="price-label">SCORE</div></div></div></div>`;
+  $('upgCP').addEventListener('click',()=>{if(score>=getUpgradeCost()){score-=getUpgradeCost();upgradeLevel++;clickValue++;updateUI();renderUpgrades();}});
+}
+
+// Widgets
+function renderWidgets(){
+  widgetList.innerHTML='';
+  widgets.forEach(w=>{
+    const can=!w.unlocked&&totalClicks>=w.unlockAt;const card=document.createElement('div');
+    card.className='widget-card '+(w.unlocked?(isWidgetActive(w)?'active-widget':'unlocked'):can?'unlockable':'locked');
+    let rH='',xI='';
+    if(!w.unlocked){rH=`<div class="widget-status">${can?'🔓':'🔒'}</div>`;
+    }else if(w.id==='lucky_spin'){const cd=w.cooldownUntil>Date.now(),s=Math.ceil((w.cooldownUntil-Date.now())/1000);if(w.spinLeft>0)xI=`<div class="widget-extra-info">🎰 ${w.spinMult}× (${w.spinLeft} left)</div>`;rH=`<button class="activate-btn" ${cd||w.spinLeft>0?'disabled':''} data-act="${w.id}">${w.spinLeft>0?'🎰'+w.spinMult+'×':cd?'⏳'+s+'s':'▶ Spin'}</button>`;
+    }else if(w.id==='time_warp'){xI=`<div class="widget-extra-info">⏳ ${twCharges}/${TW_MAX}</div>`;rH=`<button class="activate-btn" ${twCharges<=0?'disabled':''} data-act="${w.id}">▶ Warp</button>`;
+    }else if(w.id==='supernova'){const cd=w.cooldownUntil>Date.now(),s=Math.ceil((w.cooldownUntil-Date.now())/1000);rH=`<button class="activate-btn" ${cd?'disabled':''} data-act="${w.id}" style="background:#ec4899">${cd?'⏳'+s+'s':'💫 Detonate'}</button>`;
+    }else if(w.id==='computer'){const dCount=Object.keys(discoveredUUIDs).length;const hCount=Object.keys(hackedWidgets).length;xI=`<div class="widget-extra-info">🔑 ${dCount} found | ✅ ${hCount} hacked</div>`;rH=`<button class="activate-btn" data-act="${w.id}">▶ Open</button>`;
+    }else if(w.id==='universal_stats'||w.id==='rock_forge'){rH=`<button class="activate-btn" data-act="${w.id}">▶ Open</button>`;
+    }else if(w.type==='active'){const a=isWidgetActive(w),cd=w.cooldownUntil>Date.now(),s=Math.ceil((w.cooldownUntil-Date.now())/1000);rH=`<button class="activate-btn" ${a||cd?'disabled':''} data-act="${w.id}">${a?'⏳ Active':cd?'⏳'+s+'s':'▶ Activate'}</button>`;
+    }else if(w.type==='minigame'){const cd=w.cooldownUntil>Date.now(),s=Math.ceil((w.cooldownUntil-Date.now())/1000);if(w.id==='mines')xI=`<div class="widget-extra-info">⚡${mineEnergy}/${MINE_MAX}</div>`;rH=`<button class="activate-btn" ${cd?'disabled':''} data-act="${w.id}">${cd?'⏳'+s+'s':'▶ Play'}</button>`;
+    }else{rH=`<div class="widget-status">✅</div>`;}
+    const hacked=isHacked(w.id)?'<span style="color:var(--terminal);font-size:.65rem"> [HACKED]</span>':(discoveredUUIDs[w.id]?'<span style="color:var(--gold);font-size:.65rem" title="UUID discovered! Open terminal to hack."> 🔑</span>':'');
+    card.innerHTML=`<div class="widget-icon">${w.icon}</div><div class="widget-info"><div class="widget-name">${w.name}${hacked}</div><div class="widget-desc">${w.desc}</div>${xI}<div class="widget-cost">${w.unlocked?'✅ Unlocked':can?'🔓 Click to unlock!':'🔒 '+w.costLabel}</div></div>${rH}`;
+    if(can&&!w.unlocked)card.addEventListener('click',()=>{w.unlocked=true;showFlash(w.name);renderWidgets();});
+    widgetList.appendChild(card);
+  });
+  // Golden button visibility
+  const gb=widgets.find(w=>w.id==='golden_button');goldenBtn.classList.toggle('show',gb&&gb.unlocked);goldenBtn.disabled=goldenCD>Date.now();
+  document.querySelectorAll('[data-act]').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();activateWidget(b.dataset.act);}));
+}
+
+function isWidgetActive(w){return w.type==='active'&&w.activeUntil>Date.now();}
+
+function activateWidget(id){
+  const w=widgets.find(x=>x.id===id);if(!w||!w.unlocked)return;
+  if(id==='auto_pump'){if(isWidgetActive(w))return;w.activeUntil=Date.now()+w.duration*1000;const spd=isHacked('auto_pump')?(1000/5):(1000/3);w.intervalRef=setInterval(()=>{if(Date.now()>w.activeUntil){clearInterval(w.intervalRef);w.intervalRef=null;
+  discoveryCounts.auto_pump_runs++;if(discoveryCounts.auto_pump_runs>=3)tryDiscover('auto_pump','The pump has run 3 cycles — its serial number is exposed!');
+  renderWidgets();return;}addClick(getEffectiveClickValue(),false,true);},spd);renderWidgets();}
+  if(id==='golden_touch'){if(isWidgetActive(w)||w.cooldownUntil>Date.now())return;const dur=isHacked('golden_touch')?Math.floor(metaBoost(30)):20;w.duration=dur;w.activeUntil=Date.now()+dur*1000;const gtStartScore=score;w.intervalRef=setInterval(()=>{if(Date.now()>w.activeUntil){clearInterval(w.intervalRef);w.intervalRef=null;w.cooldownUntil=Date.now()+w.cooldown*1000;
+  const earned=score-gtStartScore;if(earned>=1000000)tryDiscover('golden_touch','1M earned in one Golden Touch — Midas reveals his crown code!');
+  renderWidgets();return;}addClick(getEffectiveClickValue(),false,true);},200);renderWidgets();}
+  if(id==='laser_maze'){if(w.cooldownUntil>Date.now())return;openMaze();}
+  if(id==='mines'){if(w.cooldownUntil>Date.now())return;openMine();}
+  if(id==='computer')openComputer();
+  if(id==='universal_stats')openStats();
+  if(id==='rock_forge')openRocks();
+  if(id==='lucky_spin'){if(w.cooldownUntil>Date.now()||w.spinLeft>0)return;const o=isHacked('lucky_spin')?[2,2,3,3,5,5,5,10,10,10]:[1,1,2,2,2,3,3,5,5,10];w.spinMult=o[Math.floor(Math.random()*o.length)];w.spinLeft=30;w.cooldownUntil=Date.now()+w.cooldown*1000;showFlash(`🎰 ${w.spinMult}× for 30 clicks!`);
+    if(w.spinMult>=10)tryDiscover('lucky_spin','10× JACKPOT SPIN! The dice reveal their hidden serial number!');
+    renderWidgets();}
+  if(id==='time_warp'){if(twCharges<=0)return;twCharges--;
+    discoveryCounts.warps_session++;if(discoveryCounts.warps_session>=3)tryDiscover('time_warp','3 warps in one session — the temporal flux imprints its signature!');
+    const me=widgets.find(x=>x.id==='momentum');const secs=isHacked('time_warp')?Math.floor(metaBoost(120)):60;if(me&&me.unlocked&&score>0){const g=Math.floor(score*getMomentumRate()*secs);addBonus(g);showFlash(`⏳ +${fmtFull(g)} (${secs}s Momentum)`);}renderWidgets();}
+  if(id==='supernova'){if(w.cooldownUntil>Date.now())return;const pct=isHacked('supernova')?0.05:0.10;const sac=Math.floor(score*pct);score-=sac;const bonus=score;score+=bonus;totalClicks+=bonus;w.cooldownUntil=Date.now()+w.cooldown*1000;showFlash(`💫 -${fmtFull(sac)}, +${fmtFull(bonus)}!`);
+    discoveryCounts.supernova_count++;if(discoveryCounts.supernova_count>=3)tryDiscover('supernova','3 supernovae detonated — the stellar remnant carries an encoded signal!');
+    checkWin();updateUI();renderWidgets();}
+}
+
+function showFlash(name){const f=document.createElement('div');f.style.cssText=`position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#1a1932;border:2px solid #ffd700;border-radius:16px;padding:20px 36px;text-align:center;z-index:300;animation:floatUp .9s ease-out forwards;box-shadow:0 0 40px rgba(255,215,0,.4);max-width:90vw;`;f.innerHTML=`<div style="font-size:1.8rem;margin-bottom:4px">🎉</div><div style="font-family:'Fredoka One',cursive;font-size:1rem;color:#ffd700">${name}</div>`;document.body.appendChild(f);setTimeout(()=>f.remove(),900);}
+
+// Effects HUD
+function updateEffectsHUD(){
+  let h='';
+  const qf=widgets.find(w=>w.id==='quick_fingers');if(qf&&qf.unlocked)h+=`<div class="effect-pill">⚡ QF</div>`;
+  const ap=widgets.find(w=>w.id==='auto_pump');if(ap&&isWidgetActive(ap)){const r=Math.max(0,ap.activeUntil-Date.now());h+=`<div class="effect-pill">🤖${Math.ceil(r/1000)}s</div>`;}
+  const gt=widgets.find(w=>w.id==='golden_touch');if(gt&&isWidgetActive(gt)){const r=Math.max(0,gt.activeUntil-Date.now());h+=`<div class="effect-pill amber">👑${Math.ceil(r/1000)}s</div>`;}
+  const[lo,hi]=getComboThresholds();const cs=widgets.find(w=>w.id==='combo_surge');if(cs&&cs.unlocked){if(cps>=hi)h+=`<div class="effect-pill" style="border-color:#f97316;color:#f97316">🔥3×</div>`;else if(cps>=lo)h+=`<div class="effect-pill amber">🔥2×</div>`;}
+  const ls=widgets.find(w=>w.id==='lucky_spin');if(ls&&ls.spinLeft>0)h+=`<div class="effect-pill amber">🎰${ls.spinMult}×(${ls.spinLeft})</div>`;
+  const ec=widgets.find(w=>w.id==='echo_clicks');if(ec&&ec.unlocked)h+=`<div class="effect-pill pink">👻${Math.floor(getEchoChance()*100)}%</div>`;
+  const me=widgets.find(w=>w.id==='momentum');if(me&&me.unlocked)h+=`<div class="effect-pill blue">🌀${(getMomentumRate()*100).toFixed(2)}%</div>`;
+  const sg=widgets.find(w=>w.id==='singularity');if(sg&&sg.unlocked)h+=`<div class="effect-pill green">🌑${isHacked('singularity')?'0.5':'0.3'}%/s</div>`;
+  const qd=widgets.find(w=>w.id==='quantum_doubler');if(qd&&qd.unlocked)h+=`<div class="effect-pill cyan">⚛️${isHacked('quantum_doubler')?20:10}%2×</div>`;
+  if(clickValue>1)h+=`<div class="effect-pill">💪×${fmt(clickValue)}</div>`;
+  if(mineEnergy<MINE_MAX){const mw=widgets.find(w=>w.id==='mines');if(mw&&mw.unlocked)h+=`<div class="effect-pill amber">⛏️⚡${mineEnergy}</div>`;}
+  if(rocks.length>0)h+=`<div class="effect-pill" style="border-color:#a78bfa;color:#a78bfa">🪨×${rocks.length}</div>`;
+  activeEffects.innerHTML=h;
+}
+
+function calcCPS(){const n=Date.now();clickTimestamps=clickTimestamps.filter(t=>n-t<1000);cps=clickTimestamps.length;const ap=widgets.find(w=>w.id==='auto_pump');if(ap&&isWidgetActive(ap))cps+=(isHacked('auto_pump')?5:3);const gt=widgets.find(w=>w.id==='golden_touch');if(gt&&isWidgetActive(gt))cps+=5;scoreTimestamps=scoreTimestamps.filter(s=>n-s.time<1000);spsDisplay.textContent=fmt(scoreTimestamps.reduce((s,x)=>s+x.amount,0));
+  // Combo Surge discovery at 15+ CPS
+  if(cps>=15&&!discoveryCounts.combo_15_seen){discoveryCounts.combo_15_seen=true;tryDiscover('combo_surge','15 CPS reached — the fire burns its mark into memory!');}
+  // Singularity discovery at 50M score
+  const sgW=widgets.find(w=>w.id==='singularity');if(sgW&&sgW.unlocked&&score>=50000000)tryDiscover('singularity','50M score — the singularity reveals its event horizon coordinates.');
+  // Gravity Well discovery at upgrade level 30
+  if(upgradeLevel>=30)tryDiscover('gravity_well','Upgrade level 30 — the gravitational field exposes its designation!');
+  // Universal Stats discovery at 10 total stat levels
+  const tsl=Object.values(statLevels).reduce((a,b)=>a+b,0);if(tsl>=10)tryDiscover('universal_stats','10 stat levels invested — the system acknowledges your dedication.');
+  // Computer self-hack discovery at 5 hacked widgets
+  const hc=Object.keys(hackedWidgets).filter(k=>k!=='computer').length;if(hc>=5)tryDiscover('computer','5 widgets hacked — the computer trusts you with its own source code.');
+}
+function updateUI(){scoreDisplay.textContent=fmtFull(score);clickPowerLabel.textContent=fmtFull(getEffectiveClickValue());goalBar.style.width=Math.min(score/GOAL*100,100)+'%';goldenBtn.disabled=goldenCD>Date.now();}
+// Auto-unlock: every tick, check if any widgets should be unlocked
+// Check for widgets that should be unlockable — if they've been qualifying for 2+ seconds, auto-unlock as safety net
+let _unlockableTimers={};
+function checkWidgetUnlocks(){
+  if(!upgradePanelUnlocked&&totalClicks>=500){upgradePanelUnlocked=true;showFlash('🔧 Upgrades Panel');}
+  widgets.forEach(w=>{
+    if(w.unlocked)return;
+    if(totalClicks>=w.unlockAt){
+      // Widget qualifies — track how long it's been unlockable
+      if(!_unlockableTimers[w.id])_unlockableTimers[w.id]=Date.now();
+      // If it's been sitting unlockable for 2+ seconds and user hasn't clicked it, auto-unlock
+      if(Date.now()-_unlockableTimers[w.id]>2000){
+        w.unlocked=true;
+        showFlash(w.name);
+        delete _unlockableTimers[w.id];
+      }
+    } else {
+      delete _unlockableTimers[w.id];
+    }
+  });
+}
+setInterval(()=>{checkWidgetUnlocks();calcCPS();cpsDisplay.textContent=cps;updateEffectsHUD();renderWidgets();renderUpgrades();},250);
+
+// ═══════════ LASER MAZE ═══════════
+const MR=7,MC=7;let mzS=null,lI=null,lP=0;
+function genMaze(){const g=Array.from({length:MR},()=>Array(MC).fill(1));function carve(r,c){g[r][c]=0;for(const[dr,dc]of[[0,2],[0,-2],[2,0],[-2,0]].sort(()=>Math.random()-.5)){const nr=r+dr,nc=c+dc;if(nr>=1&&nr<MR-1&&nc>=1&&nc<MC-1&&g[nr][nc]===1){g[r+dr/2][c+dc/2]=0;carve(nr,nc);}}}carve(1,1);g[MR-2][MC-2]=0;for(let i=0;i<4;i++){const r=1+Math.floor(Math.random()*(MR-2)),c=1+Math.floor(Math.random()*(MC-2));g[r][c]=0;}
+const em=[],cd=[];for(let r=0;r<MR;r++)for(let c=0;c<MC;c++)if(g[r][c]===1){let a=0;[[0,1],[0,-1],[1,0],[-1,0]].forEach(([dr,dc])=>{const nr=r+dr,nc=c+dc;if(nr>=0&&nr<MR&&nc>=0&&nc<MC&&g[nr][nc]===0)a++;});if(a>=1)cd.push([r,c]);}cd.sort(()=>Math.random()-.5);
+for(let i=0;i<Math.min(Math.floor(cd.length*.25),5);i++){const[r,c]=cd[i];let h=(c>0&&g[r][c-1]===0)||(c<MC-1&&g[r][c+1]===0),v=(r>0&&g[r-1][c]===0)||(r<MR-1&&g[r+1][c]===0);const t=h&&!v?2:!h&&v?3:Math.random()<.5?2:3;g[r][c]=t;em.push({r,c,type:t,pg:Math.random()<.5?0:1});}
+const vis=Array.from({length:MR},()=>Array(MC).fill(false));const q=[[1,1]];vis[1][1]=true;while(q.length){const[r,c]=q.shift();if(r===MR-2&&c===MC-2)return{g,em};[[0,1],[0,-1],[1,0],[-1,0]].forEach(([dr,dc])=>{const nr=r+dr,nc=c+dc;if(nr>=0&&nr<MR&&nc>=0&&nc<MC&&!vis[nr][nc]&&g[nr][nc]===0){vis[nr][nc]=true;q.push([nr,nc]);}});}return genMaze();}
+function compLas(em,ph){const lc={};em.forEach(e=>{if(e.pg!==(ph%2))return;const{r,c,type}=e;if(type===2){for(let cc=c-1;cc>=0;cc--){if(mzS.g[r][cc]>=1)break;const k=r+','+cc;lc[k]=(lc[k]||'')+(lc[k]?.includes('h')?'':'h');}for(let cc=c+1;cc<MC;cc++){if(mzS.g[r][cc]>=1)break;const k=r+','+cc;lc[k]=(lc[k]||'')+(lc[k]?.includes('h')?'':'h');}}if(type===3){for(let rr=r-1;rr>=0;rr--){if(mzS.g[rr][c]>=1)break;const k=rr+','+c;lc[k]=(lc[k]||'')+(lc[k]?.includes('v')?'':'v');}for(let rr=r+1;rr<MR;rr++){if(mzS.g[rr][c]>=1)break;const k=rr+','+c;lc[k]=(lc[k]||'')+(lc[k]?.includes('v')?'':'v');}}});return lc;}
+function openMaze(){const m=genMaze();mzS={g:m.g,em:m.em,pR:1,pC:1,gR:MR-2,gC:MC-2,res:null,rw:Math.floor(score*.5)};lP=0;$('mazeRewardPreview').textContent=`🏆 +${fmtFull(mzS.rw)} (50%)`;$('mazeOverlay').classList.add('show');$('mazeStatus').textContent='Move to 🟢!';$('mazeStatus').className='overlay-status playing';$('mazeButtons').innerHTML='<button class="overlay-btn close-btn" onclick="closeMaze()">✕</button>';renderMz();if(lI)clearInterval(lI);const spd=isHacked('laser_maze')?2500:1500;lI=setInterval(()=>{if(!mzS||mzS.res)return;lP++;renderMz();const ls=compLas(mzS.em,lP);if(ls[mzS.pR+','+mzS.pC])mzFail();},spd);}
+function closeMaze(){$('mazeOverlay').classList.remove('show');if(lI){clearInterval(lI);lI=null;}mzS=null;}
+function mzFail(){mzS.res='lose';$('mazeStatus').textContent='💀 ZAP!';$('mazeStatus').className='overlay-status fail';$('mazeButtons').innerHTML='<button class="overlay-btn close-btn" onclick="closeMaze()">Close</button>';if(lI){clearInterval(lI);lI=null;}widgets.find(x=>x.id==='laser_maze').cooldownUntil=Date.now()+60000;renderMz();}
+function mvP(nr,nc){if(!mzS||mzS.res)return;if(Math.abs(nr-mzS.pR)+Math.abs(nc-mzS.pC)!==1||nr<0||nr>=MR||nc<0||nc>=MC||mzS.g[nr][nc]!==0)return;mzS.pR=nr;mzS.pC=nc;if(compLas(mzS.em,lP)[nr+','+nc]){mzFail();return;}if(nr===mzS.gR&&nc===mzS.gC){mzS.res='win';addBonus(mzS.rw);$('mazeStatus').textContent=`🎉 +${fmtFull(mzS.rw)}!`;$('mazeStatus').className='overlay-status success';$('mazeButtons').innerHTML='<button class="overlay-btn" onclick="closeMaze()">🎉 Collect</button>';if(lI){clearInterval(lI);lI=null;}widgets.find(x=>x.id==='laser_maze').cooldownUntil=Date.now()+60000;
+  discoveryCounts.maze_wins++;if(discoveryCounts.maze_wins>=3)tryDiscover('laser_maze','3 mazes conquered — the laser grid etched a code into the wall!');}renderMz();}
+function renderMz(){if(!mzS)return;const g=mzS.g,ls=compLas(mzS.em,lP),mg=$('mazeGrid'),sz=innerWidth<=520?40:42;mg.style.gridTemplateColumns=`repeat(${MC},${sz}px)`;mg.innerHTML='';for(let r=0;r<MR;r++)for(let c=0;c<MC;c++){const cl=document.createElement('div');cl.className='maze-cell';cl.style.cssText=`width:${sz}px;height:${sz}px;font-size:${sz*.28}px`;const isP=r===mzS.pR&&c===mzS.pC,isG=r===mzS.gR&&c===mzS.gC,ct=g[r][c],ld=ls[r+','+c],adj=!mzS.res&&Math.abs(r-mzS.pR)+Math.abs(c-mzS.pC)===1&&ct===0;if(isP){cl.classList.add('player');cl.textContent='🟣';if(mzS.res==='lose'){cl.classList.add('hit');cl.textContent='💀';}}else if(isG){cl.classList.add('goal');cl.textContent='🟢';}else if(ct===1)cl.classList.add('wall');else if(ct>=2){cl.classList.add('emitter');const em=mzS.em.find(e=>e.r===r&&e.c===c);cl.textContent=em&&em.pg===(lP%2)?'🔴':'⚫';}else{cl.classList.add('path');if(adj)cl.classList.add('adjacent');if(ld)cl.classList.add(ld.includes('h')&&ld.includes('v')?'laser-hv':ld==='h'?'laser-h':'laser-v');if(adj){cl.style.cursor='pointer';const rr=r,cc=c;cl.addEventListener('click',()=>mvP(rr,cc));}}mg.appendChild(cl);}}
+document.querySelectorAll('#mazeDpad .dpad-btn[data-dir]').forEach(b=>b.addEventListener('click',()=>{if(!mzS||mzS.res)return;const d=b.dataset.dir;mvP(mzS.pR+(d==='up'?-1:d==='down'?1:0),mzS.pC+(d==='left'?-1:d==='right'?1:0));}));
+(function(){let sx,sy;const ov=$('mazeOverlay');ov.addEventListener('touchstart',e=>{sx=e.touches[0].clientX;sy=e.touches[0].clientY;},{passive:true});ov.addEventListener('touchend',e=>{if(!mzS||mzS.res||sx===undefined)return;const dx=e.changedTouches[0].clientX-sx,dy=e.changedTouches[0].clientY-sy;if(Math.abs(dx)<30&&Math.abs(dy)<30)return;Math.abs(dx)>Math.abs(dy)?mvP(mzS.pR,mzS.pC+(dx>0?1:-1)):mvP(mzS.pR+(dy>0?1:-1),mzS.pC);sx=sy=undefined;});})();
+document.addEventListener('keydown',e=>{if(mzS&&!mzS.res){let dr=0,dc=0;if(e.key==='ArrowUp'||e.key==='w')dr=-1;else if(e.key==='ArrowDown'||e.key==='s')dr=1;else if(e.key==='ArrowLeft'||e.key==='a')dc=-1;else if(e.key==='ArrowRight'||e.key==='d')dc=1;else return;e.preventDefault();mvP(mzS.pR+dr,mzS.pC+dc);}});
+
+// ═══════════ MINES ═══════════
+const MNR=6,MNC=6;let mnS=null;let autoMineTimer=null;
+function genMine(){const c=[];for(let r=0;r<MNR;r++){const row=[];for(let c2=0;c2<MNC;c2++){const roll=Math.random();const dangerChance=isHacked('mines')?0.06:0.12;let type,pct;if(roll<0.03){type='jackpot';pct=15;}else if(roll<0.13){type='gem';pct=5;}else if(roll<0.13+dangerChance){type='danger';pct=0;}else if(roll<0.50){type='ore';pct=2;}else{type='rock';pct=0;}row.push({type,pct,revealed:false});}c.push(row);}return c;}
+function openMine(){if(mineEnergy<=0){showFlash('⚡ No energy!');return;}widgets.find(x=>x.id==='mines').cooldownUntil=Date.now()+90000;mnS={grid:genMine(),loot:0,fin:false,snap:score};$('mineOverlay').classList.add('show');$('mineStatus').textContent='Tap to dig!';$('mineStatus').className='overlay-status playing';$('mineRewardDisplay').textContent='Loot: 0';$('mineButtons').innerHTML=`<button class="overlay-btn" onclick="collectMine()">💰 Collect</button><button class="overlay-btn close-btn" onclick="closeMine()">✕ Abandon</button>`;renderMn();
+  // Auto-miner
+  const am=widgets.find(w=>w.id==='auto_miner');if(am&&am.unlocked){const spd=isHacked('auto_miner')?5000:10000;if(autoMineTimer)clearInterval(autoMineTimer);autoMineTimer=setInterval(()=>{if(!mnS||mnS.fin)return;const unrevealed=[];for(let r=0;r<MNR;r++)for(let c=0;c<MNC;c++)if(!mnS.grid[r][c].revealed)unrevealed.push([r,c]);if(unrevealed.length>0&&mineEnergy>0){const[r,c]=unrevealed[Math.floor(Math.random()*unrevealed.length)];digCell(r,c);
+      discoveryCounts.auto_dig_count++;if(discoveryCounts.auto_dig_count>=30)tryDiscover('auto_miner','30 auto-digs complete — the drill bit has a serial number etched into it!');}},spd);}}
+function digCell(r,c){if(!mnS||mnS.fin||mnS.grid[r][c].revealed)return;if(mineEnergy<=0){$('mineStatus').textContent='⚡ No energy!';return;}mineEnergy--;mnS.grid[r][c].revealed=true;const cl=mnS.grid[r][c];const rw=Math.floor(mnS.snap*cl.pct/100);
+  // Collect rock for forge
+  const rf=widgets.find(w=>w.id==='rock_forge');if(rf&&rf.unlocked&&cl.type==='rock'){rocks.push({tier:0});if(rocks.length>30)rocks.shift();}
+  if(cl.type==='danger'){const lost=Math.floor(mnS.loot*.5);mnS.loot-=lost;$('mineStatus').textContent=`💥 Lost ${fmtFull(lost)}!`;$('mineStatus').className='overlay-status fail';}
+  else if(cl.type==='rock'){$('mineStatus').textContent='🪨 Rock.'+(rf&&rf.unlocked?' (→Forge)':'');$('mineStatus').className='overlay-status playing';}
+  else{mnS.loot+=rw;$('mineStatus').textContent=`${cl.type==='ore'?'🥉':cl.type==='gem'?'💎':'💰'} +${cl.pct}% → +${fmtFull(rw)}`;$('mineStatus').className='overlay-status success';
+    if(cl.type==='jackpot'){discoveryCounts.mine_jackpots++;if(discoveryCounts.mine_jackpots>=1)tryDiscover('mines','Jackpot struck — the deep earth reveals a code carved in ancient stone!');}}
+  $('mineRewardDisplay').textContent=`Loot: ${fmtFull(Math.max(0,mnS.loot))}`;
+  let allRev=true;for(const row of mnS.grid)for(const c2 of row)if(!c2.revealed)allRev=false;
+  if(allRev||mineEnergy<=0){mnS.fin=true;$('mineButtons').innerHTML=`<button class="overlay-btn" onclick="collectMine()">💰 Collect</button>`;$('mineStatus').textContent+=(allRev?' Depleted!':' No energy!');}renderMn();}
+function collectMine(){if(mnS&&mnS.loot>0){addBonus(mnS.loot);showFlash(`⛏️ +${fmtFull(mnS.loot)}`);}closeMine();}
+function closeMine(){$('mineOverlay').classList.remove('show');mnS=null;if(autoMineTimer){clearInterval(autoMineTimer);autoMineTimer=null;}}
+function renderMn(){if(!mnS)return;const mg=$('mineGrid');const sz=innerWidth<=520?46:50;mg.style.gridTemplateColumns=`repeat(${MNC},${sz}px)`;mg.innerHTML='';$('mineEnergyLabel').textContent=`⚡${mineEnergy}/${MINE_MAX}`;$('mineEnergyBar').style.width=(mineEnergy/MINE_MAX*100)+'%';
+for(let r=0;r<MNR;r++)for(let c=0;c<MNC;c++){const cl=document.createElement('div');cl.className='mine-cell';cl.style.cssText=`width:${sz}px;height:${sz}px;font-size:${sz*.38}px`;const d=mnS.grid[r][c];if(d.revealed){cl.classList.add('revealed',d.type);cl.textContent={rock:'🪨',ore:'🥉',gem:'💎',danger:'💥',jackpot:'💰'}[d.type];}else{cl.textContent='❓';cl.style.cursor='pointer';const rr=r,cc=c;cl.addEventListener('click',()=>digCell(rr,cc));}mg.appendChild(cl);}}
+
+// ═══════════ COMPUTER / HACK TERMINAL ═══════════
+function openComputer(){$('computerOverlay').classList.add('show');renderCodex();$('terminalInput').focus();}
+function closeComputer(){$('computerOverlay').classList.remove('show');}
+
+let _codexHash='';
+function getCodexHash(){
+  return widgets.filter(w=>w.unlocked).map(w=>w.id+':'+(discoveredUUIDs[w.id]?'d':'')+(hackedWidgets[w.id]?'h':'')).join('|');
+}
+function renderCodex(force){
+  const newHash=getCodexHash();
+  if(!force&&newHash===_codexHash)return; // nothing changed, skip re-render to preserve scroll
+  _codexHash=newHash;
+  const el=$('uuidCodex');
+  // Save scroll position of the codex grid
+  const oldGrid=el.querySelector('.codex-grid');
+  const scrollTop=oldGrid?oldGrid.scrollTop:0;
+
+  const unlocked=widgets.filter(w=>w.unlocked);
+  if(unlocked.length===0){el.innerHTML='<div style="color:var(--text-dim);font-size:.8rem;text-align:center;padding:10px">No widgets unlocked yet.</div>';return;}
+  const found=unlocked.filter(w=>discoveredUUIDs[w.id]).length;
+  const hacked=unlocked.filter(w=>hackedWidgets[w.id]).length;
+  let html=`<div style="font-family:'Fredoka One',cursive;font-size:.85rem;color:var(--terminal);margin-bottom:6px;text-align:center">🔑 UUID CODEX — ${found} found, ${hacked} hacked / ${unlocked.length} widgets</div>`;
+  html+='<div class="codex-grid">';
+  unlocked.forEach(w=>{
+    const d=!!discoveredUUIDs[w.id];
+    const h=!!hackedWidgets[w.id];
+    const uuid=getWidgetUUID(w.id);
+    const cls=h?'codex-row hacked':d?'codex-row discovered':'codex-row hidden';
+    const statusCls=h?'codex-status s-hacked':d?'codex-status s-found':'codex-status s-hidden';
+    const statusText=h?'✅ HACKED':d?'🔑 FOUND':'🔒 ???';
+    const uuidDisplay=d?uuid:'??-????-????';
+    const uuidCls=d?'codex-uuid':'codex-uuid hidden-uuid';
+    let actionHTML='';
+    if(d&&!h){actionHTML=`<button class="codex-hack-btn" data-hack-uuid="${uuid}">HACK</button>`;}
+    html+=`<div class="${cls}"><span class="codex-icon">${w.icon}</span><span class="codex-name">${w.name}</span><span class="${uuidCls}" ${d?`title="Click to copy" data-copy-uuid="${uuid}"`:'title="Discover in-game!"'}>${uuidDisplay}</span>${actionHTML}<span class="${statusCls}">${statusText}</span></div>`;
+  });
+  html+='</div>';
+  el.innerHTML=html;
+
+  // Restore scroll position
+  const newGrid=el.querySelector('.codex-grid');
+  if(newGrid)newGrid.scrollTop=scrollTop;
+
+  // Bind hack buttons
+  el.querySelectorAll('[data-hack-uuid]').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const code=btn.dataset.hackUuid;
+      const w=widgets.find(x=>getWidgetUUID(x.id)===code);
+      if(w&&!hackedWidgets[w.id]){
+        hackedWidgets[w.id]=true;
+        showFlash(`💻 Hacked: ${w.name}`);
+        const log=$('terminalLog');
+        const d1=document.createElement('div');d1.className='line ok';d1.textContent='> SUCCESS! Hacked '+w.name+'!';log.appendChild(d1);
+        const d2=document.createElement('div');d2.className='line ok';d2.textContent='> Effect: '+hackEffects[w.id].desc;log.appendChild(d2);
+        log.scrollTop=log.scrollHeight;
+        renderCodex(true);
+      }
+    });
+  });
+
+  // Bind copy-to-clipboard on UUID text
+  el.querySelectorAll('[data-copy-uuid]').forEach(span=>{
+    span.addEventListener('click',()=>{
+      const uuid=span.dataset.copyUuid;
+      navigator.clipboard.writeText('hack '+uuid).catch(()=>{});
+      $('terminalInput').value='hack '+uuid;
+      $('terminalInput').focus();
+    });
+  });
+}
+// Auto-refresh codex when overlay is open (only re-renders if data changed)
+setInterval(()=>{if($('computerOverlay').classList.contains('show'))renderCodex();},1000);
+function terminalRun(){
+  const input=$('terminalInput').value.trim();$('terminalInput').value='';if(!input)return;
+  const log=$('terminalLog');
+  function addLine(text,cls=''){const d=document.createElement('div');d.className='line '+(cls||'');d.textContent='> '+text;log.appendChild(d);log.scrollTop=log.scrollHeight;}
+  addLine(input);
+  if(input.toLowerCase()==='help'){addLine('Commands:','info');addLine('  help — show this','info');addLine('  list — show unlocked widgets','info');addLine('  scan — show UUID discovery status','info');addLine('  hint <name> — get riddle for finding UUID','info');addLine('  hack <UUID> — hack a widget with its UUID','info');addLine('','info');addLine('UUIDs are discovered by completing challenges in-game.','info');addLine('Each widget has a unique challenge. Use "hint" for clues!','info');return;}
+  if(input.toLowerCase()==='list'){addLine('Unlocked widgets:','info');widgets.filter(w=>w.unlocked).forEach(w=>{const h=isHacked(w.id)?' [HACKED]':'';const d=discoveredUUIDs[w.id]?' [UUID:'+getWidgetUUID(w.id)+']':'';addLine(`  ${w.icon} ${w.name}${h}${d}`,'info');});return;}
+  if(input.toLowerCase()==='scan'){addLine('=== UUID DISCOVERY STATUS ===','info');widgets.filter(w=>w.unlocked).forEach(w=>{const d=discoveredUUIDs[w.id];const h=isHacked(w.id);addLine(`  ${w.icon} ${w.name}: ${d?'🟢 FOUND ('+getWidgetUUID(w.id)+')':'🔴 HIDDEN'}${h?' ✅HACKED':''}`,d?'ok':'err');});const total=widgets.filter(w=>w.unlocked).length;const found=widgets.filter(w=>w.unlocked&&discoveredUUIDs[w.id]).length;addLine(`  ${found}/${total} discovered`,'info');return;}
+  if(input.toLowerCase().startsWith('hint ')){
+    const name=input.substring(5).trim().toLowerCase();
+    const w=widgets.find(x=>x.name.toLowerCase().includes(name)||x.id.toLowerCase().includes(name));
+    if(!w){addLine('Widget not found. Try "list" to see names.','err');return;}
+    if(!w.unlocked){addLine(`${w.name} not unlocked yet!`,'err');return;}
+    if(discoveredUUIDs[w.id]){addLine(`Already discovered! UUID: ${getWidgetUUID(w.id)}`,'ok');addLine(`Use: hack ${getWidgetUUID(w.id)}`,'ok');return;}
+    const riddle=hintRiddles[w.id];
+    if(riddle){addLine(`HINT for ${w.name}:`,'info');addLine(riddle,'info');}
+    else addLine('No hint available for this widget.','err');
+    return;
+  }
+  if(input.toLowerCase().startsWith('hack ')){
+    const code=input.substring(5).trim();
+    // Find which widget this UUID matches
+    const w=widgets.find(x=>getWidgetUUID(x.id)===code);
+    if(!w){addLine('Invalid UUID. Try "hint <widget name>".','err');return;}
+    if(!w.unlocked){addLine(`${w.name} not unlocked yet!`,'err');return;}
+    if(isHacked(w.id)){addLine(`${w.name} already hacked!`,'err');return;}
+    hackedWidgets[w.id]=true;
+    addLine(`SUCCESS! Hacked ${w.name}!`,'ok');
+    addLine(`Effect: ${hackEffects[w.id].desc}`,'ok');
+    showFlash(`💻 Hacked: ${w.name}`);
+    return;
+  }
+  addLine('Unknown command. Type "help".','err');
+}
+$('terminalSubmit').addEventListener('click',terminalRun);
+$('terminalInput').addEventListener('keydown',e=>{if(e.key==='Enter')terminalRun();});
+
+// ═══════════ ROCK FORGE ═══════════
+function openRocks(){$('rockOverlay').classList.add('show');renderRocks();}
+function closeRocks(){$('rockOverlay').classList.remove('show');}
+function dispenseRock(){if(rockDispenserCD>Date.now())return;const tier=isHacked('rock_forge')?1:0;rocks.push({tier});if(rocks.length>30)rocks.shift();rockDispenserCD=Date.now()+ROCK_DISP_CD;renderRocks();}
+function mergeRocks(){
+  // Find 3 of same tier, merge to tier+1
+  const counts={};rocks.forEach((r,i)=>{if(!counts[r.tier])counts[r.tier]=[];counts[r.tier].push(i);});
+  for(let t=0;t<ROCK_TIERS.length-1;t++){if(counts[t]&&counts[t].length>=3){
+    let removed=0;rocks=rocks.filter((r,i)=>{if(r.tier===t&&removed<3){removed++;return false;}return true;});
+    rocks.push({tier:t+1});showFlash(`Merged → ${ROCK_TIERS[t+1]} ${ROCK_NAMES[t+1]}!`);
+    if(t+1>=3)tryDiscover('rock_forge','A Crown rock forged — the anvil reveals its maker\'s mark!');
+    renderRocks();return;
+  }}
+  showFlash('Need 3 of same tier to merge!');
+}
+function sellAllRocks(){
+  if(rocks.length===0)return;
+  let total=0;rocks.forEach(r=>{total+=getRockValue(r.tier);});
+  rocks=[];addBonus(total);showFlash(`Sold rocks for ${fmtFull(total)}!`);renderRocks();
+}
+function getRockValue(tier){const base=Math.max(score*0.001,1000);return Math.floor(base*Math.pow(5,tier));}
+function renderRocks(){
+  const grid=$('rockGrid');grid.innerHTML='';
+  rocks.forEach((r,i)=>{const el=document.createElement('div');el.className='rock-item';el.innerHTML=`${ROCK_TIERS[r.tier]}<div class="rock-tier">T${r.tier+1}</div>`;el.title=`${ROCK_NAMES[r.tier]} — Sell: ${fmtFull(getRockValue(r.tier))}`;grid.appendChild(el);});
+  const cdLeft=Math.max(0,Math.ceil((rockDispenserCD-Date.now())/1000));
+  $('rockInfo').textContent=`Rocks: ${rocks.length}/30 | Dispenser: ${cdLeft>0?cdLeft+'s':'Ready!'}`;
+  const acts=$('rockActions');acts.innerHTML=`
+    <button ${cdLeft>0?'disabled':''} onclick="dispenseRock()">⚙️ Dispense${cdLeft>0?' ('+cdLeft+'s)':''}</button>
+    <button ${rocks.length<3?'disabled':''} onclick="mergeRocks()">🔀 Merge 3</button>
+    <button ${rocks.length===0?'disabled':''} onclick="sellAllRocks()">💰 Sell All (${fmt(rocks.reduce((s,r)=>s+getRockValue(r.tier),0))})</button>`;
+}
+// Auto-refresh rock overlay
+setInterval(()=>{if($('rockOverlay').classList.contains('show'))renderRocks();},1000);
+
+// ═══════════ UNIVERSAL STATS ═══════════
+function openStats(){$('statsOverlay').classList.add('show');renderStats();}
+function closeStats(){$('statsOverlay').classList.remove('show');}
+function renderStats(){
+  const defs=[
+    {id:'cps_mult',icon:'⚡',name:'Click Amplifier',desc:`+10% click value per level. Lv${statLevels.cps_mult}`},
+    {id:'momentum_boost',icon:'🌀',name:'Momentum Boost',desc:`+15% momentum rate per level. Lv${statLevels.momentum_boost}`},
+    {id:'mine_luck',icon:'🍀',name:'Mine Fortune',desc:`Unused — reserved for future mine upgrades. Lv${statLevels.mine_luck}`},
+    {id:'echo_boost',icon:'👻',name:'Echo Amplifier',desc:`+5% echo chance per level. Lv${statLevels.echo_boost}`},
+    {id:'golden_power',icon:'🟡',name:'Golden Power',desc:`+50% golden button multiplier per level. Lv${statLevels.golden_power}`},
+  ];
+  const sc=$('statsContent');sc.innerHTML='';
+  defs.forEach(d=>{
+    let cost=statCost(d.id,statLevels[d.id]);
+    if(isHacked('universal_stats'))cost=Math.floor(cost*(1-metaBoost(0.3)));
+    const can=score>=cost;
+    const row=document.createElement('div');row.className='stat-row'+(can?'':' cant');
+    row.innerHTML=`<div style="font-size:1.3rem">${d.icon}</div><div class="stat-info"><div class="stat-name">${d.name}</div><div class="stat-desc">${d.desc}</div><div class="stat-level">Lv ${statLevels[d.id]} → ${statLevels[d.id]+1}</div></div><div class="stat-cost">${fmt(cost)}</div>`;
+    if(can)row.addEventListener('click',()=>{let c2=statCost(d.id,statLevels[d.id]);if(isHacked('universal_stats'))c2=Math.floor(c2*(1-metaBoost(0.3)));if(score>=c2){score-=c2;statLevels[d.id]++;updateUI();renderStats();}});
+    sc.appendChild(row);
+  });
+}
+
+// ═══════════ PARTICLES ═══════════
+(function(){const cv=$('particles'),cx=cv.getContext('2d');let W,H;function rs(){W=cv.width=innerWidth;H=cv.height=innerHeight;}rs();addEventListener('resize',rs);const ds=Array.from({length:40},()=>({x:Math.random()*innerWidth,y:Math.random()*innerHeight,r:Math.random()*2+1,dx:(Math.random()-.5)*.3,dy:(Math.random()-.5)*.3,o:Math.random()*.25+.05}));(function dr(){cx.clearRect(0,0,W,H);const cs=getComputedStyle(document.documentElement);const pr=cs.getPropertyValue('--particle-r')||'127',pg=cs.getPropertyValue('--particle-g')||'90',pb=cs.getPropertyValue('--particle-b')||'240';ds.forEach(d=>{d.x+=d.dx;d.y+=d.dy;if(d.x<0)d.x=W;if(d.x>W)d.x=0;if(d.y<0)d.y=H;if(d.y>H)d.y=0;cx.beginPath();cx.arc(d.x,d.y,d.r,0,Math.PI*2);cx.fillStyle=`rgba(${pr},${pg},${pb},${d.o})`;cx.fill();});requestAnimationFrame(dr);})();})();
+
+// ═══════════ SAVE/LOAD ═══════════
+function saveGame(){localStorage.setItem('widgetClicker',JSON.stringify({score,totalClicks,clickValue,won,upgradeLevel,upgradePanelUnlocked,mineEnergy,lastETick,twCharges,lastWTick,goldenCD,rocks,rockDispenserCD,statLevels,hackedWidgets,discoveredUUIDs,discoveryCounts,widgets:widgets.map(w=>({id:w.id,unlocked:w.unlocked,activeUntil:w.activeUntil||0,cooldownUntil:w.cooldownUntil||0,spinMult:w.spinMult||1,spinLeft:w.spinLeft||0}))}));}
+function loadGame(){try{const raw=localStorage.getItem('widgetClicker');if(!raw)return;const d=JSON.parse(raw);score=d.score||0;totalClicks=d.totalClicks||0;clickValue=d.clickValue||1;won=d.won||false;upgradeLevel=d.upgradeLevel||0;upgradePanelUnlocked=d.upgradePanelUnlocked||false;
+mineEnergy=d.mineEnergy??MINE_MAX;lastETick=d.lastETick||Date.now();twCharges=d.twCharges??0;lastWTick=d.lastWTick||Date.now();
+goldenCD=d.goldenCD||0;rocks=d.rocks||[];rockDispenserCD=d.rockDispenserCD||0;statLevels=d.statLevels||{cps_mult:0,momentum_boost:0,mine_luck:0,echo_boost:0,golden_power:0};hackedWidgets=d.hackedWidgets||{};discoveredUUIDs=d.discoveredUUIDs||{};if(d.discoveryCounts)Object.assign(discoveryCounts,d.discoveryCounts);
+const now=Date.now();let eR=Math.floor((now-lastETick)/E_REGEN);if(eR>0){mineEnergy=Math.min(MINE_MAX,mineEnergy+eR);lastETick=now;}
+let wR=Math.floor((now-lastWTick)/W_REGEN);if(wR>0){twCharges=Math.min(TW_MAX,twCharges+wR);lastWTick=now;}
+(d.widgets||[]).forEach(sw=>{const w=widgets.find(x=>x.id===sw.id);if(w){w.unlocked=sw.unlocked;w.cooldownUntil=sw.cooldownUntil||0;if(w.id==='lucky_spin'){w.spinMult=sw.spinMult||1;w.spinLeft=sw.spinLeft||0;}if(sw.activeUntil>now){w.activeUntil=sw.activeUntil;if(w.id==='auto_pump'){const spd=isHacked('auto_pump')?(1000/5):(1000/3);w.intervalRef=setInterval(()=>{if(Date.now()>w.activeUntil){clearInterval(w.intervalRef);w.intervalRef=null;return;}addClick(getEffectiveClickValue(),false,true);},spd);}if(w.id==='golden_touch'){w.intervalRef=setInterval(()=>{if(Date.now()>w.activeUntil){clearInterval(w.intervalRef);w.intervalRef=null;w.cooldownUntil=Date.now()+w.cooldown*1000;return;}addClick(getEffectiveClickValue(),false,true);},200);}}}});
+updateUI();if(won)winOverlay.classList.add('show');}catch(e){console.error(e);}}
+setInterval(saveGame,3000);
+
+function resetGame(){score=0;totalClicks=0;clickValue=1;won=false;upgradeLevel=0;upgradePanelUnlocked=false;mineEnergy=MINE_MAX;lastETick=Date.now();twCharges=0;lastWTick=Date.now();goldenCD=0;rocks=[];rockDispenserCD=0;statLevels={cps_mult:0,momentum_boost:0,mine_luck:0,echo_boost:0,golden_power:0};hackedWidgets={};discoveredUUIDs={};discoveryCounts={auto_pump_runs:0,maze_wins:0,combo_15_seen:false,mine_jackpots:0,echo_count:0,momentum_earned:0,spin_10x:false,warps_session:0,golden_touch_earned:0,supernova_count:0,hacked_count:0,golden_presses:0,total_stat_levels:0,forged_t4:false,doubler_triggers:0,auto_dig_count:0,hold_start:0,hold_discovered:false};
+widgets.forEach(w=>{w.unlocked=false;if(w.intervalRef)clearInterval(w.intervalRef);w.intervalRef=null;w.activeUntil=0;w.cooldownUntil=0;if(w.spinMult!==undefined){w.spinMult=1;w.spinLeft=0;}});
+localStorage.removeItem('widgetClicker');winOverlay.classList.remove('show');updateUI();renderWidgets();renderUpgrades();}
+
+// ═══════════ THEMES ═══════════
+let currentTheme=localStorage.getItem('widgetClickerTheme')||'original';
+function applyTheme(theme){
+  currentTheme=theme;
+  document.documentElement.setAttribute('data-theme',theme);
+  localStorage.setItem('widgetClickerTheme',theme);
+  document.querySelectorAll('.theme-btn').forEach(b=>{b.classList.toggle('active',b.dataset.theme===theme);});
+}
+document.querySelectorAll('.theme-btn').forEach(b=>{
+  b.addEventListener('click',()=>applyTheme(b.dataset.theme));
+});
+applyTheme(currentTheme);
+
+loadGame();updateUI();renderWidgets();renderUpgrades();
+</script>
+</body>
+</html>
