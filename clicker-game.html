@@ -242,6 +242,24 @@ body{font-family:'Nunito',sans-serif;background:var(--bg-dark);color:var(--text)
 <div class="terminal-box" id="terminalLog"><div class="line info">> SYSTEM READY. Type 'help' for commands.</div><div class="line info">> Discover UUIDs by completing challenges. Use 'hint &lt;name&gt;' for clues.</div></div><div class="terminal-input-row"><input class="terminal-input" id="terminalInput" placeholder="type command..." autocomplete="off" autocapitalize="off" spellcheck="false"><button class="terminal-submit" id="terminalSubmit">RUN</button></div><div style="margin-top:10px"><button class="overlay-btn close-btn" onclick="closeComputer()">✕ Close</button></div></div></div>
 <div class="game-overlay" id="rockOverlay"><div class="overlay-box"><div class="overlay-title" style="color:#a78bfa;text-shadow:0 0 20px rgba(167,139,250,.3)">🪨 ROCK FORGE 🪨</div><div class="overlay-subtitle">Dispense, merge & sell rocks for massive score!</div><div class="overlay-reward" id="rockInfo">Rocks: 0 | Dispenser ready</div><div class="rock-grid" id="rockGrid"></div><div class="rock-actions" id="rockActions"></div><div style="margin-top:8px"><button class="overlay-btn close-btn" onclick="closeRocks()">✕ Close</button></div><div class="overlay-instructions">🪨T1→🥉T2→💎T3→👑T4→💫T5 — Merge 3 same tier = 1 higher tier. Sell for score!</div></div></div>
 <div class="game-overlay" id="statsOverlay"><div class="overlay-box"><div class="overlay-title" style="color:var(--cyan);text-shadow:0 0 20px rgba(34,211,238,.3)">📊 UNIVERSAL STATS 📊</div><div class="overlay-subtitle">Permanent global upgrades. Spend score to boost everything!</div><div id="statsContent"></div><div style="margin-top:10px"><button class="overlay-btn close-btn" onclick="closeStats()">✕ Close</button></div></div></div>
+<!-- MEMORY MATCH -->
+<div class="game-overlay" id="memoryOverlay"><div class="overlay-box">
+  <div class="overlay-title" style="color:var(--pink);text-shadow:0 0 20px rgba(236,72,153,.3)">🧠 MEMORY MATCH 🧠</div>
+  <div class="overlay-subtitle">Find all pairs! Each pair = +5% of your score.</div>
+  <div class="overlay-reward" id="memoryReward">Bonus: 0</div>
+  <div class="overlay-status playing" id="memoryStatus">Flip two cards to find a match!</div>
+  <div id="memoryGrid" style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:12px 0"></div>
+  <div id="memoryButtons"><button class="overlay-btn close-btn" onclick="closeMemory()">✕ Close</button></div>
+</div></div>
+<!-- REFLEX BLITZ -->
+<div class="game-overlay" id="reflexOverlay"><div class="overlay-box">
+  <div class="overlay-title" style="color:var(--cyan);text-shadow:0 0 20px rgba(34,211,238,.3)">🎯 REFLEX BLITZ 🎯</div>
+  <div class="overlay-subtitle">Hit the targets before they vanish! 15 targets, go fast!</div>
+  <div class="overlay-reward" id="reflexReward">Accuracy: --</div>
+  <div class="overlay-status playing" id="reflexStatus">Get ready...</div>
+  <div id="reflexArena" style="position:relative;width:300px;height:300px;margin:12px auto;background:#0a0a20;border:2px solid var(--cyan);border-radius:12px;overflow:hidden;cursor:crosshair"></div>
+  <div id="reflexButtons"><button class="overlay-btn close-btn" onclick="closeReflex()">✕ Close</button></div>
+</div></div>
 <!-- ENDGAME CUTSCENE -->
 <div id="endCutscene" style="display:none;position:fixed;inset:0;z-index:500;pointer-events:all">
   <!-- Phase 1: White fade -->
@@ -295,7 +313,7 @@ function getWidgetUUID(wid){
   const prefix=wid.substring(0,2).toUpperCase();
   const mid=hex.substring(0,4);
   const words={quick_fingers:'ECHO',auto_pump:'TURBO',laser_maze:'BEAM',combo_surge:'BLAZE',mines:'DEEP',echo_clicks:'GHOST',momentum:'SPIN',lucky_spin:'DICE',time_warp:'FLUX',golden_touch:'MIDAS',gravity_well:'VOID',supernova:'NOVA',computer:'HACK',golden_button:'SHINE',universal_stats:'OMNI',rock_forge:'FORGE',quantum_doubler:'TWIN',auto_miner:'DRILL',singularity:'ZERO',
-    click_frenzy:'BURST',shield_wall:'GUARD',chain_react:'LINK',overdrive:'SURGE',dark_matter:'SHADE'};
+    click_frenzy:'BURST',shield_wall:'GUARD',chain_react:'LINK',overdrive:'SURGE',dark_matter:'SHADE',memory_match:'MIND',reflex_blitz:'SNAP'};
   return prefix+'-'+mid+'-'+(words[wid]||'CODE');
 }
 // Verification: hash the entered UUID+wid and check against stored hashes
@@ -336,6 +354,8 @@ const hintRiddles={
   quantum_doubler:'💡 "Twins emerge from chance. Let the doubler trigger 20 times."',
   auto_miner:'💡 "Let the drill do its work. Watch it auto-dig 30 cells."',
   singularity:'💡 "The end is the beginning. Reach 50M score and stare into the abyss."',
+  memory_match:'💡 "Perfect memory. Complete a game with zero wrong flips."',
+  reflex_blitz:'💡 "Lightning reflexes. Achieve 90%+ accuracy in a single game."',
 };
 // Counters for discovery triggers
 let discoveryCounts={auto_pump_runs:0,maze_wins:0,combo_15_seen:false,mine_jackpots:0,echo_count:0,momentum_earned:0,spin_10x:false,warps_session:0,golden_touch_earned:0,supernova_count:0,hacked_count:0,golden_presses:0,total_stat_levels:0,forged_t4:false,doubler_triggers:0,auto_dig_count:0,hold_start:0,hold_discovered:false,frenzy_count:0,cavein_count:0,chain_echo:false,overdrive_count:0};
@@ -374,6 +394,8 @@ const hackEffects={
   quantum_doubler:{desc:'Doubler chance → 20%',applied:false},
   auto_miner:{desc:'Auto-Miner speed doubled',applied:false},
   singularity:{desc:'Singularity rate → 0.5%/s',applied:false},
+  memory_match:{desc:'Pairs give +8% instead of +5%',applied:false},
+  reflex_blitz:{desc:'Targets last 50% longer, easier to hit',applied:false},
 };
 
 const widgets=[
@@ -400,7 +422,9 @@ const widgets=[
   {id:'quantum_doubler',name:'⚛️ Quantum Doubler',icon:'⚛️',desc:'10% chance each second to double your passive income tick!',costLabel:'25M',unlockAt:25000000,type:'passive',unlocked:false},
   {id:'dark_matter',name:'🌌 Dark Matter',icon:'🌌',desc:'Passive: +1% score per second for every 50 upgrade levels.',costLabel:'40M',unlockAt:40000000,type:'passive',unlocked:false},
   {id:'auto_miner',name:'🤖 Auto-Miner',icon:'🔧',desc:'Auto-mines 1 cell every 10s when Mine is open. Free!',costLabel:'50M clicks',unlockAt:50000000,type:'passive',unlocked:false},
-  {id:'singularity',name:'🌑 Singularity',icon:'🌑',desc:'The endgame. +0.3%/s passive on top of Momentum. Compounds!',costLabel:'100M clicks',unlockAt:100000000,type:'passive',unlocked:false},
+  {id:'singularity',name:'🌑 Singularity',icon:'🌑',desc:'The endgame. +0.3%/s passive on top of Momentum. Compounds!',costLabel:'100M',unlockAt:100000000,type:'passive',unlocked:false},
+  {id:'memory_match',name:'🧠 Memory Match',icon:'🧠',desc:'Flip cards to find pairs! Each pair = +5% score. 90s CD.',costLabel:'1B',unlockAt:1000000000,type:'minigame',cooldown:90,unlocked:false,cooldownUntil:0},
+  {id:'reflex_blitz',name:'⚡ Reflex Blitz',icon:'🎯',desc:'Hit targets as they appear! Score % bonus based on accuracy. 120s CD.',costLabel:'2.5B',unlockAt:2500000000,type:'minigame',cooldown:120,unlocked:false,cooldownUntil:0},
 ];
 buildHashes();
 
@@ -511,16 +535,38 @@ setInterval(()=>{
 // Energy & Warp regen
 setInterval(()=>{const n=Date.now();if(mineEnergy<MINE_MAX){const g=Math.floor((n-lastETick)/E_REGEN);if(g>0){mineEnergy=Math.min(MINE_MAX,mineEnergy+g);lastETick=n;}}else lastETick=n;if(twCharges<TW_MAX){const g=Math.floor((n-lastWTick)/W_REGEN);if(g>0){twCharges=Math.min(TW_MAX,twCharges+g);lastWTick=n;}}else lastWTick=n;},1000);
 
-// Upgrades
+// Upgrades (with dirty check to prevent flicker)
+let _upgHash='';
 function renderUpgrades(){
+  const cost=getUpgradeCost();const can=score>=cost;
+  const newHash=upgradePanelUnlocked+'|'+totalClicks+'|'+can+'|'+upgradeLevel+'|'+clickValue+'|'+cost;
+  if(newHash===_upgHash)return;_upgHash=newHash;
   if(!upgradePanelUnlocked&&totalClicks<500){upgradesContent.innerHTML=`<div class="upgrades-locked-msg"><div class="lock-icon">🔒</div><div>Upgrades at <span class="lock-req">500 clicks</span></div><div style="margin-top:4px;font-size:.75rem">${fmtFull(totalClicks)}/500</div></div>`;return;}
-  upgradePanelUnlocked=true;const cost=getUpgradeCost();const can=score>=cost;
+  upgradePanelUnlocked=true;
   upgradesContent.innerHTML=`<div class="upgrade-list"><div class="upgrade-card ${can?'affordable':'too-expensive'}" id="upgCP"><div class="upgrade-icon">💪</div><div class="upgrade-info"><div class="upgrade-name">Click Power Up</div><div class="upgrade-desc">Base click +1</div><div class="upgrade-level">Lv${upgradeLevel}→${upgradeLevel+1} (${fmtFull(clickValue)})</div></div><div class="upgrade-price-tag"><div>${fmt(cost)}</div><div class="price-label">SCORE</div></div></div></div>`;
-  $('upgCP').addEventListener('click',()=>{if(score>=getUpgradeCost()){score-=getUpgradeCost();upgradeLevel++;clickValue++;updateUI();renderUpgrades();}});
+  $('upgCP').addEventListener('click',()=>{if(score>=getUpgradeCost()){score-=getUpgradeCost();upgradeLevel++;clickValue++;_upgHash='';updateUI();renderUpgrades();}});
 }
 
-// Widgets
-function renderWidgets(){
+// Widgets (with dirty check to prevent flicker)
+let _wHash='';
+function getWidgetHash(){
+  return widgets.map(w=>{
+    let h=w.id+':'+(w.unlocked?'1':'0')+':'+(totalClicks>=w.unlockAt?'1':'0');
+    if(w.unlocked){
+      h+=':'+(isWidgetActive(w)?'A':'');
+      h+=':'+(w.cooldownUntil>Date.now()?Math.ceil((w.cooldownUntil-Date.now())/1000):'0');
+      if(w.id==='lucky_spin')h+=':'+w.spinMult+':'+w.spinLeft;
+      if(w.id==='time_warp')h+=':'+twCharges;
+      if(w.id==='mines')h+=':'+mineEnergy;
+      if(w.id==='computer')h+=':'+Object.keys(discoveredUUIDs).length+':'+Object.keys(hackedWidgets).length;
+    }
+    h+=':'+(isHacked(w.id)?'H':'')+(discoveredUUIDs[w.id]?'D':'');
+    return h;
+  }).join('|');
+}
+function renderWidgets(force){
+  const newHash=getWidgetHash();
+  if(!force&&newHash===_wHash)return;_wHash=newHash;
   widgetList.innerHTML='';
   widgets.forEach(w=>{
     const can=!w.unlocked&&totalClicks>=w.unlockAt;const card=document.createElement('div');
@@ -531,16 +577,15 @@ function renderWidgets(){
     }else if(w.id==='time_warp'){xI=`<div class="widget-extra-info">⏳ ${twCharges}/${TW_MAX}</div>`;rH=`<button class="activate-btn" ${twCharges<=0?'disabled':''} data-act="${w.id}">▶ Warp</button>`;
     }else if(w.id==='supernova'){const cd=w.cooldownUntil>Date.now(),s=Math.ceil((w.cooldownUntil-Date.now())/1000);rH=`<button class="activate-btn" ${cd?'disabled':''} data-act="${w.id}" style="background:#ec4899">${cd?'⏳'+s+'s':'💫 Detonate'}</button>`;
     }else if(w.id==='computer'){const dCount=Object.keys(discoveredUUIDs).length;const hCount=Object.keys(hackedWidgets).length;xI=`<div class="widget-extra-info">🔑 ${dCount} found | ✅ ${hCount} hacked</div>`;rH=`<button class="activate-btn" data-act="${w.id}">▶ Open</button>`;
-    }else if(w.id==='universal_stats'||w.id==='rock_forge'){rH=`<button class="activate-btn" data-act="${w.id}">▶ Open</button>`;
+    }else if(w.id==='universal_stats'||w.id==='rock_forge'||w.id==='memory_match'||w.id==='reflex_blitz'){rH=`<button class="activate-btn" data-act="${w.id}">▶ Open</button>`;
     }else if(w.type==='active'){const a=isWidgetActive(w),cd=w.cooldownUntil>Date.now(),s=Math.ceil((w.cooldownUntil-Date.now())/1000);rH=`<button class="activate-btn" ${a||cd?'disabled':''} data-act="${w.id}">${a?'⏳ Active':cd?'⏳'+s+'s':'▶ Activate'}</button>`;
     }else if(w.type==='minigame'){const cd=w.cooldownUntil>Date.now(),s=Math.ceil((w.cooldownUntil-Date.now())/1000);if(w.id==='mines')xI=`<div class="widget-extra-info">⚡${mineEnergy}/${MINE_MAX}</div>`;rH=`<button class="activate-btn" ${cd?'disabled':''} data-act="${w.id}">${cd?'⏳'+s+'s':'▶ Play'}</button>`;
     }else{rH=`<div class="widget-status">✅</div>`;}
     const hacked=isHacked(w.id)?'<span style="color:var(--terminal);font-size:.65rem"> [HACKED]</span>':(discoveredUUIDs[w.id]?'<span style="color:var(--gold);font-size:.65rem" title="UUID discovered! Open terminal to hack."> 🔑</span>':'');
     card.innerHTML=`<div class="widget-icon">${w.icon}</div><div class="widget-info"><div class="widget-name">${w.name}${hacked}</div><div class="widget-desc">${w.desc}</div>${xI}<div class="widget-cost">${w.unlocked?'✅ Unlocked':can?'🔓 Click to unlock!':'🔒 '+w.costLabel}</div></div>${rH}`;
-    if(can&&!w.unlocked)card.addEventListener('click',()=>{w.unlocked=true;showFlash(w.name);renderWidgets();});
+    if(can&&!w.unlocked)card.addEventListener('click',()=>{w.unlocked=true;showFlash(w.name);_wHash='';renderWidgets(true);});
     widgetList.appendChild(card);
   });
-  // Golden button visibility
   const gb=widgets.find(w=>w.id==='golden_button');goldenBtn.classList.toggle('show',gb&&gb.unlocked);goldenBtn.disabled=goldenCD>Date.now();
   document.querySelectorAll('[data-act]').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();activateWidget(b.dataset.act);}));
 }
@@ -570,6 +615,8 @@ function activateWidget(id){
     discoveryCounts.overdrive_count++;if(discoveryCounts.overdrive_count>=3)tryDiscover('overdrive','3 overdrives — the battery exposes its manufacturing code!');
     showFlash('🔋 All cooldowns reset!');renderWidgets();}
   if(id==='laser_maze'){if(w.cooldownUntil>Date.now())return;openMaze();}
+  if(id==='memory_match'){if(w.cooldownUntil>Date.now())return;openMemoryMatch();}
+  if(id==='reflex_blitz'){if(w.cooldownUntil>Date.now())return;openReflexBlitz();}
   if(id==='mines'){if(w.cooldownUntil>Date.now())return;openMine();}
   if(id==='computer')openComputer();
   if(id==='universal_stats')openStats();
@@ -861,6 +908,116 @@ function renderStats(){
 
 // ═══════════ PARTICLES ═══════════
 (function(){const cv=$('particles'),cx=cv.getContext('2d');let W,H;function rs(){W=cv.width=innerWidth;H=cv.height=innerHeight;}rs();addEventListener('resize',rs);const ds=Array.from({length:40},()=>({x:Math.random()*innerWidth,y:Math.random()*innerHeight,r:Math.random()*2+1,dx:(Math.random()-.5)*.3,dy:(Math.random()-.5)*.3,o:Math.random()*.25+.05}));(function dr(){cx.clearRect(0,0,W,H);const cs=getComputedStyle(document.documentElement);const pr=cs.getPropertyValue('--particle-r')||'127',pg=cs.getPropertyValue('--particle-g')||'90',pb=cs.getPropertyValue('--particle-b')||'240';ds.forEach(d=>{d.x+=d.dx;d.y+=d.dy;if(d.x<0)d.x=W;if(d.x>W)d.x=0;if(d.y<0)d.y=H;if(d.y>H)d.y=0;cx.beginPath();cx.arc(d.x,d.y,d.r,0,Math.PI*2);cx.fillStyle=`rgba(${pr},${pg},${pb},${d.o})`;cx.fill();});requestAnimationFrame(dr);})();})();
+
+// ═══════════ MEMORY MATCH ═══════════
+let mmState=null;
+const MM_ICONS=['🌟','🔥','💎','🎲','🍀','⚡','🌈','🎵'];
+function openMemoryMatch(){
+  const w=widgets.find(x=>x.id==='memory_match');if(w)w.cooldownUntil=Date.now()+w.cooldown*1000;
+  const icons=[...MM_ICONS,...MM_ICONS];
+  for(let i=icons.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[icons[i],icons[j]]=[icons[j],icons[i]];}
+  mmState={cards:icons.map(ic=>({icon:ic,flipped:false,matched:false})),flipped:[],pairs:0,bonus:0,moves:0,wrongMoves:0,snap:score};
+  $('memoryOverlay').classList.add('show');
+  $('memoryStatus').textContent='Flip two cards to find a match!';
+  $('memoryStatus').className='overlay-status playing';
+  $('memoryReward').textContent='Bonus: 0';
+  $('memoryButtons').innerHTML='<button class="overlay-btn close-btn" onclick="closeMemory()">✕ Close</button>';
+  renderMemory();
+}
+function closeMemory(){$('memoryOverlay').classList.remove('show');mmState=null;}
+function flipCard(idx){
+  if(!mmState||mmState.cards[idx].flipped||mmState.cards[idx].matched||mmState.flipped.length>=2)return;
+  mmState.cards[idx].flipped=true;mmState.flipped.push(idx);mmState.moves++;
+  renderMemory();
+  if(mmState.flipped.length===2){
+    const[a,b]=mmState.flipped;
+    if(mmState.cards[a].icon===mmState.cards[b].icon){
+      mmState.cards[a].matched=true;mmState.cards[b].matched=true;mmState.pairs++;
+      const pctPer=isHacked('memory_match')?8:5;
+      const reward=Math.floor(mmState.snap*pctPer/100);mmState.bonus+=reward;
+      $('memoryStatus').textContent=`✅ Pair! +${pctPer}% → +${fmtFull(reward)}`;
+      $('memoryStatus').className='overlay-status success';
+      $('memoryReward').textContent=`Bonus: ${fmtFull(mmState.bonus)}`;
+      mmState.flipped=[];
+      if(mmState.pairs===MM_ICONS.length){
+        addBonus(mmState.bonus);showFlash(`🧠 +${fmtFull(mmState.bonus)} from Memory Match!`);
+        if(mmState.wrongMoves===0)tryDiscover('memory_match','Perfect memory — zero mistakes! The brain reveals its neural code.');
+        $('memoryStatus').textContent=`🎉 All pairs found! +${fmtFull(mmState.bonus)}`;
+        $('memoryButtons').innerHTML='<button class="overlay-btn" onclick="closeMemory()">🎉 Collect</button>';
+      }
+      renderMemory();
+    } else {
+      mmState.wrongMoves++;
+      setTimeout(()=>{if(!mmState)return;mmState.cards[a].flipped=false;mmState.cards[b].flipped=false;mmState.flipped=[];
+        $('memoryStatus').textContent='❌ No match! Try again.';$('memoryStatus').className='overlay-status fail';renderMemory();},800);
+    }
+  }
+}
+function renderMemory(){
+  if(!mmState)return;const grid=$('memoryGrid');grid.innerHTML='';
+  const sz=window.innerWidth<=520?58:64;
+  mmState.cards.forEach((c,i)=>{
+    const el=document.createElement('div');
+    el.style.cssText=`width:${sz}px;height:${sz}px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:${sz*.45}px;cursor:pointer;transition:all .2s;border:2px solid ${c.matched?'var(--accent3)':c.flipped?'var(--pink)':'#2a2950'};background:${c.matched?'#1a2a1a':c.flipped?'#2a1a30':'#1a1832'}`;
+    el.textContent=c.flipped||c.matched?c.icon:'❓';
+    if(!c.flipped&&!c.matched){const ii=i;el.addEventListener('click',()=>flipCard(ii));}
+    grid.appendChild(el);
+  });
+}
+
+// ═══════════ REFLEX BLITZ ═══════════
+let rxState=null;let rxTimer=null;
+function openReflexBlitz(){
+  const w=widgets.find(x=>x.id==='reflex_blitz');if(w)w.cooldownUntil=Date.now()+w.cooldown*1000;
+  rxState={targets:15,hit:0,miss:0,total:0,done:false,snap:score,current:null};
+  $('reflexOverlay').classList.add('show');
+  $('reflexStatus').textContent='Get ready...';$('reflexStatus').className='overlay-status playing';
+  $('reflexReward').textContent='Accuracy: --';
+  $('reflexButtons').innerHTML='<button class="overlay-btn close-btn" onclick="closeReflex()">✕ Close</button>';
+  const arena=$('reflexArena');arena.innerHTML='';
+  // Misclick on arena = miss
+  arena.onclick=function(e){if(e.target===arena&&rxState&&!rxState.done&&rxState.current){rxState.miss++;rxState.total++;removeTarget();spawnTarget();}};
+  setTimeout(()=>spawnTarget(),1000);
+}
+function closeReflex(){$('reflexOverlay').classList.remove('show');rxState=null;if(rxTimer)clearTimeout(rxTimer);}
+function spawnTarget(){
+  if(!rxState||rxState.done)return;
+  if(rxState.hit+rxState.miss>=rxState.targets){finishReflex();return;}
+  const arena=$('reflexArena');
+  const sz=isHacked('reflex_blitz')?50:38;
+  const x=Math.floor(Math.random()*(280-sz));const y=Math.floor(Math.random()*(280-sz));
+  const tgt=document.createElement('div');
+  tgt.className='rx-target';
+  tgt.style.cssText=`position:absolute;left:${x}px;top:${y}px;width:${sz}px;height:${sz}px;border-radius:50%;background:radial-gradient(circle,var(--cyan),var(--accent2));box-shadow:0 0 16px var(--cyan);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:${sz*.5}px;transition:transform .1s;animation:goalPulse .6s ease infinite`;
+  tgt.textContent='🎯';
+  tgt.addEventListener('click',e=>{e.stopPropagation();rxState.hit++;rxState.total++;removeTarget();
+    $('reflexStatus').textContent=`🎯 Hit! ${rxState.hit}/${rxState.targets}`;$('reflexStatus').className='overlay-status success';
+    updateReflexReward();spawnTarget();});
+  rxState.current=tgt;arena.appendChild(tgt);
+  // Target disappears after time
+  const lifespan=isHacked('reflex_blitz')?1800:1200;
+  rxTimer=setTimeout(()=>{if(!rxState||rxState.done)return;rxState.miss++;rxState.total++;removeTarget();
+    $('reflexStatus').textContent=`⏰ Missed! ${rxState.miss} misses`;$('reflexStatus').className='overlay-status fail';
+    updateReflexReward();spawnTarget();},lifespan);
+}
+function removeTarget(){if(rxTimer)clearTimeout(rxTimer);const arena=$('reflexArena');const old=arena.querySelector('.rx-target');if(old)old.remove();if(rxState)rxState.current=null;}
+function updateReflexReward(){
+  if(!rxState)return;
+  const acc=rxState.total>0?Math.floor(rxState.hit/rxState.total*100):0;
+  $('reflexReward').textContent=`Accuracy: ${acc}% (${rxState.hit} hits, ${rxState.miss} misses)`;
+}
+function finishReflex(){
+  if(!rxState)return;rxState.done=true;removeTarget();
+  const acc=rxState.total>0?rxState.hit/rxState.total:0;
+  const pct=Math.floor(acc*50);// up to 50% of score at 100% accuracy
+  const reward=Math.floor(rxState.snap*pct/100);
+  if(reward>0)addBonus(reward);
+  $('reflexStatus').textContent=`🏁 Done! ${Math.floor(acc*100)}% accuracy → +${pct}% → +${fmtFull(reward)}`;
+  $('reflexStatus').className='overlay-status success';
+  $('reflexButtons').innerHTML=`<button class="overlay-btn" onclick="closeReflex()">🎉 Collect</button>`;
+  if(acc>=0.9)tryDiscover('reflex_blitz','90%+ accuracy — lightning reflexes reveal the targeting system code!');
+  showFlash(`🎯 +${fmtFull(reward)} from Reflex Blitz!`);
+}
 
 // ═══════════ ENDGAME CUTSCENE ═══════════
 function startEndCutscene(){
