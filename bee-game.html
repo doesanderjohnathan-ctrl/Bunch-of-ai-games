@@ -1,0 +1,1134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Buzz Quest — A Bee's Life</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    height: 100%;
+    background: #0c1018;
+    font-family: 'Trebuchet MS', 'Segoe UI', sans-serif;
+    color: #fff;
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  #wrap {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  canvas {
+    display: block;
+    background: #aee3f5;
+    image-rendering: pixelated;
+    touch-action: none;
+  }
+  /* HUD */
+  #hud {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    padding: 10px 14px;
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    flex-wrap: wrap;
+    pointer-events: none;
+    text-shadow: 0 2px 4px rgba(0,0,0,.6);
+    font-weight: bold;
+    z-index: 5;
+  }
+  .stat {
+    background: rgba(20,24,34,.55);
+    backdrop-filter: blur(4px);
+    padding: 6px 11px;
+    border-radius: 20px;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    border: 1px solid rgba(255,255,255,.12);
+  }
+  .bar {
+    width: 90px; height: 9px;
+    background: rgba(0,0,0,.35);
+    border-radius: 6px;
+    overflow: hidden;
+    display: inline-block;
+  }
+  .bar > i {
+    display: block; height: 100%;
+    border-radius: 6px;
+    transition: width .15s linear;
+  }
+  #energyBar i { background: linear-gradient(90deg,#ffd54a,#ff9d2f); }
+  #healthBar i { background: linear-gradient(90deg,#ff6b6b,#ff2d6f); }
+  #nectarBar i { background: linear-gradient(90deg,#7be0ff,#3aa0ff); }
+
+  /* Overlays */
+  .overlay {
+    position: absolute; inset: 0;
+    background: radial-gradient(circle at 50% 35%, rgba(20,30,50,.86), rgba(6,8,14,.96));
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center; z-index: 20;
+    padding: 24px;
+  }
+  .overlay.hidden { display: none; }
+  h1 { font-size: clamp(34px, 7vw, 70px); letter-spacing: 2px;
+       background: linear-gradient(90deg,#ffe259,#ffa751);
+       -webkit-background-clip: text; background-clip: text; color: transparent;
+       text-shadow: 0 6px 20px rgba(255,180,0,.25); margin-bottom: 4px;}
+  .sub { color: #cfd6e4; font-size: 16px; max-width: 560px; margin-bottom: 18px; line-height: 1.5;}
+  .keys { display: flex; gap: 18px; flex-wrap: wrap; justify-content: center; margin-bottom: 22px;}
+  .keycol { background: rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12);
+            border-radius: 12px; padding: 12px 16px; min-width: 150px; font-size: 13px; color:#dfe5f0;}
+  .keycol b { color:#ffd54a; }
+  kbd { background:#2a3142; border:1px solid #444c61; border-bottom-width:3px;
+        border-radius:6px; padding:1px 7px; font-family:inherit; font-size:12px; }
+  button.btn {
+    pointer-events: auto;
+    font-family: inherit; font-weight: bold; font-size: 18px;
+    color: #2a1c00; cursor: pointer;
+    padding: 14px 38px; border: none; border-radius: 40px;
+    background: linear-gradient(180deg,#ffe259,#ffb43a);
+    box-shadow: 0 8px 0 #c98517, 0 12px 20px rgba(0,0,0,.4);
+    transition: transform .08s, box-shadow .08s;
+  }
+  button.btn:active { transform: translateY(5px); box-shadow: 0 3px 0 #c98517, 0 6px 10px rgba(0,0,0,.4);}
+  .stats-grid { display:grid; grid-template-columns: repeat(2,minmax(140px,1fr)); gap:10px; margin:14px 0 22px; }
+  .stat-card { background: rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12);
+               border-radius:12px; padding:12px; font-size:13px; color:#cfd6e4;}
+  .stat-card b { display:block; font-size:24px; color:#ffd54a; }
+
+  /* Upgrade shop */
+  #shop { z-index: 25; }
+  .shop-row { display:flex; flex-direction:column; gap:10px; width:min(440px,90vw); margin-bottom:18px; }
+  .up {
+    pointer-events:auto;
+    display:flex; align-items:center; gap:12px; text-align:left;
+    background: rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.14);
+    border-radius:14px; padding:12px 14px; cursor:pointer; transition: background .12s, transform .08s;
+  }
+  .up:hover { background: rgba(255,255,255,.12); }
+  .up:active { transform: scale(.985); }
+  .up.dis { opacity:.45; cursor:not-allowed; }
+  .up .ic { font-size:26px; width:38px; text-align:center; }
+  .up .t { flex:1; }
+  .up .t b { color:#fff; font-size:15px; }
+  .up .t span { display:block; color:#aab3c5; font-size:12px; }
+  .up .cost { color:#ffd54a; font-weight:bold; white-space:nowrap; }
+  .lvtag { font-size:11px; color:#8de08d; }
+
+  #toast {
+    position:absolute; left:50%; top:64px; transform:translateX(-50%);
+    background: rgba(20,24,34,.85); border:1px solid rgba(255,255,255,.15);
+    padding:9px 18px; border-radius:30px; font-weight:bold; font-size:14px;
+    z-index:15; opacity:0; transition:opacity .3s, top .3s; pointer-events:none; white-space:nowrap;
+  }
+  #toast.show { opacity:1; top:74px; }
+  .hint { color:#8893a8; font-size:12px; margin-top:6px;}
+  #mute { position:absolute; top:10px; right:12px; z-index:12; pointer-events:auto;
+          background:rgba(20,24,34,.55); border:1px solid rgba(255,255,255,.15); color:#fff;
+          width:38px;height:38px;border-radius:50%; cursor:pointer; font-size:16px;}
+  .badge { background:#ff2d6f; color:#fff; border-radius:10px; font-size:11px; padding:1px 7px; margin-left:4px;}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="game"></canvas>
+
+  <!-- HUD -->
+  <div id="hud">
+    <div class="stat">🍯 <span id="honey">0</span></div>
+    <div class="stat">💰 <span id="pollen">0</span></div>
+    <div class="stat">🌼 Day <span id="day">1</span></div>
+    <div class="stat">⚡<div class="bar" id="energyBar"><i style="width:100%"></i></div></div>
+    <div class="stat">❤️<div class="bar" id="healthBar"><i style="width:100%"></i></div></div>
+    <div class="stat">💧<div class="bar" id="nectarBar"><i style="width:0%"></i></div></div>
+    <div class="stat" id="comboStat" style="display:none">🔥 x<span id="combo">1</span></div>
+  </div>
+
+  <button id="mute" title="Mute">🔊</button>
+  <div id="toast"></div>
+
+  <!-- Start screen -->
+  <div class="overlay" id="start">
+    <h1>🐝 BUZZ QUEST</h1>
+    <div class="sub">You are <b>Bumble</b>, a worker bee. Sip nectar from flowers, pollinate the meadow,
+       and haul honey back to the hive before night falls. Dodge wasps & spiders, beat the clock, and
+       grow into the mightiest bee the garden has ever known.</div>
+    <div class="keys">
+      <div class="keycol"><b>Fly</b><br><kbd>W A S D</kbd> / <kbd>arrows</kbd><br>or drag / touch</div>
+      <div class="keycol"><b>Boost</b><br><kbd>Shift</kbd> or <kbd>Space</kbd><br>(uses energy)</div>
+      <div class="keycol"><b>Goal</b><br>Sip 🌸 then return to<br>the 🏠 hive to bank honey</div>
+    </div>
+    <button class="btn" id="startBtn">Start Buzzing</button>
+    <div class="hint">Tip: full pouch? Rush home before a wasp catches you!</div>
+  </div>
+
+  <!-- Shop / between-day -->
+  <div class="overlay hidden" id="shop">
+    <h1 style="font-size:clamp(28px,5vw,48px)">🌻 Dawn of Day <span id="shopDay">2</span></h1>
+    <div class="sub" id="shopSummary"></div>
+    <div class="shop-row" id="upgradeList"></div>
+    <button class="btn" id="nextDayBtn">Begin Day ▶</button>
+    <div class="hint">Spend 💰 pollen on upgrades. Unspent pollen carries over.</div>
+  </div>
+
+  <!-- Game over -->
+  <div class="overlay hidden" id="over">
+    <h1 id="overTitle">The Hive Sleeps</h1>
+    <div class="sub" id="overMsg"></div>
+    <div class="stats-grid" id="overStats"></div>
+    <button class="btn" id="restartBtn">Buzz Again</button>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ============================================================
+   BUZZ QUEST — a feature-rich bee game
+   Single-file HTML5 canvas. No external assets.
+   ============================================================ */
+
+const cvs = document.getElementById('game');
+const ctx = cvs.getContext('2d');
+
+// ---------- World config ----------
+const WORLD = { w: 2200, h: 1500 };
+let VIEW = { w: 0, h: 0 };
+
+function resize() {
+  VIEW.w = window.innerWidth;
+  VIEW.h = window.innerHeight;
+  cvs.width = VIEW.w;
+  cvs.height = VIEW.h;
+}
+window.addEventListener('resize', resize);
+resize();
+
+// ---------- Tiny audio engine (Web Audio, no files) ----------
+const Audio2 = (() => {
+  let ctxA = null, muted = false, master;
+  function ensure() {
+    if (!ctxA) {
+      ctxA = new (window.AudioContext || window.webkitAudioContext)();
+      master = ctxA.createGain();
+      master.gain.value = 0.35;
+      master.connect(ctxA.destination);
+    }
+    if (ctxA.state === 'suspended') ctxA.resume();
+  }
+  function tone(freq, dur, type='sine', vol=0.4, slideTo=null) {
+    if (muted) return;
+    ensure();
+    const o = ctxA.createOscillator(), g = ctxA.createGain();
+    o.type = type; o.frequency.value = freq;
+    if (slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, ctxA.currentTime + dur);
+    g.gain.setValueAtTime(0.0001, ctxA.currentTime);
+    g.gain.exponentialRampToValueAtTime(vol, ctxA.currentTime + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, ctxA.currentTime + dur);
+    o.connect(g); g.connect(master);
+    o.start(); o.stop(ctxA.currentTime + dur + 0.02);
+  }
+  // ambient buzz drone tied to movement
+  let buzzOsc=null, buzzGain=null;
+  function startBuzz() {
+    if (muted || buzzOsc) return;
+    ensure();
+    buzzOsc = ctxA.createOscillator();
+    buzzGain = ctxA.createGain();
+    buzzOsc.type='sawtooth'; buzzOsc.frequency.value=110;
+    buzzGain.gain.value=0.0;
+    const lp = ctxA.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=400;
+    buzzOsc.connect(lp); lp.connect(buzzGain); buzzGain.connect(master);
+    buzzOsc.start();
+  }
+  function setBuzz(intensity){ // 0..1
+    if (!buzzGain) return;
+    buzzGain.gain.setTargetAtTime(0.05*intensity, ctxA.currentTime, 0.05);
+    buzzOsc.frequency.setTargetAtTime(90 + 80*intensity, ctxA.currentTime, 0.05);
+  }
+  return {
+    sip(){ tone(660,0.12,'triangle',0.3,990); },
+    deposit(){ tone(440,0.1,'square',0.25,660); setTimeout(()=>tone(660,0.12,'square',0.25,880),90); },
+    hurt(){ tone(200,0.25,'sawtooth',0.4,80); },
+    buy(){ tone(523,0.08,'square',0.3); setTimeout(()=>tone(784,0.12,'square',0.3),80); },
+    bonus(){ tone(880,0.08,'triangle',0.3); setTimeout(()=>tone(1175,0.12,'triangle',0.3),70); },
+    dayend(){ [523,659,784,1047].forEach((f,i)=>setTimeout(()=>tone(f,0.18,'triangle',0.3),i*110)); },
+    gameover(){ [440,330,262,196].forEach((f,i)=>setTimeout(()=>tone(f,0.3,'sawtooth',0.3),i*180)); },
+    startBuzz, setBuzz,
+    toggleMute(){ muted=!muted; if(muted&&buzzGain) buzzGain.gain.value=0; return muted; }
+  };
+})();
+
+// ---------- Input ----------
+const keys = {};
+const pointer = { active:false, x:0, y:0 };
+window.addEventListener('keydown', e=>{
+  if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key)) e.preventDefault();
+  keys[e.key.toLowerCase()] = true;
+});
+window.addEventListener('keyup', e=>{ keys[e.key.toLowerCase()] = false; });
+cvs.addEventListener('pointerdown', e=>{ pointer.active=true; pointer.x=e.clientX; pointer.y=e.clientY; });
+cvs.addEventListener('pointermove', e=>{ if(pointer.active){ pointer.x=e.clientX; pointer.y=e.clientY; } });
+window.addEventListener('pointerup', ()=>{ pointer.active=false; });
+
+// ---------- Utility ----------
+const rand = (a,b)=>a+Math.random()*(b-a);
+const randi = (a,b)=>Math.floor(rand(a,b+1));
+const clamp = (v,a,b)=>v<a?a:v>b?b:v;
+const dist2 = (ax,ay,bx,by)=>{const dx=ax-bx,dy=ay-by;return dx*dx+dy*dy;};
+const lerp = (a,b,t)=>a+(b-a)*t;
+
+// ---------- Game state ----------
+const G = {
+  state: 'start',     // start, play, shop, over
+  day: 1,
+  dayLength: 60,      // seconds
+  dayTime: 0,
+  honey: 0,
+  pollen: 0,
+  combo: 1,
+  comboTimer: 0,
+  flowersPollinated: 0,
+  totalHoney: 0,
+  shake: 0,
+  upgrades: {
+    speed: 0, pouch: 0, energy: 0, armor: 0, magnet: 0, refine: 0
+  }
+};
+
+const UPGRADE_DEFS = {
+  speed:  { name:"Swift Wings",   ic:"🌀", max:5, baseCost:18, desc:"+12% top speed & accel" },
+  pouch:  { name:"Bigger Pouch",  ic:"🎒", max:5, baseCost:22, desc:"+25% nectar capacity" },
+  energy: { name:"Stamina",       ic:"⚡", max:5, baseCost:20, desc:"+25% energy & faster regen" },
+  armor:  { name:"Fuzzy Armor",   ic:"🛡️", max:4, baseCost:30, desc:"-20% damage from foes" },
+  magnet: { name:"Pollen Magnet", ic:"🧲", max:4, baseCost:26, desc:"Auto-attract nearby pollen" },
+  refine: { name:"Royal Refinery",ic:"👑", max:5, baseCost:34, desc:"+1 honey per nectar banked" },
+};
+const upCost = (k)=> Math.round(UPGRADE_DEFS[k].baseCost * Math.pow(1.6, G.upgrades[k]));
+
+// derived stats
+function stat() {
+  const u = G.upgrades;
+  return {
+    maxSpeed: 4.2 * (1 + 0.12*u.speed),
+    accel:    0.42 * (1 + 0.12*u.speed),
+    pouchCap: Math.round(5 * (1 + 0.25*u.pouch)),
+    maxEnergy: 100 * (1 + 0.25*u.energy),
+    energyRegen: 8 * (1 + 0.25*u.energy),
+    damageMul: 1 - 0.20*u.armor,
+    magnetR: u.magnet>0 ? 70 + 35*u.magnet : 0,
+    refine: 1 + u.refine,
+  };
+}
+
+// ---------- Entities ----------
+const bee = {
+  x: WORLD.w/2, y: WORLD.h/2, vx:0, vy:0, angle:0,
+  energy: 100, maxEnergy: 100,
+  health: 100, maxHealth: 100,
+  nectar: 0, pouchCap: 5,
+  wingPhase: 0, boosting:false,
+  invuln: 0,
+};
+
+let flowers = [];
+let enemies = [];
+let pickups = [];  // floating pollen orbs
+let particles = [];
+let clouds = [];
+let hive = { x: WORLD.w/2, y: 120, r: 60 };
+
+function spawnFlowers(n) {
+  flowers = [];
+  const types = [
+    {color:'#ff6fae', center:'#ffd54a', nectar:3, petals:6},
+    {color:'#b07bff', center:'#ffe082', nectar:4, petals:8},
+    {color:'#ff8b3d', center:'#7a4a00', nectar:3, petals:5},
+    {color:'#5ad6ff', center:'#fff3a8', nectar:5, petals:7},
+    {color:'#ffffff', center:'#ffd54a', nectar:2, petals:5},
+  ];
+  for (let i=0;i<n;i++){
+    const t = types[randi(0,types.length-1)];
+    let x,y,tries=0;
+    do {
+      x = rand(80, WORLD.w-80);
+      y = rand(280, WORLD.h-80);
+      tries++;
+    } while (dist2(x,y,hive.x,hive.y) < 240*240 && tries<20);
+    flowers.push({
+      x, y, r: rand(20,28),
+      type: t, nectar: t.nectar, max: t.nectar,
+      bloom: 1, pollinated:false, sway: rand(0,Math.PI*2),
+      regen: 0
+    });
+  }
+}
+
+function spawnClouds() {
+  clouds = [];
+  for (let i=0;i<14;i++){
+    clouds.push({x:rand(0,WORLD.w), y:rand(0,WORLD.h*0.4), r:rand(40,90), s:rand(0.1,0.4)});
+  }
+}
+
+function spawnEnemy() {
+  const edge = randi(0,3);
+  let x,y;
+  if (edge===0){x=rand(0,WORLD.w);y=300;}
+  else if(edge===1){x=rand(0,WORLD.w);y=WORLD.h-20;}
+  else if(edge===2){x=20;y=rand(300,WORLD.h);}
+  else {x=WORLD.w-20;y=rand(300,WORLD.h);}
+  const kind = Math.random() < 0.65 ? 'wasp' : 'spider';
+  if (kind==='wasp') {
+    enemies.push({
+      kind, x, y, vx:0, vy:0,
+      speed: rand(1.8,2.6)+G.day*0.12, r:16,
+      damage: 14, wingPhase:0, hp: 1,
+      detect: 520, state:'patrol', target:{x:rand(0,WORLD.w),y:rand(300,WORLD.h)}
+    });
+  } else {
+    enemies.push({
+      kind, x, y, vx:0, vy:0,
+      speed: rand(1.0,1.6)+G.day*0.08, r:20,
+      damage: 22, legPhase:0, hp:1,
+      detect: 360, state:'patrol', target:{x:rand(0,WORLD.w),y:rand(300,WORLD.h)}
+    });
+  }
+}
+
+// ---------- Particles ----------
+function burst(x,y,color,n=10,spd=3,life=40){
+  for(let i=0;i<n;i++){
+    const a=rand(0,Math.PI*2), s=rand(0.4,spd);
+    particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life,max:life,color,r:rand(2,4)});
+  }
+}
+function floatText(x,y,text,color){
+  particles.push({x,y,vx:0,vy:-0.8,life:50,max:50,color,text});
+}
+
+// ---------- HUD refs ----------
+const el = id=>document.getElementById(id);
+const ui = {
+  honey:el('honey'), pollen:el('pollen'), day:el('day'),
+  energy:el('energyBar').firstElementChild,
+  health:el('healthBar').firstElementChild,
+  nectar:el('nectarBar').firstElementChild,
+  combo:el('combo'), comboStat:el('comboStat'),
+  toast:el('toast')
+};
+let toastTimer=0;
+function toast(msg){
+  ui.toast.textContent = msg;
+  ui.toast.classList.add('show');
+  toastTimer = 130;
+}
+
+// ---------- Day / level ----------
+function startDay(reset=false) {
+  if (reset) {
+    G.day=1; G.honey=0; G.pollen=0; G.totalHoney=0; G.flowersPollinated=0;
+    G.upgrades={speed:0,pouch:0,energy:0,armor:0,magnet:0,refine:0};
+  }
+  const s = stat();
+  bee.maxEnergy = s.maxEnergy; bee.energy = s.maxEnergy;
+  bee.maxHealth = 100; bee.health = 100;
+  bee.pouchCap = s.pouchCap; bee.nectar = 0;
+  bee.x = hive.x; bee.y = hive.y + 120; bee.vx=0; bee.vy=0;
+  bee.invuln = 90;
+  G.dayTime = 0;
+  G.dayLength = 58 + G.day*3;
+  G.combo = 1; G.comboTimer = 0;
+  spawnFlowers(14 + G.day*2);
+  spawnClouds();
+  enemies = []; pickups=[]; particles=[];
+  // a couple of starter foes
+  const initial = Math.min(1 + Math.floor(G.day/1.5), 6);
+  for(let i=0;i<initial;i++) spawnEnemy();
+  G.state='play';
+  Audio2.startBuzz();
+}
+
+let enemySpawnTimer = 0;
+
+function endDay() {
+  Audio2.dayend();
+  G.state='shop';
+  el('shopDay').textContent = G.day+1;
+  el('shopSummary').innerHTML =
+    `Day ${G.day} complete! You banked <b>${G.honey}</b> 🍯 honey and pollinated `+
+    `<b>${G.flowersPollinated}</b> flowers. You have <b>${G.pollen}</b> 💰 pollen to spend.`;
+  renderShop();
+  el('shop').classList.remove('hidden');
+}
+
+function renderShop() {
+  const list = el('upgradeList');
+  list.innerHTML='';
+  for (const k in UPGRADE_DEFS) {
+    const d = UPGRADE_DEFS[k];
+    const lv = G.upgrades[k];
+    const maxed = lv>=d.max;
+    const cost = upCost(k);
+    const afford = G.pollen>=cost && !maxed;
+    const row = document.createElement('div');
+    row.className = 'up'+(afford?'':' dis');
+    row.innerHTML =
+      `<div class="ic">${d.ic}</div>
+       <div class="t"><b>${d.name} <span class="lvtag">Lv ${lv}/${d.max}</span></b>
+       <span>${d.desc}</span></div>
+       <div class="cost">${maxed?'MAX':cost+' 💰'}</div>`;
+    if (afford) row.onclick = ()=>{
+      G.pollen -= cost; G.upgrades[k]++;
+      Audio2.buy();
+      el('shopSummary').innerHTML =
+        `Day ${G.day} complete! You banked <b>${G.honey}</b> 🍯 honey and pollinated `+
+        `<b>${G.flowersPollinated}</b> flowers. You have <b>${G.pollen}</b> 💰 pollen to spend.`;
+      renderShop();
+      syncHUD();
+    };
+    list.appendChild(row);
+  }
+}
+
+function gameOver(reason) {
+  Audio2.gameover();
+  G.state='over';
+  el('overTitle').textContent = reason==='time'? 'Winter Comes ❄️' : 'Bumble Fell 💔';
+  el('overMsg').textContent = reason==='time'
+    ? `You survived ${G.day} days of buzzing. The garden remembers your work.`
+    : `A predator got you on day ${G.day}. The hive mourns a brave forager.`;
+  el('overStats').innerHTML =
+    `<div class="stat-card"><b>${G.day}</b>Days survived</div>
+     <div class="stat-card"><b>${G.totalHoney}</b>Total honey made</div>
+     <div class="stat-card"><b>${G.flowersPollinated}</b>Flowers pollinated</div>
+     <div class="stat-card"><b>${Object.values(G.upgrades).reduce((a,b)=>a+b,0)}</b>Upgrades bought</div>`;
+  el('over').classList.remove('hidden');
+}
+
+// ---------- HUD sync ----------
+function syncHUD() {
+  ui.honey.textContent = G.honey;
+  ui.pollen.textContent = G.pollen;
+  ui.day.textContent = G.day;
+  ui.energy.style.width = clamp(bee.energy/bee.maxEnergy*100,0,100)+'%';
+  ui.health.style.width = clamp(bee.health/bee.maxHealth*100,0,100)+'%';
+  ui.nectar.style.width = clamp(bee.nectar/bee.pouchCap*100,0,100)+'%';
+  if (G.combo>1){ ui.comboStat.style.display='flex'; ui.combo.textContent=G.combo; }
+  else ui.comboStat.style.display='none';
+}
+
+// ---------- Update ----------
+function update(dt) {
+  if (G.state!=='play') return;
+  const s = stat();
+
+  // ----- day timer -----
+  G.dayTime += dt;
+  if (G.dayTime >= G.dayLength) {
+    // must be near hive-ish? No—night ends day automatically. Bank carries.
+    G.day++;
+    endDay();
+    return;
+  }
+
+  // ----- input → acceleration -----
+  let ax=0, ay=0;
+  if (keys['w']||keys['arrowup']) ay-=1;
+  if (keys['s']||keys['arrowdown']) ay+=1;
+  if (keys['a']||keys['arrowleft']) ax-=1;
+  if (keys['d']||keys['arrowright']) ax+=1;
+  if (pointer.active) {
+    // steer toward pointer (relative to screen center = bee)
+    const tx = pointer.x - VIEW.w/2;
+    const ty = pointer.y - VIEW.h/2;
+    const m = Math.hypot(tx,ty);
+    if (m>14){ ax += tx/m; ay += ty/m; }
+  }
+  const im = Math.hypot(ax,ay);
+  if (im>0){ ax/=im; ay/=im; }
+
+  // boost
+  bee.boosting = (keys['shift']||keys[' ']) && bee.energy>1 && im>0;
+  let topSpeed = s.maxSpeed;
+  let acc = s.accel;
+  if (bee.boosting) { topSpeed*=1.7; acc*=1.8; bee.energy -= 24*dt; }
+  else { bee.energy += s.energyRegen*dt; }
+  bee.energy = clamp(bee.energy,0,bee.maxEnergy);
+
+  bee.vx += ax*acc; bee.vy += ay*acc;
+  // friction
+  bee.vx *= 0.93; bee.vy *= 0.93;
+  const spd = Math.hypot(bee.vx,bee.vy);
+  if (spd>topSpeed){ bee.vx=bee.vx/spd*topSpeed; bee.vy=bee.vy/spd*topSpeed; }
+  bee.x += bee.vx; bee.y += bee.vy;
+  bee.x = clamp(bee.x, 20, WORLD.w-20);
+  bee.y = clamp(bee.y, 20, WORLD.h-20);
+  if (spd>0.3) bee.angle = Math.atan2(bee.vy,bee.vx);
+  bee.wingPhase += 0.6 + spd*0.15;
+
+  Audio2.setBuzz(clamp(spd/topSpeed,0,1));
+
+  if (bee.invuln>0) bee.invuln -= dt*60;
+
+  // ----- combo decay -----
+  if (G.comboTimer>0){ G.comboTimer-=dt; if(G.comboTimer<=0){G.combo=1;} }
+
+  // ----- flowers: sipping & regen -----
+  for (const f of flowers) {
+    f.sway += dt*1.5;
+    if (f.nectar < f.max) { f.regen += dt; if (f.regen>6){ f.nectar++; f.regen=0; f.bloom=1;} }
+    const near = dist2(bee.x,bee.y,f.x,f.y) < (f.r+22)*(f.r+22);
+    if (near && f.nectar>0 && bee.nectar < bee.pouchCap) {
+      // sip
+      f._sipT = (f._sipT||0) + dt;
+      if (f._sipT > 0.35) {
+        f._sipT = 0;
+        f.nectar--;
+        bee.nectar++;
+        Audio2.sip();
+        burst(f.x,f.y,'#ffe27a',6,1.5,24);
+        if (!f.pollinated){ f.pollinated=true; G.flowersPollinated++;
+          floatText(f.x,f.y-20,'+pollinated','#9be59b');
+          G.pollen += 1; // small pollen reward for pollination
+        }
+        syncHUD();
+      }
+    } else { f._sipT=0; }
+  }
+
+  // ----- magnet: pull pollen -----
+  if (s.magnetR>0){
+    for (const p of pickups){
+      const d2=dist2(bee.x,bee.y,p.x,p.y);
+      if (d2 < s.magnetR*s.magnetR){
+        const d=Math.sqrt(d2)||1;
+        p.x += (bee.x-p.x)/d*3.5;
+        p.y += (bee.y-p.y)/d*3.5;
+      }
+    }
+  }
+  // collect pollen pickups
+  for (let i=pickups.length-1;i>=0;i--){
+    const p=pickups[i];
+    p.life-=dt;
+    p.y += Math.sin((p.life+p.seed)*4)*0.3;
+    if (p.life<=0){ pickups.splice(i,1); continue; }
+    if (dist2(bee.x,bee.y,p.x,p.y) < 26*26){
+      G.pollen += p.val;
+      Audio2.bonus();
+      floatText(p.x,p.y,'+'+p.val+'💰','#ffd54a');
+      pickups.splice(i,1);
+      syncHUD();
+    }
+  }
+
+  // ----- hive: deposit -----
+  if (dist2(bee.x,bee.y,hive.x,hive.y) < (hive.r+10)*(hive.r+10)) {
+    // regen at hive
+    bee.health = clamp(bee.health + 14*dt, 0, bee.maxHealth);
+    bee.energy = clamp(bee.energy + 20*dt, 0, bee.maxEnergy);
+    if (bee.nectar>0) {
+      const gained = bee.nectar * s.refine * G.combo;
+      G.honey += gained;
+      G.totalHoney += gained;
+      G.pollen += bee.nectar; // pollen earned on deposit too
+      // combo up for a full pouch
+      if (bee.nectar >= bee.pouchCap){ G.combo = Math.min(G.combo+1, 9); G.comboTimer=8; }
+      floatText(hive.x,hive.y-50,'+'+gained+'🍯','#ffd54a');
+      burst(hive.x,hive.y,'#ffd54a',16,3,40);
+      Audio2.deposit();
+      bee.nectar=0;
+      syncHUD();
+    }
+  }
+
+  // ----- enemies -----
+  enemySpawnTimer += dt;
+  const maxEnemies = 2 + Math.floor(G.day*0.8);
+  const spawnInterval = Math.max(3.5, 9 - G.day*0.5);
+  if (enemySpawnTimer > spawnInterval && enemies.length < maxEnemies) {
+    enemySpawnTimer = 0; spawnEnemy();
+  }
+  for (const e of enemies) {
+    const dB = Math.sqrt(dist2(e.x,e.y,bee.x,bee.y));
+    if (dB < e.detect) e.state='chase'; 
+    else if (e.state==='chase' && dB>e.detect*1.4) e.state='patrol';
+
+    let tx,ty;
+    if (e.state==='chase'){ tx=bee.x; ty=bee.y; }
+    else {
+      tx=e.target.x; ty=e.target.y;
+      if (dist2(e.x,e.y,tx,ty)<60*60){ e.target={x:rand(0,WORLD.w),y:rand(300,WORLD.h)}; }
+    }
+    const a = Math.atan2(ty-e.y, tx-e.x);
+    const sp = e.state==='chase'? e.speed*1.25 : e.speed*0.6;
+    e.vx = lerp(e.vx, Math.cos(a)*sp, 0.08);
+    e.vy = lerp(e.vy, Math.sin(a)*sp, 0.08);
+    e.x += e.vx; e.y += e.vy;
+    e.x = clamp(e.x,10,WORLD.w-10); e.y=clamp(e.y,10,WORLD.h-10);
+    e.wingPhase = (e.wingPhase||0)+0.8;
+    e.legPhase = (e.legPhase||0)+0.2;
+
+    // hit bee
+    if (bee.invuln<=0 && dB < e.r+12) {
+      const dmg = e.damage * s.damageMul;
+      bee.health -= dmg;
+      bee.invuln = 70;
+      G.shake = 14;
+      // knockback
+      const ka=Math.atan2(bee.y-e.y,bee.x-e.x);
+      bee.vx += Math.cos(ka)*6; bee.vy += Math.sin(ka)*6;
+      burst(bee.x,bee.y,'#ff5b6e',14,4,34);
+      floatText(bee.x,bee.y-24,'-'+Math.round(dmg),'#ff6b6b');
+      Audio2.hurt();
+      G.combo=1;
+      syncHUD();
+      if (bee.health<=0){ bee.health=0; gameOver('death'); return; }
+    }
+  }
+
+  // ----- particles -----
+  for (let i=particles.length-1;i>=0;i--){
+    const p=particles[i];
+    p.x+=p.vx; p.y+=p.vy; p.life-=dt*60;
+    if(!p.text){ p.vy+=0.05; }
+    if (p.life<=0) particles.splice(i,1);
+  }
+
+  // clouds drift
+  for (const c of clouds){ c.x += c.s; if (c.x-c.r>WORLD.w) c.x=-c.r; }
+
+  // toast timer
+  if (toastTimer>0){ toastTimer-=dt*60; if(toastTimer<=0) ui.toast.classList.remove('show'); }
+
+  // energy starvation: if 0 energy, slowly drain? Keep gentle—just no boost.
+  syncHUD();
+}
+
+// ---------- Rendering ----------
+let cam = {x:0,y:0};
+function draw() {
+  // camera follows bee, clamped
+  const tcx = clamp(bee.x - VIEW.w/2, 0, WORLD.w-VIEW.w);
+  const tcy = clamp(bee.y - VIEW.h/2, 0, WORLD.h-VIEW.h);
+  cam.x = lerp(cam.x, tcx, 0.12);
+  cam.y = lerp(cam.y, tcy, 0.12);
+  if (WORLD.w<VIEW.w) cam.x=(WORLD.w-VIEW.w)/2;
+  if (WORLD.h<VIEW.h) cam.y=(WORLD.h-VIEW.h)/2;
+
+  let sx=0, sy=0;
+  if (G.shake>0){ sx=rand(-G.shake,G.shake); sy=rand(-G.shake,G.shake); G.shake*=0.86; if(G.shake<0.5)G.shake=0; }
+
+  ctx.save();
+  ctx.translate(-cam.x+sx, -cam.y+sy);
+
+  // --- day/night sky tint ---
+  const t = G.dayTime/G.dayLength; // 0..1
+  drawSky(t);
+
+  // ground
+  drawGround(t);
+
+  // clouds (behind, parallax-ish but drawn in world)
+  for (const c of clouds){ drawCloud(c, t); }
+
+  // hive
+  drawHive(t);
+
+  // flowers
+  for (const f of flowers) drawFlower(f);
+
+  // pickups
+  for (const p of pickups) drawPickup(p);
+
+  // enemies
+  for (const e of enemies) e.kind==='wasp'?drawWasp(e):drawSpider(e);
+
+  // bee
+  drawBee();
+
+  // particles
+  for (const p of particles) drawParticle(p);
+
+  ctx.restore();
+
+  // --- screen-space HUD extras ---
+  drawMinimap();
+  drawDayClock(t);
+  drawVignette(t);
+}
+
+function drawSky(t) {
+  // gradient changes with day progress: morning→noon→dusk
+  let top, bot;
+  if (t<0.6){ // day
+    const k=t/0.6;
+    top = mix('#7ec8ff','#5ab0ff',k); bot = mix('#cdeeff','#bfe9ff',k);
+  } else { // dusk → night
+    const k=(t-0.6)/0.4;
+    top = mix('#5ab0ff','#27224e',k); bot = mix('#bfe9ff','#5a3b6e',k);
+  }
+  const g = ctx.createLinearGradient(0,0,0,WORLD.h);
+  g.addColorStop(0,top); g.addColorStop(1,bot);
+  ctx.fillStyle=g;
+  ctx.fillRect(0,0,WORLD.w,WORLD.h);
+  // sun
+  const sunX = lerp(WORLD.w*0.1, WORLD.w*0.9, t);
+  const sunY = 140 + Math.sin(t*Math.PI)* -80 + (t>0.6? (t-0.6)/0.4*260:0);
+  ctx.save();
+  ctx.globalAlpha = t<0.75?0.9:0.3;
+  const sg=ctx.createRadialGradient(sunX,sunY,4,sunX,sunY,90);
+  sg.addColorStop(0, t<0.6?'#fff7c2':'#ffb877');
+  sg.addColorStop(1,'rgba(255,247,194,0)');
+  ctx.fillStyle=sg; ctx.beginPath(); ctx.arc(sunX,sunY,90,0,7); ctx.fill();
+  ctx.fillStyle = t<0.6?'#fff3a0':'#ff9b5a';
+  ctx.beginPath(); ctx.arc(sunX,sunY,26,0,7); ctx.fill();
+  ctx.restore();
+}
+
+function drawGround(t) {
+  const gy = 250;
+  let g1 = t<0.6?'#86d36a':mix('#86d36a','#2c4d3a',(t-0.6)/0.4);
+  let g2 = t<0.6?'#5fb24c':mix('#5fb24c','#1d3527',(t-0.6)/0.4);
+  const g=ctx.createLinearGradient(0,gy,0,WORLD.h);
+  g.addColorStop(0,g1); g.addColorStop(1,g2);
+  ctx.fillStyle=g;
+  ctx.beginPath();
+  ctx.moveTo(0,gy);
+  for(let x=0;x<=WORLD.w;x+=120){ ctx.lineTo(x, gy + Math.sin(x*0.01)*14); }
+  ctx.lineTo(WORLD.w,WORLD.h); ctx.lineTo(0,WORLD.h); ctx.closePath(); ctx.fill();
+  // grass tufts
+  ctx.strokeStyle = t<0.6?'rgba(60,140,50,.5)':'rgba(30,70,40,.5)';
+  ctx.lineWidth=2;
+  for(let x=40;x<WORLD.w;x+=70){
+    const yy=gy+Math.sin(x*0.01)*14+6;
+    ctx.beginPath();
+    ctx.moveTo(x,yy); ctx.quadraticCurveTo(x-6,yy-16,x-10,yy-22);
+    ctx.moveTo(x,yy); ctx.quadraticCurveTo(x+6,yy-16,x+10,yy-22);
+    ctx.stroke();
+  }
+}
+
+function drawCloud(c, t) {
+  ctx.save();
+  ctx.globalAlpha = t<0.6?0.85:0.4;
+  ctx.fillStyle = t<0.6?'#ffffff':'#c9bce0';
+  ctx.beginPath();
+  ctx.arc(c.x,c.y,c.r,0,7);
+  ctx.arc(c.x+c.r*0.8,c.y+8,c.r*0.7,0,7);
+  ctx.arc(c.x-c.r*0.8,c.y+10,c.r*0.6,0,7);
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawHive(t) {
+  const {x,y}=hive;
+  // glow
+  ctx.save();
+  ctx.shadowColor='rgba(255,200,40,.6)'; ctx.shadowBlur=30;
+  // pole
+  ctx.fillStyle='#7a5230'; ctx.fillRect(x-6,y,12,180);
+  // hive body (stacked domes)
+  for(let i=0;i<4;i++){
+    ctx.fillStyle = i%2? '#e0a740':'#f0bd55';
+    ctx.beginPath();
+    ctx.ellipse(x, y+i*22-20, 50-i*6, 18, 0, Math.PI, 0);
+    ctx.fill();
+  }
+  ctx.fillStyle='#f0bd55';
+  ctx.beginPath(); ctx.ellipse(x,y-30,40,22,0,Math.PI,0); ctx.fill();
+  ctx.restore();
+  // entrance
+  ctx.fillStyle='#5a3c10';
+  ctx.beginPath(); ctx.ellipse(x,y+44,12,15,0,0,7); ctx.fill();
+  // deposit ring hint
+  ctx.strokeStyle='rgba(255,255,255,'+(0.25+0.15*Math.sin(performance.now()/300))+')';
+  ctx.lineWidth=3; ctx.setLineDash([10,10]);
+  ctx.beginPath(); ctx.arc(x,y,hive.r,0,7); ctx.stroke();
+  ctx.setLineDash([]);
+  // label
+  ctx.fillStyle='rgba(0,0,0,.5)'; ctx.font='bold 16px Trebuchet MS'; ctx.textAlign='center';
+  ctx.fillText('🏠 HIVE', x, y-58);
+}
+
+function drawFlower(f) {
+  const {x,y}=f;
+  const swayX = Math.sin(f.sway)*3;
+  // stem
+  ctx.strokeStyle='#3f8c34'; ctx.lineWidth=4;
+  ctx.beginPath(); ctx.moveTo(x,y+40); ctx.quadraticCurveTo(x+swayX,y+20,x+swayX,y); ctx.stroke();
+  const cx=x+swayX, cy=y;
+  const empty = f.nectar<=0;
+  ctx.save();
+  ctx.globalAlpha = empty?0.45:1;
+  // petals
+  for(let i=0;i<f.type.petals;i++){
+    const a=i/f.type.petals*Math.PI*2 + f.sway*0.1;
+    const px=cx+Math.cos(a)*f.r, py=cy+Math.sin(a)*f.r;
+    ctx.fillStyle=f.type.color;
+    ctx.beginPath(); ctx.ellipse(px,py,f.r*0.55,f.r*0.34,a,0,7); ctx.fill();
+  }
+  // center
+  ctx.fillStyle=f.type.center;
+  ctx.beginPath(); ctx.arc(cx,cy,f.r*0.45,0,7); ctx.fill();
+  ctx.restore();
+  // pollinated sparkle
+  if (f.pollinated){
+    ctx.fillStyle='rgba(255,255,255,.8)';
+    ctx.font='10px serif'; ctx.textAlign='center';
+    ctx.fillText('✦', cx+f.r*0.5, cy-f.r*0.5);
+  }
+  // nectar dots
+  for(let i=0;i<f.max;i++){
+    ctx.fillStyle = i<f.nectar? '#6fd0ff':'rgba(255,255,255,.25)';
+    ctx.beginPath(); ctx.arc(cx-f.max*2.5+i*5, cy+f.r+8, 2, 0,7); ctx.fill();
+  }
+}
+
+function drawPickup(p) {
+  ctx.save();
+  ctx.globalAlpha = p.life<8? p.life/8 : 1;
+  ctx.shadowColor='#ffd54a'; ctx.shadowBlur=10;
+  ctx.fillStyle='#ffd54a';
+  ctx.beginPath(); ctx.arc(p.x,p.y,6,0,7); ctx.fill();
+  ctx.restore();
+}
+
+function drawBee() {
+  ctx.save();
+  ctx.translate(bee.x,bee.y);
+  // shadow on ground
+  // flashing when invuln
+  if (bee.invuln>0 && Math.floor(bee.invuln/5)%2===0) ctx.globalAlpha=0.4;
+  ctx.rotate(bee.angle);
+  // wings
+  const wf = Math.sin(bee.wingPhase)*0.5;
+  ctx.fillStyle='rgba(255,255,255,.55)';
+  ctx.save(); ctx.scale(1,1+wf*0.4);
+  ctx.beginPath(); ctx.ellipse(-2,-12,9,5,-0.5,0,7); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(-2,12,9,5,0.5,0,7); ctx.fill();
+  ctx.restore();
+  // body
+  const grd=ctx.createLinearGradient(-14,0,14,0);
+  grd.addColorStop(0,'#ffcf3f'); grd.addColorStop(1,'#ffb300');
+  ctx.fillStyle=grd;
+  ctx.beginPath(); ctx.ellipse(0,0,16,11,0,0,7); ctx.fill();
+  // stripes
+  ctx.fillStyle='#3a2a00';
+  for(const sxp of [-6,0,6]){
+    ctx.beginPath(); ctx.ellipse(sxp,0,2.4,10,0,0,7); ctx.fill();
+  }
+  // head
+  ctx.fillStyle='#2a2000';
+  ctx.beginPath(); ctx.arc(14,0,7,0,7); ctx.fill();
+  // eye
+  ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(16,-2,2,0,7); ctx.fill();
+  // stinger
+  ctx.fillStyle='#2a2000';
+  ctx.beginPath(); ctx.moveTo(-16,0); ctx.lineTo(-22,-2); ctx.lineTo(-22,2); ctx.fill();
+  // boost flame
+  if (bee.boosting){
+    ctx.fillStyle='rgba(120,200,255,.7)';
+    ctx.beginPath(); ctx.moveTo(-18,0); ctx.lineTo(-30+rand(-3,3),-3); ctx.lineTo(-30+rand(-3,3),3); ctx.fill();
+  }
+  ctx.restore();
+
+  // pouch fill indicator above bee
+  if (bee.nectar>0){
+    ctx.fillStyle='rgba(0,0,0,.4)'; 
+    ctx.fillRect(bee.x-15, bee.y-26, 30, 5);
+    ctx.fillStyle='#6fd0ff';
+    ctx.fillRect(bee.x-15, bee.y-26, 30*bee.nectar/bee.pouchCap, 5);
+  }
+}
+
+function drawWasp(e) {
+  ctx.save(); ctx.translate(e.x,e.y);
+  ctx.rotate(Math.atan2(e.vy,e.vx));
+  // detection aura when chasing
+  if (e.state==='chase'){
+    ctx.fillStyle='rgba(255,40,60,.08)';
+    ctx.beginPath(); ctx.arc(0,0,e.r+10,0,7); ctx.fill();
+  }
+  // wings
+  const wf=Math.sin(e.wingPhase)*0.5;
+  ctx.fillStyle='rgba(220,230,255,.5)';
+  ctx.save(); ctx.scale(1,1+wf*0.4);
+  ctx.beginPath(); ctx.ellipse(-2,-10,8,4,-0.5,0,7); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(-2,10,8,4,0.5,0,7); ctx.fill();
+  ctx.restore();
+  // body
+  ctx.fillStyle='#ffcc00';
+  ctx.beginPath(); ctx.ellipse(0,0,15,9,0,0,7); ctx.fill();
+  ctx.fillStyle='#1a1a1a';
+  for(const sxp of [-7,-1,5]){ ctx.beginPath(); ctx.ellipse(sxp,0,2,8,0,0,7); ctx.fill(); }
+  // head + angry eyes
+  ctx.fillStyle='#1a1a1a'; ctx.beginPath(); ctx.arc(13,0,6,0,7); ctx.fill();
+  ctx.fillStyle='red'; ctx.beginPath(); ctx.arc(15,-2,1.6,0,7); ctx.fill();
+  // long stinger
+  ctx.strokeStyle='#1a1a1a'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(-15,0); ctx.lineTo(-24,0); ctx.stroke();
+  ctx.restore();
+}
+
+function drawSpider(e) {
+  ctx.save(); ctx.translate(e.x,e.y);
+  if (e.state==='chase'){
+    ctx.fillStyle='rgba(80,0,120,.10)';
+    ctx.beginPath(); ctx.arc(0,0,e.r+10,0,7); ctx.fill();
+  }
+  // legs
+  ctx.strokeStyle='#2a0030'; ctx.lineWidth=3;
+  const lp=Math.sin(e.legPhase)*3;
+  for(let i=0;i<4;i++){
+    const ang=(i/4)*Math.PI - Math.PI/2;
+    for(const side of [-1,1]){
+      const a=ang*side*0+ (i*0.5+0.4)*side;
+      const ex=Math.cos(a)* (e.r+10)*side*0;
+    }
+  }
+  for(let i=0;i<4;i++){
+    const baseA = 0.5 + i*0.45;
+    for (const s of [-1,1]){
+      const a = baseA*s;
+      ctx.beginPath();
+      ctx.moveTo(0,0);
+      const midX=Math.cos(a)*e.r*1.0, midY=Math.sin(a)*e.r*1.0*s/Math.abs(s);
+      ctx.quadraticCurveTo(Math.cos(a)*e.r* (s>0?1:1), s*(e.r*0.6),
+                           Math.cos(a)*(e.r+12), s*(e.r+8)+lp*s);
+      ctx.stroke();
+    }
+  }
+  // body
+  ctx.fillStyle='#3a1240';
+  ctx.beginPath(); ctx.arc(-4,0,e.r*0.7,0,7); ctx.fill();
+  ctx.fillStyle='#22001a';
+  ctx.beginPath(); ctx.arc(e.r*0.5,0,e.r*0.55,0,7); ctx.fill();
+  // eyes
+  ctx.fillStyle='#ff4040';
+  ctx.beginPath(); ctx.arc(e.r*0.8,-3,2,0,7); ctx.fill();
+  ctx.beginPath(); ctx.arc(e.r*0.8,3,2,0,7); ctx.fill();
+  ctx.restore();
+}
+
+function drawParticle(p) {
+  if (p.text){
+    ctx.save();
+    ctx.globalAlpha=clamp(p.life/p.max,0,1);
+    ctx.fillStyle=p.color; ctx.font='bold 15px Trebuchet MS'; ctx.textAlign='center';
+    ctx.fillText(p.text,p.x,p.y);
+    ctx.restore();
+  } else {
+    ctx.save();
+    ctx.globalAlpha=clamp(p.life/p.max,0,1);
+    ctx.fillStyle=p.color;
+    ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,7); ctx.fill();
+    ctx.restore();
+  }
+}
+
+// minimap (screen space)
+function drawMinimap() {
+  const mw=150, mh=mw*WORLD.h/WORLD.w;
+  const px=VIEW.w-mw-12, py=VIEW.h-mh-12;
+  ctx.save();
+  ctx.globalAlpha=0.85;
+  ctx.fillStyle='rgba(10,14,22,.6)';
+  ctx.fillRect(px,py,mw,mh);
+  ctx.strokeStyle='rgba(255,255,255,.2)'; ctx.strokeRect(px,py,mw,mh);
+  const sx=mw/WORLD.w, sy=mh/WORLD.h;
+  // flowers
+  for(const f of flowers){ ctx.fillStyle=f.nectar>0?'#ff8fc0':'rgba(255,255,255,.25)';
+    ctx.fillRect(px+f.x*sx-1,py+f.y*sy-1,2,2); }
+  // hive
+  ctx.fillStyle='#ffd54a'; ctx.fillRect(px+hive.x*sx-3,py+hive.y*sy-3,6,6);
+  // enemies
+  for(const e of enemies){ ctx.fillStyle=e.kind==='wasp'?'#ff3b3b':'#b248ff';
+    ctx.fillRect(px+e.x*sx-2,py+e.y*sy-2,3,3); }
+  // bee
+  ctx.fillStyle='#fff'; ctx.fillRect(px+bee.x*sx-2,py+bee.y*sy-2,4,4);
+  ctx.restore();
+}
+
+function drawDayClock(t) {
+  // top-center progress bar of the day
+  const w=Math.min(360,VIEW.w-360), h=8;
+  const x=VIEW.w/2 - w/2, y=14;
+  ctx.save();
+  ctx.fillStyle='rgba(0,0,0,.3)'; roundRect(x,y,w,h,4); ctx.fill();
+  const col = t<0.6? '#ffe27a' : '#9a7bff';
+  ctx.fillStyle=col; roundRect(x,y,w*t,h,4); ctx.fill();
+  ctx.fillStyle='#fff'; ctx.font='bold 11px Trebuchet MS'; ctx.textAlign='center';
+  ctx.fillText(t<0.6?'☀️ Daytime':'🌙 Dusk — head home!', VIEW.w/2, y+22);
+  ctx.restore();
+}
+
+function drawVignette(t) {
+  if (t<0.6) return;
+  ctx.save();
+  ctx.globalAlpha=(t-0.6)/0.4*0.5;
+  const g=ctx.createRadialGradient(VIEW.w/2,VIEW.h/2,VIEW.h*0.3,VIEW.w/2,VIEW.h/2,VIEW.h*0.75);
+  g.addColorStop(0,'rgba(0,0,20,0)'); g.addColorStop(1,'rgba(0,0,30,1)');
+  ctx.fillStyle=g; ctx.fillRect(0,0,VIEW.w,VIEW.h);
+  ctx.restore();
+}
+
+function roundRect(x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+}
+
+// color mixing helpers
+function hex(c){ c=c.replace('#',''); return [parseInt(c.slice(0,2),16),parseInt(c.slice(2,4),16),parseInt(c.slice(4,6),16)]; }
+function mix(a,b,t){ const A=hex(a),B=hex(b); return `rgb(${A.map((v,i)=>Math.round(lerp(v,B[i],clamp(t,0,1)))).join(',')})`; }
+
+// occasionally spawn pollen pickups near flowers (reward exploration)
+setInterval(()=>{
+  if (G.state!=='play') return;
+  if (pickups.length<6 && flowers.length){
+    const f=flowers[randi(0,flowers.length-1)];
+    pickups.push({x:f.x+rand(-30,30), y:f.y+rand(-30,30), val:randi(2,4), life:18, seed:rand(0,9)});
+  }
+}, 2600);
+
+// ---------- Main loop ----------
+let last=performance.now();
+function loop(now){
+  let dt=(now-last)/1000; last=now;
+  if (dt>0.05) dt=0.05; // clamp
+  update(dt);
+  draw();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+// ---------- Menu wiring ----------
+el('startBtn').onclick = ()=>{ el('start').classList.add('hidden'); startDay(true); syncHUD(); };
+el('nextDayBtn').onclick = ()=>{ el('shop').classList.add('hidden'); startDay(false); syncHUD(); };
+el('restartBtn').onclick = ()=>{ el('over').classList.add('hidden'); startDay(true); syncHUD(); };
+el('mute').onclick = ()=>{ const m=Audio2.toggleMute(); el('mute').textContent=m?'🔇':'🔊'; };
+
+// allow Enter / Space on overlays
+window.addEventListener('keydown', e=>{
+  if (e.key==='Enter'){
+    if (G.state==='start') el('startBtn').click();
+    else if (G.state==='shop') el('nextDayBtn').click();
+    else if (G.state==='over') el('restartBtn').click();
+  }
+});
+
+syncHUD();
+</script>
+</body>
+</html>
