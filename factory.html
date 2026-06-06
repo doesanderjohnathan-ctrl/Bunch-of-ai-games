@@ -338,7 +338,7 @@ const RESEARCH_NODES = [
   {id:'chemistry',     name:'Chemistry',      icon:'⚗️', cost:8,  req:[],                            desc:'Unlocks Oil Refinery & Plastic Plant', unlocks:['refinery','plastic-plant'], x:3,y:0},
   // T1
   {id:'metallurgy',    name:'Metallurgy',     icon:'⚙️', cost:15, req:['basic-mining'],             desc:'Unlocks Steel Mill & Copper Smelter', unlocks:['steel-mill','copper-smelter'], x:0,y:1},
-  {id:'glassworks',    name:'Glassworks',     icon:'🪟', cost:12, req:['sand-quarry','water-works'],desc:'Unlocks Glass Foundry',        unlocks:['glass-foundry'],        x:1,y:1},
+  {id:'glassworks',    name:'Glassworks',     icon:'🪟', cost:12, req:['basic-mining','water-works'],desc:'Unlocks Glass Foundry',       unlocks:['glass-foundry'],        x:1,y:1},
   {id:'construction',  name:'Construction',   icon:'🧱', cost:14, req:['water-works'],              desc:'Unlocks Concrete Mixer',      unlocks:['concrete-mixer'],       x:2,y:1},
   {id:'fast-belts',    name:'Fast Belts',     icon:'⚡', cost:20, req:['logistics'],               desc:'+50% belt speed',             effect:'beltSpeed',    val:.5,  x:3,y:1},
   // T2
@@ -693,7 +693,7 @@ function buildPalette(){
       const ok=isBuildingUnlocked(type);
       const lockNode=def.locked?RESEARCH_NODES.find(n=>n.id===def.locked):null;
       const el=document.createElement('div');
-      el.className='pi'+(ok?'',' locked').replace(',',' ')+(selectedPalette===type?' active':'');
+      el.className='pi'+(ok?'':' locked')+(selectedPalette===type?' active':'');
       el.id='pi-'+type;
       el.innerHTML=`<span class="pi-icon">${def.icon}</span>
         <div class="pi-info">
@@ -713,7 +713,7 @@ function buildPalette(){
     Object.entries(BUILDING_DEFS).forEach(([type,def])=>{
       const ok=isBuildingUnlocked(type);
       const el=document.createElement('div');
-      el.className='mob-pi'+(ok?'',' locked').replace(',',' ')+(selectedPalette===type?' active':'');
+      el.className='mob-pi'+(ok?'':' locked')+(selectedPalette===type?' active':'');
       el.innerHTML=`<div class="m-icon">${def.icon}</div><div class="m-name">${def.name}</div><div class="m-cost">${ok?'$'+def.cost:'🔒'}</div>`;
       if(ok) el.onclick=()=>{selectPaletteItem(type);closeDrawer();};
       mgrid.appendChild(el);
@@ -1408,37 +1408,46 @@ function buildStarterLayout(){
   camX=canvas.width/2-5*cs(); camY=canvas.height/2-5*cs();
   const savedMoney=money, savedId=nextId;
 
-  // Iron → Furnace → Forge → Export
+  // ── Row 2: Iron Mine → Furnace → Forge → Export ──────────────
   freePlaceBuilding(2,2,'iron-mine');
-  freePlaceBelt(3,2,'right');freePlaceBelt(4,2,'right');
+  freePlaceBelt(3,2,'right'); freePlaceBelt(4,2,'right');
   freePlaceBuilding(5,2,'furnace');
-  freePlaceBelt(6,2,'right');freePlaceBelt(7,2,'right');
+  freePlaceBelt(6,2,'right'); freePlaceBelt(7,2,'right');
   freePlaceBuilding(8,2,'forge');
-  freePlaceBelt(9,2,'right');freePlaceBelt(10,2,'right');
+  freePlaceBelt(9,2,'right'); freePlaceBelt(10,2,'right');
   freePlaceBuilding(11,2,'export');
 
-  // Wood → Sawmill → (planks right) + tools from forge (down)
+  // ── Row 5: Tree Farm → Sawmill (planks flow right) ───────────
   freePlaceBuilding(2,5,'tree-farm');
-  freePlaceBelt(3,5,'right');freePlaceBelt(4,5,'right');
+  freePlaceBelt(3,5,'right'); freePlaceBelt(4,5,'right');
   freePlaceBuilding(5,5,'sawmill');
-  freePlaceBelt(6,5,'right');freePlaceBelt(7,5,'right');
-  freePlaceBelt(8,3,'down');freePlaceBelt(8,4,'down');
+  freePlaceBelt(6,5,'right'); freePlaceBelt(7,5,'right');
+
+  // ── Forge tools drop down (col 8, rows 3-4) into Assembler ───
+  freePlaceBelt(8,3,'down'); freePlaceBelt(8,4,'down');
+
+  // ── Assembler at (8,5): gets tools from above, planks from left
   freePlaceBuilding(8,5,'assembler');
-  freePlaceBelt(9,5,'right');freePlaceBelt(10,5,'right');
-  freePlaceBuilding(11,5,'export');
 
-  // Assembler → Lab (machines down)
-  freePlaceBelt(8,6,'down');freePlaceBelt(8,7,'down');
-  freePlaceBuilding(8,8,'lab');
+  // ── Assembler output (machines) goes right → splitter ────────
+  freePlaceBelt(9,5,'right');
+  freePlaceBuilding(10,5,'splitter');   // splits machines: right→export, down→lab & storage
 
-  // Storage Depot for order fulfillment (connected to forge output fork)
-  freePlaceBelt(9,2,'down');freePlaceBelt(9,3,'down');freePlaceBelt(9,4,'down');
-  freePlaceBuilding(9,5,'storage'); // actually put storage elsewhere
-  // Reset that — put a storage connected to assembler right output fork
-  // Use a splitter to split assembler output: one to export, one to storage
-  // Keep it simple: add coal mine for steel mill demo
-  freePlaceBuilding(2,9,'coal-mine');
+  // Right branch: Export Dock
+  freePlaceBelt(11,5,'right');
+  freePlaceBuilding(12,5,'export');
 
+  // Down branch from splitter: one belt to lab, one to storage
+  freePlaceBelt(10,6,'down');
+  freePlaceBuilding(10,7,'lab');        // Lab consumes machines → research points
+
+  freePlaceBelt(10,8,'down');           // another machine item continues down
+  freePlaceBuilding(10,9,'storage');    // Storage Depot feeds the order stockpile
+
+  // ── Coal Mine (for future Steel Mill use) ────────────────────
+  freePlaceBuilding(2,8,'coal-mine');
+
+  // ── Restore money & bump nextId safely ───────────────────────
   money=savedMoney;
   nextId=savedId+buildings.length+belts.length;
 
