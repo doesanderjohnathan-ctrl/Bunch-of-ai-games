@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rube Goldberg Machine Simulator</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Main Menu -->
+        <div id="menu-screen" class="screen active">
+            <div class="menu-container">
+                <h1 class="game-title">Rube Goldberg<br>Machine</h1>
+                <div class="menu-buttons">
+                    <button class="btn btn-primary" onclick="game.showLevelSelect()">Play Levels</button>
+                    <button class="btn btn-secondary" onclick="game.startDesignMode()">Design Mode</button>
+                    <button class="btn btn-accent" onclick="game.showTutorial()">How to Play</button>
+                </div>
+                <div class="theme-selector">
+                    <label>Theme:</label>
+                    <select id="menu-theme" onchange="game.setTheme(this.value)">
+                        <option value="modern">Modern Lab</option>
+                        <option value="space">Space Station</option>
+                        <option value="medieval">Medieval Castle</option>
+                        <option value="factory">Steampunk Factory</option>
+                        <option value="neon">Neon Arcade</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Level Select -->
+        <div id="level-select-screen" class="screen">
+            <div class="header">
+                <button class="btn btn-small" onclick="game.showMenu()">← Back</button>
+                <h2>Select Level</h2>
+                <div class="spacer"></div>
+            </div>
+            <div class="level-grid" id="level-grid"></div>
+        </div>
+
+        <!-- Game Screen -->
+        <div id="game-screen" class="screen">
+            <div class="header">
+                <button class="btn btn-small" onclick="game.showMenu()">← Menu</button>
+                <div class="level-info">
+                    <span id="level-name">Level 1</span>
+                    <span id="level-status" class="status-badge">Ready</span>
+                </div>
+                <div class="header-right">
+                    <select id="game-theme" onchange="game.setTheme(this.value)">
+                        <option value="modern">Modern</option>
+                        <option value="space">Space</option>
+                        <option value="medieval">Medieval</option>
+                        <option value="factory">Factory</option>
+                        <option value="neon">Neon</option>
+                    </select>
+                    <button class="btn btn-small" onclick="game.togglePause()" id="pause-btn">Pause</button>
+                </div>
+            </div>
+            <div class="game-area">
+                <canvas id="sim-canvas"></canvas>
+                <div class="game-overlay" id="game-overlay"></div>
+                <div class="guide-overlay" id="guide-overlay">
+                    <div class="guide-arrow" id="guide-arrow"></div>
+                    <div class="guide-text" id="guide-text">Press Start to drop the ball!</div>
+                    <button class="btn btn-small" onclick="game.hideGuide()">Got it</button>
+                </div>
+            </div>
+            <div class="controls-bar">
+                <button class="btn btn-primary" onclick="game.startSimulation()" id="play-btn">▶ Start</button>
+                <button class="btn btn-secondary" onclick="game.resetSimulation()">↺ Reset</button>
+                <button class="btn btn-secondary" onclick="game.stepFrame()">⏭ Step</button>
+                    <div class="spacer"></div>
+                    <button class="btn btn-small" onclick="game.toggleSlowMo()" id="slowmo-btn">Slow Mo</button>
+            </div>
+        </div>
+
+        <!-- Design Mode -->
+        <div id="design-screen" class="screen">
+            <div class="header">
+                <button class="btn btn-small" onclick="game.showMenu()">← Menu</button>
+                <h2>Design Mode</h2>
+                <div class="header-right">
+                    <select id="design-theme" onchange="game.setTheme(this.value)">
+                        <option value="modern">Modern</option>
+                        <option value="space">Space</option>
+                        <option value="medieval">Medieval</option>
+                        <option value="factory">Factory</option>
+                        <option value="neon">Neon</option>
+                    </select>
+                    <button class="btn btn-small" onclick="game.togglePause()" id="design-pause-btn">Pause</button>
+                </div>
+            </div>
+            <div class="design-area">
+                <div class="palette" id="palette">
+                    <h3>Elements</h3>
+                    <div class="palette-items">
+                        <div class="palette-item" data-type="ball" title="Ball">
+                            <div class="item-preview ball-preview"></div>
+                            <span>Ball</span>
+                        </div>
+                        <div class="palette-item" data-type="box" title="Box">
+                            <div class="item-preview box-preview"></div>
+                            <span>Box</span>
+                        </div>
+                        <div class="palette-item" data-type="domino" title="Domino">
+                            <div class="item-preview domino-preview"></div>
+                            <span>Domino</span>
+                        </div>
+                        <div class="palette-item" data-type="ramp" title="Ramp">
+                            <div class="item-preview ramp-preview"></div>
+                            <span>Ramp</span>
+                        </div>
+                        <div class="palette-item" data-type="platform" title="Platform">
+                            <div class="item-preview platform-preview"></div>
+                            <span>Platform</span>
+                        </div>
+                        <div class="palette-item" data-type="spring" title="Spring">
+                            <div class="item-preview spring-preview"></div>
+                            <span>Spring</span>
+                        </div>
+                        <div class="palette-item" data-type="fan" title="Fan">
+                            <div class="item-preview fan-preview"></div>
+                            <span>Fan</span>
+                        </div>
+                        <div class="palette-item" data-type="seesaw" title="Seesaw">
+                            <div class="item-preview seesaw-preview"></div>
+                            <span>Seesaw</span>
+                        </div>
+                        <div class="palette-item" data-type="pendulum" title="Pendulum">
+                            <div class="item-preview pendulum-preview"></div>
+                            <span>Pendulum</span>
+                        </div>
+                        <div class="palette-item" data-type="cannon" title="Cannon">
+                            <div class="item-preview cannon-preview"></div>
+                            <span>Cannon</span>
+                        </div>
+                        <div class="palette-item" data-type="conveyor" title="Conveyor">
+                            <div class="item-preview conveyor-preview"></div>
+                            <span>Conveyor</span>
+                        </div>
+                        <div class="palette-item" data-type="bucket" title="Bucket">
+                            <div class="item-preview bucket-preview"></div>
+                            <span>Bucket</span>
+                        </div>
+                        <div class="palette-item" data-type="teleporter" title="Teleporter">
+                            <div class="item-preview teleporter-preview"></div>
+                            <span>Teleporter</span>
+                        </div>
+                        <div class="palette-item" data-type="bouncer" title="Bouncer">
+                            <div class="item-preview bouncer-preview"></div>
+                            <span>Bouncer</span>
+                        </div>
+                    </div>
+                    <div class="palette-actions">
+                        <button class="btn btn-small btn-delete" id="delete-mode-btn" onclick="game.toggleDeleteMode()">🗑 Delete Mode</button>
+                        <button class="btn btn-small" onclick="game.clearDesign()">Clear All</button>
+                    </div>
+                </div>
+                <div class="canvas-area">
+                    <canvas id="design-canvas"></canvas>
+                    <div class="design-hint" id="design-hint">Click an element to select, then click on canvas to place. Right-click to remove.</div>
+                </div>
+                <div class="properties-panel" id="properties-panel">
+                    <h3>Properties</h3>
+                    <div id="prop-content">
+                        <p class="no-selection">Select an element to edit properties</p>
+                    </div>
+                </div>
+            </div>
+            <div class="controls-bar">
+                <button class="btn btn-primary" onclick="game.testDesign()">▶ Test</button>
+                <button class="btn btn-secondary" onclick="game.resetDesign()">↺ Reset</button>
+                <div class="spacer"></div>
+                <button class="btn btn-secondary" onclick="game.saveDesign()">💾 Save</button>
+                <button class="btn btn-secondary" onclick="game.loadDesign()">📂 Load</button>
+                <button class="btn btn-accent" onclick="game.exportDesign()">Export JSON</button>
+                <input type="file" id="load-file" style="display:none" accept=".json">
+            </div>
+        </div>
+
+        <!-- Tutorial Modal -->
+        <div id="tutorial-modal" class="modal">
+            <div class="modal-content">
+                <h2>How to Play</h2>
+                <div class="tutorial-content">
+                    <div class="tutorial-section">
+                        <h3>🎮 Levels</h3>
+                        <p>Complete each level by triggering the chain reaction. Start the simulation and watch the physics unfold!</p>
+                    </div>
+                    <div class="tutorial-section">
+                        <h3>🛠 Design Mode</h3>
+                        <p>Build your own Rube Goldberg machines from scratch. Select elements from the left panel, place them on the canvas, and test your creation.</p>
+                        <ul>
+                            <li><strong>Left Click:</strong> Place selected element</li>
+                            <li><strong>Right Click:</strong> Remove element</li>
+                            <li><strong>Drag:</strong> Move existing elements (when not simulating)</li>
+                            <li><strong>Properties:</strong> Select an element to edit rotation, size, and more</li>
+                        </ul>
+                    </div>
+                    <div class="tutorial-section">
+                        <h3>⚙ Controls</h3>
+                        <p>Use Start/Reset to control the simulation. Slow Mo lets you watch in detail. Switch themes anytime for a different visual style!</p>
+                    </div>
+                </div>
+                <button class="btn btn-primary" onclick="game.hideTutorial()">Got it!</button>
+            </div>
+        </div>
+
+        <!-- Win Modal -->
+        <div id="win-modal" class="modal">
+            <div class="modal-content">
+                <h2>🎉 Level Complete!</h2>
+                <p id="win-message">Great chain reaction!</p>
+                <div class="win-stats" id="win-stats"></div>
+                <div class="modal-buttons">
+                    <button class="btn btn-secondary" onclick="game.resetSimulation(); game.hideWin()">Replay</button>
+                    <button class="btn btn-primary" onclick="game.nextLevel(); game.hideWin()">Next Level →</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="matter.min.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>
