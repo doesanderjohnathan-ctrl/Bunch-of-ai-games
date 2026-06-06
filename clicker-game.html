@@ -293,6 +293,7 @@ function getUpgradeCost(){return Math.floor(50*Math.pow(1.45,upgradeLevel))}
 let mineEnergy=10;const MINE_MAX=10;let lastETick=Date.now();const E_REGEN=45000;
 let twCharges=0;const TW_MAX=3;let lastWTick=Date.now();const W_REGEN=180000;
 let goldenCD=0;
+let goldenWindowEnd=0; // when the 5s clickable window expires
 // Rocks
 let rocks=[];const ROCK_TIERS=['🪨','🥉','💎','👑','💫'];const ROCK_NAMES=['Stone','Bronze','Crystal','Crown','Star'];
 let rockDispenserCD=0;const ROCK_DISP_CD=30000;
@@ -388,7 +389,7 @@ const hackEffects={
   overdrive:{desc:'Overdrive also gives 30s of 2× clicks',applied:false},
   dark_matter:{desc:'Dark Matter bonus per 25 upgrades instead of 50',applied:false},
   computer:{desc:'META-HACK: All other hack bonuses boosted by +50%!',applied:false},
-  golden_button:{desc:'Golden Button cooldown halved',applied:false},
+  golden_button:{desc:'Golden Button cooldown halved (2.5s)',applied:false},
   universal_stats:{desc:'Stat upgrade costs -30%',applied:false},
   rock_forge:{desc:'Dispenser gives T2 rocks',applied:false},
   quantum_doubler:{desc:'Doubler chance → 20%',applied:false},
@@ -415,7 +416,7 @@ const widgets=[
   {id:'shield_wall',name:'🛡️ Shield Wall',icon:'🛡️',desc:'Passive: mine cave-ins only take 25% of loot instead of 50%.',costLabel:'750K',unlockAt:750000,type:'passive',unlocked:false},
   {id:'computer',name:'💻 Computer',icon:'💻',desc:'Hack terminal! Enter widget UUIDs for permanent boosts.',costLabel:'1M',unlockAt:1000000,type:'minigame',cooldown:0,unlocked:false,cooldownUntil:0},
   {id:'chain_react',name:'⛓️ Chain React',icon:'⛓️',desc:'Each echo click has a 15% chance to trigger ANOTHER echo!',costLabel:'1.5M',unlockAt:1500000,type:'passive',unlocked:false},
-  {id:'golden_button',name:'🟡 Golden Button',icon:'🟡',desc:'A 2nd button! Grants 100× click value. 10s cooldown.',costLabel:'2.5M',unlockAt:2500000,type:'passive',unlocked:false},
+  {id:'golden_button',name:'🟡 Golden Button',icon:'🟡',desc:'A 2nd button! 100× click value. 5s spam window → 5s cooldown.',costLabel:'2.5M',unlockAt:2500000,type:'passive',unlocked:false},
   {id:'universal_stats',name:'📊 Universal Stats',icon:'📊',desc:'Global stat upgrades panel! CPS, momentum, luck & more.',costLabel:'5M',unlockAt:5000000,type:'minigame',cooldown:0,unlocked:false,cooldownUntil:0},
   {id:'rock_forge',name:'🪨 Rock Forge',icon:'🪨',desc:'Dispense, merge & sell rocks! Rocks from mines auto-collect.',costLabel:'10M',unlockAt:10000000,type:'minigame',cooldown:0,unlocked:false,cooldownUntil:0},
   {id:'overdrive',name:'🔋 Overdrive',icon:'🔋',desc:'Activate: ALL cooldowns reset instantly! 300s CD.',costLabel:'15M',unlockAt:15000000,type:'active',cooldown:300,unlocked:false,cooldownUntil:0},
@@ -497,16 +498,29 @@ bigBtn.addEventListener('pointerup',stopH);bigBtn.addEventListener('pointerleave
 
 // Golden Button
 goldenBtn.addEventListener('click',e=>{
-  e.preventDefault();if(goldenCD>Date.now())return;
-  const gp=100*(1+statLevels.golden_power*0.5);
-  const val=Math.floor(getEffectiveClickValue()*gp);
-  score+=val;totalClicks+=val;spawnFloat(val);scoreTimestamps.push({time:Date.now(),amount:val});
-  const cd=isHacked('golden_button')?5000:10000;
-  goldenCD=Date.now()+cd;
-  discoveryCounts.golden_presses++;if(discoveryCounts.golden_presses>=50)tryDiscover('golden_button','50 golden presses — the button reveals the code engraved beneath it!');
-  goldenBtn.classList.add('pressed');setTimeout(()=>goldenBtn.classList.remove('pressed'),100);
-  checkWin();updateUI();
+  e.preventDefault();
+  const now=Date.now();
+  if(goldenCD>now)return; // on cooldown
+  // Start clickable window if not already active
+  if(goldenWindowEnd<=now)goldenWindowEnd=now+5000;
+  // If still within window, do the click
+  if(now<=goldenWindowEnd){
+    const gp=100*(1+statLevels.golden_power*0.5);
+    const val=Math.floor(getEffectiveClickValue()*gp);
+    score+=val;totalClicks+=val;spawnFloat(val);scoreTimestamps.push({time:Date.now(),amount:val});
+    discoveryCounts.golden_presses++;if(discoveryCounts.golden_presses>=50)tryDiscover('golden_button','50 golden presses — the button reveals the code engraved beneath it!');
+    goldenBtn.classList.add('pressed');setTimeout(()=>goldenBtn.classList.remove('pressed'),100);
+    checkWin();updateUI();
+  }
 });
+// When the 5s window expires, start the cooldown
+setInterval(()=>{
+  const now=Date.now();
+  if(goldenWindowEnd>0&&now>goldenWindowEnd&&goldenCD<=now){
+    const cd=isHacked('golden_button')?2500:5000;
+    goldenCD=now+cd;goldenWindowEnd=0;
+  }
+},100);
 
 function spawnFloat(v){const el=document.createElement('div');el.className='click-float';el.textContent='+'+fmt(v);const r=bigBtn.getBoundingClientRect();el.style.left=(r.width/2+(Math.random()-.5)*80)+'px';el.style.top=(r.height/2-20)+'px';bigBtn.parentElement.appendChild(el);el.addEventListener('animationend',()=>el.remove());}
 function spawnEcho(v){const el=document.createElement('div');el.className='click-float';el.textContent='👻+'+fmt(v);el.style.color='#c084fc';const r=bigBtn.getBoundingClientRect();el.style.left=(r.width/2+(Math.random()-.5)*80)+'px';el.style.top=(r.height/2+10)+'px';bigBtn.parentElement.appendChild(el);el.addEventListener('animationend',()=>el.remove());}
@@ -586,7 +600,7 @@ function renderWidgets(force){
     if(can&&!w.unlocked)card.addEventListener('click',()=>{w.unlocked=true;showFlash(w.name);_wHash='';renderWidgets(true);});
     widgetList.appendChild(card);
   });
-  const gb=widgets.find(w=>w.id==='golden_button');goldenBtn.classList.toggle('show',gb&&gb.unlocked);goldenBtn.disabled=goldenCD>Date.now();
+  const gb=widgets.find(w=>w.id==='golden_button');goldenBtn.classList.toggle('show',gb&&gb.unlocked);goldenBtn.disabled=goldenCD>Date.now()&&goldenWindowEnd<=Date.now();
   document.querySelectorAll('[data-act]').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();activateWidget(b.dataset.act);}));
 }
 
@@ -671,7 +685,17 @@ function calcCPS(){const n=Date.now();clickTimestamps=clickTimestamps.filter(t=>
   // Computer self-hack discovery at 5 hacked widgets
   const hc=Object.keys(hackedWidgets).filter(k=>k!=='computer').length;if(hc>=5)tryDiscover('computer','5 widgets hacked — the computer trusts you with its own source code.');
 }
-function updateUI(){scoreDisplay.textContent=fmtFull(score);clickPowerLabel.textContent=fmtFull(getEffectiveClickValue());const pct=Math.min(score/GOAL*100,100);goalBar.style.width=pct+'%';$('goalLabel').textContent=pct.toFixed(3)+'% — GOAL: 100B';goldenBtn.disabled=goldenCD>Date.now();$('totalEarnedDisplay').textContent=fmt(totalClicks);}
+function updateUI(){
+  scoreDisplay.textContent=fmtFull(score);clickPowerLabel.textContent=fmtFull(getEffectiveClickValue());
+  const pct=Math.min(score/GOAL*100,100);goalBar.style.width=pct+'%';$('goalLabel').textContent=pct.toFixed(3)+'% — GOAL: 100B';
+  $('totalEarnedDisplay').textContent=fmt(totalClicks);
+  // Golden button state
+  const now=Date.now();const onCD=goldenCD>now;const inWindow=goldenWindowEnd>now;
+  goldenBtn.disabled=onCD;
+  if(onCD){const s=((goldenCD-now)/1000).toFixed(1);goldenBtn.innerHTML='⏳<br>'+s+'s';}
+  else if(inWindow){const s=((goldenWindowEnd-now)/1000).toFixed(1);goldenBtn.innerHTML='🟡<br>'+s+'s';}
+  else{goldenBtn.innerHTML='🟡<br>GOLD';}
+}
 // Auto-unlock: every tick, check if any widgets should be unlocked
 // Check for widgets that should be unlockable — if they've been qualifying for 2+ seconds, auto-unlock as safety net
 let _unlockableTimers={};
@@ -1109,7 +1133,7 @@ if(w.id==='click_frenzy'){w.intervalRef=setInterval(()=>{if(Date.now()>w.activeU
 updateUI();if(won){/* already won — don't replay cutscene, just allow continued play */}}catch(e){console.error(e);}}
 setInterval(saveGame,3000);
 
-function resetGame(){$('endCutscene').style.display='none';score=0;totalClicks=0;rawClicks=0;clickValue=1;won=false;upgradeLevel=0;upgradePanelUnlocked=false;gameStartTime=Date.now();mineEnergy=MINE_MAX;lastETick=Date.now();twCharges=0;lastWTick=Date.now();goldenCD=0;rocks=[];rockDispenserCD=0;statLevels={cps_mult:0,momentum_boost:0,mine_luck:0,echo_boost:0,golden_power:0};hackedWidgets={};discoveredUUIDs={};discoveryCounts={auto_pump_runs:0,maze_wins:0,combo_15_seen:false,mine_jackpots:0,echo_count:0,momentum_earned:0,spin_10x:false,warps_session:0,golden_touch_earned:0,supernova_count:0,hacked_count:0,golden_presses:0,total_stat_levels:0,forged_t4:false,doubler_triggers:0,auto_dig_count:0,hold_start:0,hold_discovered:false,frenzy_count:0,cavein_count:0,chain_echo:false,overdrive_count:0};
+function resetGame(){$('endCutscene').style.display='none';score=0;totalClicks=0;rawClicks=0;clickValue=1;won=false;upgradeLevel=0;upgradePanelUnlocked=false;gameStartTime=Date.now();mineEnergy=MINE_MAX;lastETick=Date.now();twCharges=0;lastWTick=Date.now();goldenCD=0;goldenWindowEnd=0;rocks=[];rockDispenserCD=0;statLevels={cps_mult:0,momentum_boost:0,mine_luck:0,echo_boost:0,golden_power:0};hackedWidgets={};discoveredUUIDs={};discoveryCounts={auto_pump_runs:0,maze_wins:0,combo_15_seen:false,mine_jackpots:0,echo_count:0,momentum_earned:0,spin_10x:false,warps_session:0,golden_touch_earned:0,supernova_count:0,hacked_count:0,golden_presses:0,total_stat_levels:0,forged_t4:false,doubler_triggers:0,auto_dig_count:0,hold_start:0,hold_discovered:false,frenzy_count:0,cavein_count:0,chain_echo:false,overdrive_count:0};
 widgets.forEach(w=>{w.unlocked=false;if(w.intervalRef)clearInterval(w.intervalRef);w.intervalRef=null;w.activeUntil=0;w.cooldownUntil=0;if(w.spinMult!==undefined){w.spinMult=1;w.spinLeft=0;}});
 localStorage.removeItem('widgetClicker');winOverlay.classList.remove('show');updateUI();renderWidgets();renderUpgrades();}
 
@@ -1128,5 +1152,5 @@ applyTheme(currentTheme);
 
 loadGame();updateUI();renderWidgets();renderUpgrades();
 </script>
-</body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a071d879bd0328dc',t:'MTc4MDY5MDQ4Nw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
