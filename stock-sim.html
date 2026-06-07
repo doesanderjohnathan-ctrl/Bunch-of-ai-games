@@ -443,6 +443,12 @@ h3 {
   margin-top: 14px;
 }
 
+.option-trade-summary {
+  min-height: 66px;
+  align-content: center;
+  color: var(--muted);
+}
+
 .selected-contract {
   min-height: 72px;
   align-content: center;
@@ -834,6 +840,17 @@ code {
         <form id="option-order-form" class="form-grid option-ticket">
           <div class="card selected-contract" id="selected-contract">Select a contract from the chain.</div>
           <label>
+            Strategy Helper
+            <select id="option-strategy">
+              <option value="custom">Custom Contract</option>
+              <option value="bullish-call">Bullish Call</option>
+              <option value="bearish-put">Bearish Put</option>
+              <option value="covered-call">Covered Call</option>
+              <option value="protective-put">Protective Put</option>
+              <option value="cash-secured-put">Cash-Secured Put</option>
+            </select>
+          </label>
+          <label>
             Side
             <select id="option-side">
               <option value="long">Long</option>
@@ -844,6 +861,7 @@ code {
             Contracts
             <input id="option-contracts" type="number" min="1" step="1" value="1" />
           </label>
+          <div class="card option-trade-summary" id="option-trade-summary">Select or auto-build a contract to see breakeven, max risk, and strategy notes.</div>
           <div class="card order-status-card" id="option-order-status">Ready to place an options order.</div>
           <button id="option-order-btn" type="button" class="primary">Submit Options Order</button>
         </form>
@@ -884,6 +902,7 @@ code {
                   <th>Entry</th>
                   <th>Mark</th>
                   <th>P/L</th>
+                  <th>Action</th>
                 </tr>
               </thead>
               <tbody id="option-positions-body"></tbody>
@@ -969,7 +988,7 @@ code {
         </section>
         <section>
           <h3>4) Options Trading</h3>
-          <p>The options chain is generated from the current underlying price, time to expiry, implied volatility, and the risk-free rate using a Black-Scholes style model. You can trade long or short calls and puts. Short premium positions reserve margin; covered calls use eligible long shares as collateral.</p>
+          <p>The options chain is generated from the current underlying price, time to expiry, implied volatility, and the risk-free rate using a Black-Scholes style model. You can trade long or short calls and puts, use strategy helpers like bullish calls, bearish puts, covered calls, protective puts, and cash-secured puts, and close positions directly from the portfolio view. The ticket also shows breakeven, estimated debit or credit, and max-risk context.</p>
         </section>
         <section>
           <h3>5) News, Events, Earnings, and Dividends</h3>
@@ -1000,8 +1019,8 @@ code {
 (() => {
   'use strict';
 
-  const STORAGE_KEY = 'arena_market_sim_v3';
-  const VERSION = 3;
+  const STORAGE_KEY = 'arena_market_sim_v4';
+  const VERSION = 4;
   const STARTING_CASH = 100000;
   const MARKET_OPEN_MIN = 9 * 60 + 30;
   const MARKET_CLOSE_MIN = 16 * 60;
@@ -1470,6 +1489,8 @@ code {
     optionOrderStatus: document.getElementById('option-order-status'),
     optionOrderBtn: document.getElementById('option-order-btn'),
     optionOrderForm: document.getElementById('option-order-form'),
+    optionStrategy: document.getElementById('option-strategy'),
+    optionTradeSummary: document.getElementById('option-trade-summary'),
     optionSide: document.getElementById('option-side'),
     optionContracts: document.getElementById('option-contracts'),
     portfolioSummary: document.getElementById('portfolio-summary'),
@@ -1498,7 +1519,7 @@ code {
     const initialDate = new Date('2026-06-08T09:30:00');
     const created = {
       version: VERSION,
-      rngState: 123456789,
+      rngState: createRandomSeed(),
       settings: {
         running: true,
         speed: DEFAULT_SPEED,
@@ -1525,6 +1546,7 @@ code {
         optionSymbol: 'AAPL',
         optionExpiryDays: 30,
         selectedContract: null,
+        optionStrategy: 'custom',
         stockOrderStatus: { text: 'Ready to place a stock order.', tone: 'neutral' },
         optionOrderStatus: { text: 'Ready to place an options order.', tone: 'neutral' },
       },
@@ -1818,6 +1840,7 @@ code {
     loaded.account.openOrders ??= [];
     loaded.account.holdings ??= {};
     loaded.ui ??= { selectedTicker: 'AAPL', optionSymbol: 'AAPL', optionExpiryDays: 30, selectedContract: null };
+    loaded.ui.optionStrategy ??= 'custom';
     loaded.ui.stockOrderStatus ??= { text: 'Ready to place a stock order.', tone: 'neutral' };
     loaded.ui.optionOrderStatus ??= { text: 'Ready to place an options order.', tone: 'neutral' };
     loaded.training ??= {
@@ -1917,6 +1940,19 @@ code {
     syncControlsFromState();
     renderAll();
     startLoop();
+  }
+
+  function createRandomSeed() {
+    try {
+      if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+        const arr = new Uint32Array(1);
+        crypto.getRandomValues(arr);
+        return arr[0] || Math.floor(Math.random() * 0xffffffff);
+      }
+    } catch (error) {
+      console.warn('Crypto seed generation unavailable:', error);
+    }
+    return ((Date.now() ^ Math.floor(Math.random() * 0xffffffff)) >>> 0) || 1;
   }
 
   function rng(container = state) {
@@ -2304,11 +2340,45 @@ code {
     return normalizeFetchedBars(bars, sinceDate);
   }
 
+  async function fetchAlphaVantageReplayBars(ticker, sinceDate) {
+    const url = `https://www.alphavantage.co/query?function=TIME_SERIES_DAILY_ADJUSTED&symbol=${encodeURIComponent(ticker)}&outputsize=full&apikey=demo`;
+    const json = await fetchJsonWithTimeout(url, 15000);
+    const series = json?.['Time Series (Daily)'];
+    if (!series) throw new Error('No Alpha Vantage data');
+    const bars = Object.entries(series).map(([date, bar]) => ({
+      time: getIsoAtMarketClose(date),
+      open: Number(bar['1. open']),
+      high: Number(bar['2. high']),
+      low: Number(bar['3. low']),
+      close: Number(bar['4. close']),
+      volume: Number(bar['6. volume'] || 0),
+    }));
+    return normalizeFetchedBars(bars, sinceDate);
+  }
+
+  async function fetchTwelveDataReplayBars(ticker, sinceDate) {
+    const url = `https://api.twelvedata.com/time_series?symbol=${encodeURIComponent(ticker)}&interval=1day&outputsize=220&apikey=demo`;
+    const json = await fetchJsonWithTimeout(url, 15000);
+    const values = json?.values;
+    if (!values?.length) throw new Error('No Twelve Data data');
+    const bars = values.map((bar) => ({
+      time: new Date(bar.datetime).toISOString(),
+      open: Number(bar.open),
+      high: Number(bar.high),
+      low: Number(bar.low),
+      close: Number(bar.close),
+      volume: Number(bar.volume || 0),
+    }));
+    return normalizeFetchedBars(bars, sinceDate);
+  }
+
   async function fetchReplayBarsForTicker(ticker, sinceDate) {
     const providers = [
       { name: 'Yahoo Finance', fetcher: fetchYahooReplayBars },
       { name: 'Stooq', fetcher: fetchStooqReplayBars },
       { name: 'Financial Modeling Prep', fetcher: fetchFmpReplayBars },
+      { name: 'Alpha Vantage', fetcher: fetchAlphaVantageReplayBars },
+      { name: 'Twelve Data', fetcher: fetchTwelveDataReplayBars },
     ];
     let lastError = null;
     for (const provider of providers) {
@@ -3439,6 +3509,120 @@ code {
     return Math.max(asset.price * 100 * position.contracts * 0.2 - otm + premium, position.strike * 100 * position.contracts * 0.1 + premium);
   }
 
+  function getOptionMoneyness(underlyingPrice, strike, type) {
+    const diffPct = ((underlyingPrice - strike) / underlyingPrice) * 100;
+    if (type === 'call') {
+      if (Math.abs(diffPct) < 1) return 'ATM';
+      return strike < underlyingPrice ? 'ITM' : 'OTM';
+    }
+    if (Math.abs(diffPct) < 1) return 'ATM';
+    return strike > underlyingPrice ? 'ITM' : 'OTM';
+  }
+
+  function getOptionSelectionProfile(selection, side = dom.optionSide?.value || 'long', contracts = Number(dom.optionContracts?.value || 1)) {
+    if (!selection) return null;
+    const asset = state.assets[selection.underlying];
+    const quote = getOptionQuote(selection.underlying, selection.expiry, selection.strike, selection.type);
+    const fill = side === 'long' ? quote.ask : quote.bid;
+    const multiplier = 100 * Math.max(1, contracts || 1);
+    const breakeven = selection.type === 'call'
+      ? selection.strike + fill
+      : selection.strike - fill;
+    let maxLoss = side === 'long'
+      ? fill * multiplier
+      : 'Unlimited / margin-based';
+    let maxProfit = side === 'long'
+      ? (selection.type === 'call' ? 'Unlimited' : (selection.strike - fill) * multiplier)
+      : fill * multiplier;
+    if (selection.type === 'put' && side === 'short') {
+      maxLoss = (selection.strike - fill) * multiplier;
+    }
+    if (selection.type === 'call' && side === 'short') {
+      const covered = Math.floor(Math.max(0, state.account.holdings[selection.underlying].shares) / 100) >= contracts;
+      if (covered) maxLoss = 'Covered by shares';
+    }
+    return {
+      asset,
+      quote,
+      fill,
+      contracts: Math.max(1, contracts || 1),
+      notional: fill * multiplier,
+      breakeven,
+      maxLoss,
+      maxProfit,
+      moneyness: getOptionMoneyness(asset.price, selection.strike, selection.type),
+    };
+  }
+
+  function getNearestStrikeForBias(chain, targetPrice) {
+    return chain.reduce((best, row) => Math.abs(row.strike - targetPrice) < Math.abs(best.strike - targetPrice) ? row : best, chain[0]);
+  }
+
+  function applyOptionStrategyPreset(strategy) {
+    state.ui.optionStrategy = strategy;
+    if (strategy === 'custom') {
+      updateSelectedContractCard();
+      renderOptionsChain();
+      return;
+    }
+    const ticker = state.ui.optionSymbol || 'AAPL';
+    const expiries = getOptionExpiries();
+    const expiryObj = expiries.find((entry) => entry.days === Number(state.ui.optionExpiryDays)) || expiries[2];
+    const chainData = getOptionsChain(ticker, expiryObj.iso);
+    const spot = state.assets[ticker].price;
+    let targetStrike = spot;
+    let type = 'call';
+    let side = 'long';
+    let contracts = 1;
+    const ownedLots = Math.max(1, Math.floor(Math.max(0, state.account.holdings[ticker].shares) / 100));
+
+    let helperWarning = '';
+    if (strategy === 'bullish-call') {
+      type = 'call';
+      side = 'long';
+      targetStrike = spot * 1.01;
+    } else if (strategy === 'bearish-put') {
+      type = 'put';
+      side = 'long';
+      targetStrike = spot * 0.99;
+    } else if (strategy === 'covered-call') {
+      type = 'call';
+      side = 'short';
+      targetStrike = spot * 1.03;
+      contracts = ownedLots;
+      if (Math.floor(Math.max(0, state.account.holdings[ticker].shares) / 100) < 1) helperWarning = 'You do not currently own 100 shares, so this will behave like a naked short call until you buy shares.';
+    } else if (strategy === 'protective-put') {
+      type = 'put';
+      side = 'long';
+      targetStrike = spot * 0.97;
+      contracts = ownedLots;
+      if (Math.floor(Math.max(0, state.account.holdings[ticker].shares) / 100) < 1) helperWarning = 'No 100-share lot is currently held, so this will act as a speculative long put rather than a hedge.';
+    } else if (strategy === 'cash-secured-put') {
+      type = 'put';
+      side = 'short';
+      targetStrike = spot * 0.97;
+    }
+
+    const strikeRow = getNearestStrikeForBias(chainData.chain, targetStrike);
+    state.ui.selectedContract = {
+      underlying: ticker,
+      expiry: expiryObj.iso,
+      strike: strikeRow.strike,
+      type,
+    };
+    dom.optionSide.value = side;
+    dom.optionContracts.value = String(Math.max(1, contracts));
+    const helperLabels = {
+      'bullish-call': 'Bullish call helper loaded.',
+      'bearish-put': 'Bearish put helper loaded.',
+      'covered-call': 'Covered call helper loaded.',
+      'protective-put': 'Protective put helper loaded.',
+      'cash-secured-put': 'Cash-secured put helper loaded.',
+    };
+    setOptionOrderStatus(helperWarning || helperLabels[strategy] || 'Option helper loaded.', helperWarning ? 'warning' : 'neutral');
+    renderOptionsChain();
+  }
+
   function placeOptionOrder(selection, side, contracts) {
     contracts = Math.max(1, Math.floor(contracts));
     if (!selection) {
@@ -3535,6 +3719,18 @@ code {
     }
 
     addLog(state, `Closed ${contractsToClose} ${position.underlying} ${position.type.toUpperCase()} ${formatMoney(position.strike)} @ ${formatMoney(fill)}. Realized ${formatMoney(pnl)}.`);
+  }
+
+  function closeOptionPositionAtMarket(positionId, contractsToClose = null) {
+    const position = state.account.options.find((item) => item.id === positionId);
+    if (!position) return;
+    const qty = Math.max(1, Math.min(position.contracts, contractsToClose || position.contracts));
+    const quote = getOptionQuote(position.underlying, position.expiry, position.strike, position.type);
+    const fill = position.side === 'long' ? quote.bid : quote.ask;
+    closeOptionPosition(position, qty, fill, OPTION_FEE * qty);
+    setOptionOrderStatus(`Closed ${qty} ${position.underlying} ${position.type.toUpperCase()} at ${formatMoney(fill)}.`, 'positive');
+    saveState(false);
+    renderAll();
   }
 
   function processExpiries() {
@@ -3725,6 +3921,7 @@ code {
   function syncControlsFromState() {
     dom.modeSelect.value = state.dataMode.preference;
     dom.speedSelect.value = String(state.settings.speed);
+    dom.optionStrategy.value = state.ui.optionStrategy || 'custom';
     dom.toggleRun.textContent = state.settings.running ? 'Pause' : 'Resume';
     dom.toggleSma20.checked = !!state.settings.overlays.sma20;
     dom.toggleSma50.checked = !!state.settings.overlays.sma50;
@@ -4111,19 +4308,24 @@ code {
       state.ui.selectedContract = null;
     }
 
-    dom.optionChainMeta.textContent = `${ticker} • IV ${(state.assets[ticker].iv * 100).toFixed(1)}% • RF ${(state.market.riskFreeRate * 100).toFixed(2)}% • Expiry ${expiryObj.label}`;
+    dom.optionStrategy.value = state.ui.optionStrategy || 'custom';
+    dom.optionChainMeta.textContent = `${ticker} • Spot ${formatMoney(state.assets[ticker].price)} • IV ${(state.assets[ticker].iv * 100).toFixed(1)}% • RF ${(state.market.riskFreeRate * 100).toFixed(2)}% • Expiry ${expiryObj.label}`;
     dom.optionExpiry.innerHTML = expiries.map((entry) => `<option value="${entry.days}" ${entry.days === expiryObj.days ? 'selected' : ''}>${entry.label}</option>`).join('');
 
     const chainData = getOptionsChain(ticker, expiryObj.iso);
-    dom.optionsBody.innerHTML = chainData.chain.map((row) => `
+    const spot = state.assets[ticker].price;
+    dom.optionsBody.innerHTML = chainData.chain.map((row) => {
+      const callTag = getOptionMoneyness(spot, row.strike, 'call');
+      const putTag = getOptionMoneyness(spot, row.strike, 'put');
+      return `
       <tr>
-        <td>${formatMoney(row.call.bid)}</td>
+        <td>${formatMoney(row.call.bid)}<small>${callTag}</small></td>
         <td>${formatMoney(row.call.ask)}</td>
         <td class="${row.call.delta >= 0 ? 'positive-text' : ''}">${row.call.delta.toFixed(2)}</td>
-        <td><strong>${formatMoney(row.strike)}</strong></td>
+        <td><strong>${formatMoney(row.strike)}</strong><br /><small class="muted">${Math.abs(((row.strike - spot) / spot) * 100).toFixed(1)}% from spot</small></td>
         <td class="${row.put.delta <= 0 ? 'negative-text' : ''}">${row.put.delta.toFixed(2)}</td>
         <td>${formatMoney(row.put.bid)}</td>
-        <td>${formatMoney(row.put.ask)}</td>
+        <td>${formatMoney(row.put.ask)}<small>${putTag}</small></td>
         <td>
           <div class="contract-button-row">
             <button type="button" data-option-select='${JSON.stringify({ underlying: ticker, expiry: expiryObj.iso, strike: row.strike, type: 'call' })}'>Call</button>
@@ -4131,7 +4333,8 @@ code {
           </div>
         </td>
       </tr>
-    `).join('');
+    `;
+    }).join('');
 
     updateSelectedContractCard();
   }
@@ -4140,12 +4343,25 @@ code {
     const selection = state.ui.selectedContract;
     if (!selection) {
       dom.selectedContract.textContent = 'Select a contract from the chain.';
+      dom.optionTradeSummary.textContent = 'Select or auto-build a contract to see breakeven, max risk, and strategy notes.';
       return;
     }
-    const quote = getOptionQuote(selection.underlying, selection.expiry, selection.strike, selection.type);
+    const side = dom.optionSide.value;
+    const contracts = Number(dom.optionContracts.value || 1);
+    const profile = getOptionSelectionProfile(selection, side, contracts);
+    const quote = profile.quote;
+    const asset = profile.asset;
     dom.selectedContract.innerHTML = `
       <strong>${selection.underlying} ${selection.type.toUpperCase()} ${formatMoney(selection.strike)}</strong><br />
-      Expiry ${formatExpiry(selection.expiry)} • Bid ${formatMoney(quote.bid)} / Ask ${formatMoney(quote.ask)} • Δ ${quote.delta.toFixed(2)} • Θ ${quote.theta.toFixed(3)} /day
+      Expiry ${formatExpiry(selection.expiry)} • ${profile.moneyness} • Spot ${formatMoney(asset.price)} • Bid ${formatMoney(quote.bid)} / Ask ${formatMoney(quote.ask)} • Δ ${quote.delta.toFixed(2)} • Θ ${quote.theta.toFixed(3)} /day • Vega ${quote.vega.toFixed(3)}
+    `;
+    const maxLossText = typeof profile.maxLoss === 'number' ? formatMoney(profile.maxLoss) : profile.maxLoss;
+    const maxProfitText = typeof profile.maxProfit === 'number' ? formatMoney(profile.maxProfit) : profile.maxProfit;
+    dom.optionTradeSummary.innerHTML = `
+      <strong>${side === 'long' ? 'Debit' : 'Credit'}:</strong> ${formatMoney(profile.notional)} for ${profile.contracts} contract${profile.contracts === 1 ? '' : 's'} •
+      <strong>Breakeven:</strong> ${formatMoney(profile.breakeven)} •
+      <strong>Max profit:</strong> ${maxProfitText} •
+      <strong>Max loss:</strong> ${maxLossText}
     `;
   }
 
@@ -4218,10 +4434,11 @@ code {
           <td>${formatMoney(position.entryPremium)}</td>
           <td>${formatMoney(quote.mid)}</td>
           <td class="${pnl >= 0 ? 'positive-text' : 'negative-text'}">${formatMoney(pnl)}</td>
+          <td><button type="button" data-option-close="${position.id}">Close</button></td>
         </tr>
       `;
     });
-    dom.optionPositionsBody.innerHTML = optionRows.length ? optionRows.join('') : '<tr><td colspan="6" class="muted">No options positions.</td></tr>';
+    dom.optionPositionsBody.innerHTML = optionRows.length ? optionRows.join('') : '<tr><td colspan="7" class="muted">No options positions.</td></tr>';
 
     dom.activityLog.innerHTML = state.account.log.map((item) => `
       <div class="log-item">
@@ -4505,19 +4722,37 @@ code {
     dom.optionSymbol.addEventListener('change', (event) => {
       state.ui.optionSymbol = event.target.value;
       state.ui.selectedContract = null;
-      renderOptionsChain();
+      if (state.ui.optionStrategy !== 'custom') applyOptionStrategyPreset(state.ui.optionStrategy);
+      else renderOptionsChain();
     });
     dom.optionExpiry.addEventListener('change', (event) => {
       state.ui.optionExpiryDays = Number(event.target.value);
       state.ui.selectedContract = null;
-      renderOptionsChain();
+      if (state.ui.optionStrategy !== 'custom') applyOptionStrategyPreset(state.ui.optionStrategy);
+      else renderOptionsChain();
+    });
+    dom.optionStrategy.addEventListener('change', (event) => {
+      applyOptionStrategyPreset(event.target.value);
+    });
+    dom.optionSide.addEventListener('change', () => {
+      updateSelectedContractCard();
+    });
+    dom.optionContracts.addEventListener('input', () => {
+      updateSelectedContractCard();
     });
 
     dom.optionsBody.addEventListener('click', (event) => {
       const button = event.target.closest('button[data-option-select]');
       if (!button) return;
+      state.ui.optionStrategy = 'custom';
+      dom.optionStrategy.value = 'custom';
       state.ui.selectedContract = JSON.parse(button.dataset.optionSelect);
       updateSelectedContractCard();
+    });
+    dom.optionPositionsBody.addEventListener('click', (event) => {
+      const button = event.target.closest('button[data-option-close]');
+      if (!button) return;
+      closeOptionPositionAtMarket(button.dataset.optionClose);
     });
 
     dom.optionOrderBtn.addEventListener('click', (event) => {
