@@ -1,0 +1,2430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Dungeon Depths</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Noto+Sans:wght@400;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --bg-dark: #0a0a12;
+            --bg-panel: #12121a;
+            --bg-card: #1a1a2a;
+            --border-color: #2a2a3a;
+            --text-primary: #e8e8f0;
+            --text-secondary: #888899;
+            --text-muted: #666677;
+            --hp-color: #ff4757;
+            --mp-color: #3498db;
+            --xp-color: #9b59b6;
+            --gold-color: #f1c40f;
+            --heal-color: #2ecc71;
+            --danger-color: #e74c3c;
+            --accent: #ff6b6b;
+            --accent-glow: rgba(255,107,107,0.5);
+            --tile-bg: #1a1a2a;
+            --tile-wall: #3a3a4a;
+            --tile-floor: #2a2a3a;
+            --fog-color: rgba(0,0,0,0.9);
+            --hud-bg: rgba(18,18,26,0.95);
+            --btn-primary: linear-gradient(180deg, #ff6b6b 0%, #ee5a5a 100%);
+            --shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+        
+        /* Light Mode */
+        .light-mode {
+            --bg-dark: #f5f5f0;
+            --bg-panel: #ffffff;
+            --bg-card: #f0f0eb;
+            --border-color: #d0d0c5;
+            --text-primary: #1a1a1a;
+            --text-secondary: #555550;
+            --text-muted: #888882;
+            --hp-color: #e74c3c;
+            --mp-color: #2980b9;
+            --xp-color: #8e44ad;
+            --gold-color: #d4a500;
+            --accent: #e74c3c;
+            --accent-glow: rgba(231,76,60,0.3);
+            --tile-bg: #e8e8e0;
+            --tile-wall: #c0c0b0;
+            --tile-floor: #d8d8d0;
+            --fog-color: rgba(200,200,195,0.9);
+            --hud-bg: rgba(255,255,255,0.95);
+            --btn-primary: linear-gradient(180deg, #e74c3c 0%, #c0392b 100%);
+            --shadow: 0 4px 20px rgba(0,0,0,0.15);
+        }
+        
+        /* High Contrast Mode */
+        .high-contrast {
+            --bg-dark: #000000;
+            --bg-panel: #000000;
+            --bg-card: #111111;
+            --border-color: #ffffff;
+            --text-primary: #ffffff;
+            --text-secondary: #ffff00;
+            --text-muted: #00ffff;
+            --hp-color: #ff0000;
+            --mp-color: #0000ff;
+            --xp-color: #ff00ff;
+            --gold-color: #ffff00;
+            --heal-color: #00ff00;
+            --danger-color: #ff0000;
+            --accent: #ffffff;
+            --accent-glow: rgba(255,255,255,0.8);
+            --tile-bg: #111111;
+            --tile-wall: #ffffff;
+            --tile-floor: #222222;
+            --fog-color: rgba(0,0,0,1);
+            --hud-bg: rgba(0,0,0,0.98);
+            --btn-primary: linear-gradient(180deg, #ffffff 0%, #cccccc 100%);
+            --shadow: 0 0 30px rgba(255,255,255,0.5);
+        }
+        
+        .high-contrast .action-btn,
+        .high-contrast .upgrade-btn {
+            border-width: 3px;
+            font-weight: bold;
+        }
+        
+        .high-contrast .inv-slot,
+        .high-contrast .craft-slot,
+        .high-contrast .shop-item {
+            border-width: 3px;
+        }
+        
+        .high-contrast .stat-bar {
+            border: 2px solid #fff;
+        }
+        
+        body {
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            font-family: 'Noto Sans', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow-x: hidden;
+            transition: background 0.3s ease, color 0.3s ease;
+        }
+        
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 10px;
+            max-width: 100%;
+            width: 100%;
+        }
+        
+        .title-bar {
+            font-family: 'Press Start 2P', cursive;
+            font-size: clamp(12px, 3vw, 18px);
+            color: var(--accent);
+            text-shadow: 2px 2px 0 var(--text-muted), 0 0 20px var(--accent-glow);
+            margin: 8px 0;
+            letter-spacing: 2px;
+            text-align: center;
+        }
+        
+        /* Settings Button */
+        .settings-btn {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            width: 44px;
+            height: 44px;
+            background: var(--bg-panel);
+            border: 2px solid var(--border-color);
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 20px;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+        
+        .settings-btn:hover {
+            border-color: var(--accent);
+            transform: scale(1.1);
+        }
+        
+        .settings-menu {
+            position: fixed;
+            top: 60px;
+            right: 10px;
+            background: var(--bg-panel);
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            padding: 15px;
+            z-index: 101;
+            display: none;
+            min-width: 200px;
+            box-shadow: var(--shadow);
+        }
+        
+        .settings-menu.active {
+            display: block;
+            animation: fadeIn 0.2s ease;
+        }
+        
+        .settings-title {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 10px;
+            color: var(--accent);
+            margin-bottom: 12px;
+            text-align: center;
+        }
+        
+        .settings-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            cursor: pointer;
+            border-radius: 8px;
+            margin-bottom: 5px;
+            transition: background 0.2s ease;
+        }
+        
+        .settings-option:hover {
+            background: var(--bg-card);
+        }
+        
+        .settings-option.active {
+            background: var(--accent);
+            color: var(--bg-dark);
+        }
+        
+        .settings-option-icon {
+            font-size: 20px;
+            width: 30px;
+            text-align: center;
+        }
+        
+        .settings-option-text {
+            font-size: 13px;
+            font-weight: bold;
+        }
+        
+        /* HUD */
+        .hud {
+            display: flex;
+            gap: 8px;
+            background: var(--hud-bg);
+            padding: 10px 15px;
+            border-radius: 12px;
+            border: 2px solid var(--border-color);
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+            width: 100%;
+            max-width: 700px;
+            backdrop-filter: blur(10px);
+            box-shadow: var(--shadow);
+        }
+        
+        .stat {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .stat-icon {
+            width: 22px;
+            height: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+        
+        .stat-bar {
+            width: 70px;
+            height: 14px;
+            background: var(--bg-dark);
+            border-radius: 7px;
+            overflow: hidden;
+            position: relative;
+            border: 1px solid var(--border-color);
+        }
+        
+        .stat-fill {
+            height: 100%;
+            transition: width 0.3s ease;
+            border-radius: 7px;
+        }
+        
+        .stat-fill.hp { background: linear-gradient(90deg, var(--hp-color), #ff6b6b); }
+        .stat-fill.mp { background: linear-gradient(90deg, var(--mp-color), #5dade2); }
+        .stat-fill.xp { background: linear-gradient(90deg, var(--xp-color), #a569bd); }
+        
+        .stat-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 9px;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px #000;
+            color: #fff;
+        }
+        
+        .gold-display, .floor-display {
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .gold-display { color: var(--gold-color); }
+        .floor-display { color: var(--xp-color); }
+        
+        .game-wrapper {
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+            width: 100%;
+            max-width: 1000px;
+            justify-content: center;
+        }
+        
+        /* Canvas Container */
+        .canvas-container {
+            position: relative;
+            touch-action: none;
+        }
+        
+        #gameCanvas {
+            border: 3px solid var(--border-color);
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: var(--shadow);
+            max-width: 100%;
+            height: auto;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+        
+        /* Mobile D-Pad */
+        .mobile-controls {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            z-index: 50;
+        }
+        
+        .dpad {
+            display: grid;
+            grid-template-columns: repeat(3, 50px);
+            grid-template-rows: repeat(3, 50px);
+            gap: 2px;
+        }
+        
+        .dpad-btn {
+            background: var(--hud-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+            transition: all 0.1s ease;
+        }
+        
+        .dpad-btn:active {
+            background: var(--accent);
+            transform: scale(0.95);
+        }
+        
+        .dpad-btn.empty {
+            visibility: hidden;
+        }
+        
+        /* Quick Action Buttons */
+        .quick-actions {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: none;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 50;
+        }
+        
+        .quick-btn {
+            width: 56px;
+            height: 56px;
+            background: var(--hud-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 50%;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+            transition: all 0.1s ease;
+            box-shadow: var(--shadow);
+        }
+        
+        .quick-btn:active {
+            transform: scale(0.9);
+            background: var(--accent);
+        }
+        
+        .quick-btn.attack { border-color: #e74c3c; }
+        .quick-btn.potion { border-color: #2ecc71; }
+        
+        /* Side Panel */
+        .side-panel {
+            background: var(--bg-panel);
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            padding: 12px;
+            width: 260px;
+            max-height: 400px;
+            overflow-y: auto;
+            box-shadow: var(--shadow);
+        }
+        
+        .panel-title {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 10px;
+            color: var(--accent);
+            margin-bottom: 10px;
+            text-align: center;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 6px;
+        }
+        
+        .combat-log {
+            height: 150px;
+            overflow-y: auto;
+            font-size: 11px;
+            line-height: 1.5;
+        }
+        
+        .log-entry {
+            padding: 4px;
+            border-radius: 4px;
+            margin-bottom: 3px;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .log-entry.damage { background: rgba(231,76,60,0.2); }
+        .log-entry.heal { background: rgba(46,204,113,0.2); }
+        .log-entry.info { background: rgba(52,152,219,0.2); }
+        .log-entry.loot { background: rgba(241,196,15,0.2); }
+        .log-entry.levelup { background: rgba(155,89,182,0.3); font-weight: bold; }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        
+        .action-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            margin-top: 12px;
+        }
+        
+        .action-btn {
+            background: var(--bg-card);
+            border: 2px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 10px;
+            font-weight: bold;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            min-height: 44px;
+            touch-action: manipulation;
+        }
+        
+        .action-btn:hover {
+            border-color: var(--accent);
+            transform: scale(1.02);
+        }
+        
+        .action-btn:active {
+            transform: scale(0.98);
+        }
+        
+        .action-btn.attack { border-color: #e74c3c; }
+        .action-btn.defend { border-color: #3498db; }
+        .action-btn.item { border-color: #2ecc71; }
+        .action-btn.special { border-color: #9b59b6; }
+        
+        .message-display {
+            text-align: center;
+            padding: 8px;
+            background: var(--bg-card);
+            border-radius: 8px;
+            margin-bottom: 8px;
+            font-size: 11px;
+            min-height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .key-hint {
+            font-size: 9px;
+            color: var(--text-muted);
+            margin-top: 8px;
+            text-align: center;
+        }
+        
+        .progress-info {
+            font-size: 10px;
+            color: var(--text-secondary);
+            margin-top: 8px;
+            text-align: center;
+        }
+        
+        /* Modals */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.85);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            padding: 20px;
+        }
+        
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+        
+        .modal {
+            background: var(--bg-panel);
+            border: 3px solid var(--border-color);
+            border-radius: 16px;
+            padding: 20px;
+            max-width: 550px;
+            max-height: 90vh;
+            overflow-y: auto;
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+            width: 100%;
+        }
+        
+        .modal-overlay.active .modal {
+            transform: scale(1);
+        }
+        
+        .inventory-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+        
+        .inv-slot {
+            aspect-ratio: 1;
+            background: var(--bg-card);
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s ease;
+            min-height: 50px;
+        }
+        
+        .inv-slot:hover {
+            border-color: var(--accent);
+            background: var(--tile-floor);
+        }
+        
+        .inv-slot.equipped {
+            border-color: var(--gold-color);
+            box-shadow: 0 0 10px rgba(241,196,15,0.3);
+        }
+        
+        .item-icon {
+            font-size: 22px;
+        }
+        
+        .item-tooltip {
+            position: absolute;
+            bottom: 110%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bg-dark);
+            border: 2px solid var(--border-color);
+            padding: 10px;
+            border-radius: 8px;
+            min-width: 160px;
+            z-index: 100;
+            display: none;
+            font-size: 11px;
+        }
+        
+        .inv-slot:hover .item-tooltip {
+            display: block;
+        }
+        
+        .item-name {
+            color: var(--gold-color);
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+        
+        .item-desc {
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+        
+        .item-stats {
+            color: var(--heal-color);
+            font-size: 10px;
+        }
+        
+        .equipment-slots {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+        
+        .equip-slot {
+            background: var(--bg-card);
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            padding: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .equip-slot:hover {
+            border-color: var(--accent);
+        }
+        
+        .equip-slot-label {
+            font-size: 9px;
+            color: var(--text-muted);
+            margin-bottom: 5px;
+        }
+        
+        .crafting-area {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            justify-content: center;
+            margin: 15px 0;
+        }
+        
+        .craft-slot {
+            width: 55px;
+            height: 55px;
+            background: var(--bg-card);
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+        }
+        
+        .craft-arrow {
+            font-size: 22px;
+            color: var(--text-muted);
+        }
+        
+        .craft-result {
+            width: 65px;
+            height: 65px;
+            background: var(--bg-card);
+            border: 2px solid var(--gold-color);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+            cursor: pointer;
+        }
+        
+        .recipe-list {
+            display: grid;
+            gap: 6px;
+            margin-top: 12px;
+        }
+        
+        .recipe-item {
+            background: var(--bg-card);
+            padding: 8px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s ease;
+            min-height: 50px;
+        }
+        
+        .recipe-item:hover {
+            border-color: var(--accent);
+        }
+        
+        .recipe-item.craftable {
+            border-color: var(--heal-color);
+        }
+        
+        .recipe-name {
+            font-weight: bold;
+            font-size: 12px;
+        }
+        
+        .recipe-materials {
+            font-size: 10px;
+            color: var(--text-muted);
+        }
+        
+        .shop-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+        
+        .shop-item {
+            background: var(--bg-card);
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            padding: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-height: 80px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .shop-item:hover {
+            border-color: var(--gold-color);
+            transform: scale(1.02);
+        }
+        
+        .shop-item-icon {
+            font-size: 28px;
+            margin-bottom: 6px;
+        }
+        
+        .shop-item-name {
+            font-size: 11px;
+            font-weight: bold;
+            margin-bottom: 3px;
+        }
+        
+        .shop-item-price {
+            color: var(--gold-color);
+            font-size: 10px;
+        }
+        
+        .shop-item.can-afford {
+            border-color: var(--heal-color);
+        }
+        
+        .shop-item.cant-afford {
+            opacity: 0.5;
+        }
+        
+        .floor-transition {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg-dark);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+        }
+        
+        .floor-transition.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+        
+        .floor-text {
+            font-family: 'Press Start 2P', cursive;
+            font-size: clamp(16px, 4vw, 24px);
+            color: var(--text-primary);
+            text-shadow: 0 0 30px var(--accent-glow);
+            animation: pulse 1s ease infinite;
+        }
+        
+        .floor-number {
+            font-size: clamp(32px, 8vw, 48px);
+            color: var(--accent);
+            margin-top: 20px;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .player-stats-display {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            margin-bottom: 12px;
+        }
+        
+        .stat-item {
+            background: var(--bg-card);
+            padding: 8px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .stat-label {
+            color: var(--text-muted);
+            font-size: 10px;
+        }
+        
+        .stat-value {
+            color: var(--heal-color);
+            font-weight: bold;
+        }
+        
+        .upgrade-btn {
+            background: var(--heal-color);
+            border: none;
+            color: #fff;
+            padding: 10px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 10px;
+            margin: 4px;
+            transition: all 0.2s ease;
+            min-height: 44px;
+            touch-action: manipulation;
+        }
+        
+        .upgrade-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(46,204,113,0.5);
+        }
+        
+        .upgrade-btn:disabled {
+            background: var(--text-muted);
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+        
+        .tab {
+            background: var(--bg-card);
+            border: 2px solid var(--border-color);
+            color: var(--text-muted);
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 10px;
+            transition: all 0.2s ease;
+            min-height: 40px;
+            touch-action: manipulation;
+        }
+        
+        .tab.active {
+            background: var(--accent);
+            color: var(--bg-dark);
+        }
+        
+        .level-up-overlay {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--bg-panel);
+            border: 4px solid var(--xp-color);
+            border-radius: 20px;
+            padding: 25px;
+            text-align: center;
+            z-index: 1500;
+            display: none;
+            animation: levelUpPop 0.5s ease;
+            width: 90%;
+            max-width: 300px;
+        }
+        
+        @keyframes levelUpPop {
+            0% { transform: translate(-50%, -50%) scale(0); }
+            50% { transform: translate(-50%, -50%) scale(1.1); }
+            100% { transform: translate(-50%, -50%) scale(1); }
+        }
+        
+        .level-up-title {
+            font-family: 'Press Start 2P', cursive;
+            font-size: clamp(14px, 4vw, 18px);
+            color: var(--xp-color);
+            margin-bottom: 15px;
+            text-shadow: 0 0 20px rgba(155,89,182,0.8);
+        }
+        
+        .damage-number {
+            position: absolute;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 14px;
+            font-weight: bold;
+            pointer-events: none;
+            animation: floatUp 1s ease forwards;
+            text-shadow: 2px 2px 0 #000;
+        }
+        
+        .damage-number.damage { color: #e74c3c; }
+        .damage-number.heal { color: #2ecc71; }
+        .damage-number.crit { color: #f1c40f; font-size: 18px; }
+        
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateY(-50px) scale(0.5); }
+        }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--bg-card);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
+        
+        /* Mobile Responsive */
+        @media (max-width: 900px) {
+            .game-wrapper {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .side-panel {
+                width: 100%;
+                max-width: 640px;
+                max-height: 250px;
+            }
+            
+            .combat-log {
+                height: 100px;
+            }
+        }
+        
+        @media (max-width: 700px) {
+            .hud {
+                padding: 8px 10px;
+                gap: 6px;
+            }
+            
+            .stat-bar {
+                width: 55px;
+                height: 12px;
+            }
+            
+            .stat-text {
+                font-size: 8px;
+            }
+            
+            .gold-display, .floor-display {
+                font-size: 12px;
+            }
+            
+            #gameCanvas {
+                max-width: calc(100vw - 20px);
+            }
+            
+            .side-panel {
+                padding: 10px;
+            }
+            
+            .action-buttons {
+                grid-template-columns: repeat(4, 1fr);
+            }
+            
+            .action-btn {
+                padding: 10px 6px;
+                font-size: 9px;
+            }
+        }
+        
+        @media (max-width: 500px) {
+            .settings-btn {
+                width: 50px;
+                height: 50px;
+                font-size: 24px;
+            }
+            
+            .hud {
+                padding: 6px 8px;
+            }
+            
+            .stat {
+                flex: 1;
+                min-width: 60px;
+                justify-content: center;
+            }
+            
+            .stat-bar {
+                width: 100%;
+                max-width: 70px;
+            }
+            
+            .title-bar {
+                font-size: 11px;
+            }
+            
+            .inventory-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+            
+            .shop-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .equipment-slots {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            
+            /* Show mobile controls */
+            .mobile-controls,
+            .quick-actions {
+                display: flex;
+            }
+            
+            /* Hide keyboard hints on mobile */
+            .key-hint {
+                display: none;
+            }
+            
+            /* Adjust panels for mobile */
+            .side-panel {
+                margin-bottom: 180px;
+            }
+        }
+        
+        @media (min-width: 501px) {
+            .mobile-controls,
+            .quick-actions {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <button class="settings-btn" onclick="toggleSettings()" aria-label="Settings">⚙️</button>
+    
+    <div class="settings-menu" id="settingsMenu">
+        <div class="settings-title">DISPLAY</div>
+        <div class="settings-option" onclick="setTheme('dark')" id="themeDark">
+            <span class="settings-option-icon">🌙</span>
+            <span class="settings-option-text">Dark Mode</span>
+        </div>
+        <div class="settings-option" onclick="setTheme('light')" id="themeLight">
+            <span class="settings-option-icon">☀️</span>
+            <span class="settings-option-text">Light Mode</span>
+        </div>
+        <div class="settings-option" onclick="setTheme('highContrast')" id="themeHighContrast">
+            <span class="settings-option-icon">◐</span>
+            <span class="settings-option-text">High Contrast</span>
+        </div>
+    </div>
+    
+    <div class="game-container">
+        <div class="title-bar">DUNGEON DEPTHS</div>
+        
+        <div class="hud">
+            <div class="stat">
+                <span class="stat-icon" style="color: var(--hp-color);">♥</span>
+                <div class="stat-bar">
+                    <div class="stat-fill hp" id="hpBar" style="width: 100%"></div>
+                    <span class="stat-text" id="hpText">100/100</span>
+                </div>
+            </div>
+            <div class="stat">
+                <span class="stat-icon" style="color: var(--mp-color);">◆</span>
+                <div class="stat-bar">
+                    <div class="stat-fill mp" id="mpBar" style="width: 100%"></div>
+                    <span class="stat-text" id="mpText">50/50</span>
+                </div>
+            </div>
+            <div class="stat">
+                <span class="stat-icon" style="color: var(--xp-color);">★</span>
+                <div class="stat-bar">
+                    <div class="stat-fill xp" id="xpBar" style="width: 0%"></div>
+                    <span class="stat-text" id="xpText">0/100</span>
+                </div>
+            </div>
+            <div class="stat gold-display">
+                <span class="stat-icon">◆</span>
+                <span id="goldDisplay">0</span>
+            </div>
+            <div class="stat floor-display">
+                <span>Floor:</span>
+                <span id="floorDisplay">1</span>
+            </div>
+        </div>
+        
+        <div class="game-wrapper">
+            <div class="canvas-container">
+                <canvas id="gameCanvas" width="640" height="480"></canvas>
+            </div>
+            
+            <div class="side-panel">
+                <div class="panel-title">COMBAT LOG</div>
+                <div class="combat-log" id="combatLog"></div>
+                
+                <div class="message-display" id="messageDisplay">Use WASD or tap to move. Defeat enemies!</div>
+                
+                <div class="action-buttons">
+                    <button class="action-btn attack" onclick="playerAttack()">⚔ ATK</button>
+                    <button class="action-btn defend" onclick="playerDefend()">🛡 DEF</button>
+                    <button class="action-btn item" onclick="openInventory()">🎒 INV</button>
+                    <button class="action-btn special" onclick="useSpecialAbility()">✦ SKL</button>
+                </div>
+                
+                <div class="key-hint">WASD/Arrows: Move | Space: Action | I: Inventory | Q: Potion | C: Craft</div>
+                
+                <div class="progress-info" id="progressInfo">Lvl 1 | XP: 100 | Special: Ready</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Mobile Controls -->
+    <div class="mobile-controls">
+        <div class="dpad">
+            <div class="dpad-btn empty"></div>
+            <div class="dpad-btn" onclick="movePlayer(0, -1)" ontouchstart="movePlayer(0, -1)">▲</div>
+            <div class="dpad-btn empty"></div>
+            <div class="dpad-btn" onclick="movePlayer(-1, 0)" ontouchstart="movePlayer(-1, 0)">◀</div>
+            <div class="dpad-btn" onclick="movePlayer(0, 1)" ontouchstart="movePlayer(0, 1)">▼</div>
+            <div class="dpad-btn" onclick="movePlayer(1, 0)" ontouchstart="movePlayer(1, 0)">▶</div>
+        </div>
+    </div>
+    
+    <div class="quick-actions">
+        <button class="quick-btn attack" onclick="playerAttack()" aria-label="Attack">⚔</button>
+        <button class="quick-btn potion" onclick="useHealthPotion()" aria-label="Use Potion">🧪</button>
+    </div>
+    
+    <!-- Inventory Modal -->
+    <div class="modal-overlay" id="inventoryModal">
+        <div class="modal">
+            <div class="panel-title">INVENTORY</div>
+            
+            <div class="equipment-slots">
+                <div class="equip-slot" id="weaponSlot" onclick="unequipItem('weapon')">
+                    <div class="equip-slot-label">WEAPON</div>
+                    <div class="item-icon" id="weaponIcon">-</div>
+                </div>
+                <div class="equip-slot" id="armorSlot" onclick="unequipItem('armor')">
+                    <div class="equip-slot-label">ARMOR</div>
+                    <div class="item-icon" id="armorIcon">-</div>
+                </div>
+                <div class="equip-slot" id="accSlot" onclick="unequipItem('accessory')">
+                    <div class="equip-slot-label">ACC</div>
+                    <div class="item-icon" id="accIcon">-</div>
+                </div>
+            </div>
+            
+            <div class="inventory-grid" id="inventoryGrid"></div>
+            
+            <button class="action-btn" onclick="closeInventory()" style="width: 100%; margin-top: 10px;">CLOSE</button>
+        </div>
+    </div>
+    
+    <!-- Crafting Modal -->
+    <div class="modal-overlay" id="craftingModal">
+        <div class="modal">
+            <div class="panel-title">CRAFTING</div>
+            
+            <div class="player-stats-display">
+                <div class="stat-item"><span class="stat-label">Iron</span><span class="stat-value" id="matIron">0</span></div>
+                <div class="stat-item"><span class="stat-label">Wood</span><span class="stat-value" id="matWood">0</span></div>
+                <div class="stat-item"><span class="stat-label">Herbs</span><span class="stat-value" id="matHerbs">0</span></div>
+                <div class="stat-item"><span class="stat-label">Gems</span><span class="stat-value" id="matGems">0</span></div>
+                <div class="stat-item"><span class="stat-label">Hide</span><span class="stat-value" id="matHide">0</span></div>
+                <div class="stat-item"><span class="stat-label">Gold</span><span class="stat-value" id="matGold">0</span></div>
+            </div>
+            
+            <div class="recipe-list" id="recipeList"></div>
+            
+            <button class="action-btn" onclick="closeCrafting()" style="width: 100%; margin-top: 12px;">CLOSE</button>
+        </div>
+    </div>
+    
+    <!-- Shop Modal -->
+    <div class="modal-overlay" id="shopModal">
+        <div class="modal">
+            <div class="panel-title">BLACKSMITH SHOP</div>
+            
+            <div class="gold-display" style="text-align: center; margin-bottom: 12px; font-size: 16px;">
+                Gold: <span id="shopGold">0</span>
+            </div>
+            
+            <div class="tabs">
+                <button class="tab active" onclick="showShopTab('items')">ITEMS</button>
+                <button class="tab" onclick="showShopTab('weapons')">WEAPONS</button>
+                <button class="tab" onclick="showShopTab('armor')">ARMOR</button>
+                <button class="tab" onclick="showShopTab('upgrades')">UPGRADE</button>
+            </div>
+            
+            <div id="shopContent"></div>
+            
+            <div style="text-align: center; margin-top: 12px;">
+                <button class="action-btn" onclick="continueToNextFloor()" style="background: var(--heal-color); color: #fff;">
+                    FLOOR <span id="nextFloorNum">2</span> →
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Level Up Overlay -->
+    <div class="level-up-overlay" id="levelUpOverlay">
+        <div class="level-up-title">LEVEL UP!</div>
+        <div id="levelUpStats" style="margin-bottom: 15px;"></div>
+        <button class="action-btn" onclick="closeLevelUp()" style="background: var(--xp-color);">CONTINUE</button>
+    </div>
+    
+    <!-- Floor Transition -->
+    <div class="floor-transition" id="floorTransition">
+        <div class="floor-text">ENTERING</div>
+        <div class="floor-number" id="floorTransitionNum">1</div>
+    </div>
+
+    <script>
+        // Game Constants
+        const TILE_SIZE = 40;
+        const GRID_WIDTH = 16;
+        const GRID_HEIGHT = 12;
+        const MAX_INV_SLOTS = 20;
+        
+        // Floor Themes (Dynamic colors based on settings)
+        const FLOOR_THEMES = [
+            { name: 'Classic Dungeon', floor: '#2a2a3a', wall: '#3a3a4a', accent: '#ff6b6b' },
+            { name: 'Crystal Cavern', floor: '#1a1a3a', wall: '#2a2a4a', accent: '#3498db' },
+            { name: 'Haunted Crypt', floor: '#1a2a1a', wall: '#2a3a2a', accent: '#2ecc71' },
+            { name: 'Burning Inferno', floor: '#3a1a1a', wall: '#4a2a2a', accent: '#e67e22' },
+            { name: 'Frost Dungeon', floor: '#2a4a5a', wall: '#3a5a6a', accent: '#00d2d3' },
+            { name: 'Ancient Ruins', floor: '#3a3a1a', wall: '#4a4a2a', accent: '#f1c40f' },
+            { name: 'Poison Marsh', floor: '#1a3a1a', wall: '#2a4a2a', accent: '#a3e635' },
+            { name: 'Shadow Realm', floor: '#0a0a2a', wall: '#1a1a3a', accent: '#9b59b6' }
+        ];
+        
+        // Enemy Types
+        const ENEMY_TYPES = {
+            slime: { name: 'Slime', icon: '🔵', hp: 30, attack: 5, defense: 2, speed: 2, xp: 15, gold: 5, color: '#3498db' },
+            skeleton: { name: 'Skeleton', icon: '💀', hp: 45, attack: 10, defense: 5, speed: 3, xp: 25, gold: 10, color: '#ecf0f1' },
+            ghost: { name: 'Ghost', icon: '👻', hp: 35, attack: 12, defense: 3, speed: 4, xp: 30, gold: 15, color: '#9b59b6' },
+            orc: { name: 'Orc', icon: '👹', hp: 70, attack: 15, defense: 8, speed: 2, xp: 40, gold: 20, color: '#27ae60' },
+            demon: { name: 'Demon', icon: '😈', hp: 80, attack: 20, defense: 10, speed: 3, xp: 50, gold: 30, color: '#e74c3c' },
+            golem: { name: 'Golem', icon: '🗿', hp: 120, attack: 18, defense: 20, speed: 1, xp: 60, gold: 35, color: '#95a5a6' },
+            wraith: { name: 'Wraith', icon: '🌀', hp: 50, attack: 16, defense: 5, speed: 4, xp: 45, gold: 25, color: '#8e44ad' },
+            dragon: { name: 'Dragon', icon: '🐉', hp: 300, attack: 30, defense: 25, speed: 2, xp: 200, gold: 100, color: '#e67e22', isBoss: true }
+        };
+        
+        // Item Definitions
+        const ITEMS = {
+            rusty_sword: { name: 'Rusty Sword', icon: '🗡', type: 'weapon', attack: 5, value: 20, desc: 'A worn but functional blade' },
+            iron_sword: { name: 'Iron Sword', icon: '⚔️', type: 'weapon', attack: 12, value: 50, desc: 'A sturdy iron blade' },
+            steel_sword: { name: 'Steel Sword', icon: '⚔️', type: 'weapon', attack: 20, value: 100, desc: 'A finely crafted steel sword' },
+            fire_blade: { name: 'Fire Blade', icon: '🔥', type: 'weapon', attack: 30, critBonus: 10, value: 200, desc: 'Burns with enchanted flames' },
+            crystal_sword: { name: 'Crystal Sword', icon: '💎', type: 'weapon', attack: 40, defense: 10, value: 350, desc: 'Forged from pure crystal' },
+            leather_armor: { name: 'Leather Armor', icon: '🥋', type: 'armor', defense: 5, value: 25, desc: 'Basic protection' },
+            chainmail: { name: 'Chainmail', icon: '⛓️', type: 'armor', defense: 12, value: 60, desc: 'Linked metal rings' },
+            plate_armor: { name: 'Plate Armor', icon: '🛡️', type: 'armor', defense: 20, value: 120, desc: 'Heavy plate protection' },
+            dragon_scale: { name: 'Dragon Scale', icon: '🐲', type: 'armor', defense: 35, hpBonus: 30, value: 300, desc: 'Made from dragon scales' },
+            iron_ring: { name: 'Iron Ring', icon: '💍', type: 'accessory', defense: 3, value: 30, desc: 'Simple but effective' },
+            power_charm: { name: 'Power Charm', icon: '📿', type: 'accessory', attack: 8, value: 50, desc: 'Enhances attack power' },
+            crit_amulet: { name: 'Crit Amulet', icon: '⭐', type: 'accessory', critBonus: 15, value: 80, desc: 'Increases critical chance' },
+            evasion_cloak: { name: 'Evasion Cloak', icon: '🧥', type: 'accessory', evasionBonus: 15, value: 100, desc: 'Helps dodge attacks' },
+            regen_talisman: { name: 'Regen Talisman', icon: '✝️', type: 'accessory', regen: 2, value: 90, desc: 'Slowly restores health' },
+            health_potion: { name: 'Health Potion', icon: '🧪', type: 'consumable', heal: 40, value: 20, desc: 'Restores 40 HP' },
+            mana_potion: { name: 'Mana Potion', icon: '💙', type: 'consumable', manaRestore: 30, value: 15, desc: 'Restores 30 MP' },
+            super_potion: { name: 'Super Potion', icon: '💖', type: 'consumable', heal: 80, value: 50, desc: 'Restores 80 HP' },
+            bomb: { name: 'Bomb', icon: '💣', type: 'consumable', damage: 50, value: 30, desc: 'Deals 50 damage to an enemy' },
+            elixir: { name: 'Elixir', icon: '⚗️', type: 'consumable', heal: 50, manaRestore: 30, value: 60, desc: 'Restores HP and MP' },
+            iron_ingot: { name: 'Iron Ingot', icon: '🔲', type: 'material', value: 10, desc: 'Refined iron bar' },
+            wood_handle: { name: 'Wood Handle', icon: '🪵', type: 'material', value: 5, desc: 'Carved wooden handle' },
+            herb: { name: 'Herb', icon: '🌿', type: 'material', value: 8, desc: 'Medicinal herb' },
+            empty_vial: { name: 'Empty Vial', icon: '🫙', type: 'material', value: 5, desc: 'Glass container' },
+            gem: { name: 'Gem', icon: '💠', type: 'material', value: 25, desc: 'Polished gemstone' },
+            gold_band: { name: 'Gold Band', icon: '🔰', type: 'material', value: 15, desc: 'Ring of pure gold' },
+            hide: { name: 'Hide', icon: '🟤', type: 'material', value: 12, desc: 'Tanned animal hide' },
+            thread: { name: 'Thread', icon: '🧵', type: 'material', value: 4, desc: 'Strong cloth thread' },
+            gold_ore: { name: 'Gold Ore', icon: '🪙', type: 'material', value: 20, desc: 'Raw gold ore' },
+            crystal_shard: { name: 'Crystal Shard', icon: '💎', type: 'material', value: 30, desc: 'Piece of magical crystal' },
+            ancient_stone: { name: 'Ancient Stone', icon: '🪨', type: 'material', value: 40, desc: 'Fragment of ancient ruins' }
+        };
+        
+        // Crafting Recipes
+        const RECIPES = [
+            { result: 'iron_sword', materials: { iron_ingot: 2, wood_handle: 1 }, desc: 'Iron Sword' },
+            { result: 'steel_sword', materials: { iron_sword: 1, iron_ingot: 3, crystal_shard: 1 }, desc: 'Steel Sword' },
+            { result: 'fire_blade', materials: { steel_sword: 1, ancient_stone: 2, gem: 3 }, desc: 'Fire Blade' },
+            { result: 'health_potion', materials: { herb: 2, empty_vial: 1 }, desc: 'Health Potion' },
+            { result: 'leather_armor', materials: { hide: 3, thread: 2 }, desc: 'Leather Armor' },
+            { result: 'chainmail', materials: { leather_armor: 1, iron_ingot: 4 }, desc: 'Chainmail' },
+            { result: 'plate_armor', materials: { chainmail: 1, iron_ingot: 5, gold_ore: 2 }, desc: 'Plate Armor' },
+            { result: 'power_charm', materials: { gem: 1, gold_band: 1 }, desc: 'Power Charm' },
+            { result: 'crit_amulet', materials: { gem: 2, gold_band: 2, crystal_shard: 1 }, desc: 'Crit Amulet' },
+            { result: 'super_potion', materials: { health_potion: 2, herb: 3 }, desc: 'Super Potion' },
+            { result: 'elixir', materials: { health_potion: 1, mana_potion: 1, crystal_shard: 1 }, desc: 'Elixir' },
+            { result: 'bomb', materials: { iron_ingot: 2, gold_ore: 1 }, desc: 'Bomb' },
+            { result: 'evasion_cloak', materials: { thread: 4, hide: 2, gem: 1 }, desc: 'Evasion Cloak' },
+            { result: 'regen_talisman', materials: { herb: 4, gem: 2, gold_band: 1 }, desc: 'Regen Talisman' },
+            { result: 'crystal_sword', materials: { crystal_shard: 5, ancient_stone: 2, gold_band: 2 }, desc: 'Crystal Sword' },
+            { result: 'dragon_scale', materials: { hide: 5, ancient_stone: 3, crystal_shard: 3 }, desc: 'Dragon Scale' }
+        ];
+        
+        // Game State
+        let gameState = {
+            floor: 1,
+            player: {
+                x: 0, y: 0,
+                hp: 100, maxHp: 100,
+                mp: 50, maxMp: 50,
+                xp: 0, xpToLevel: 100,
+                level: 1,
+                gold: 50,
+                baseAttack: 10,
+                baseDefense: 5,
+                baseCrit: 10,
+                baseEvasion: 5,
+                weapon: null,
+                armor: null,
+                accessory: null
+            },
+            enemies: [],
+            items: [],
+            revealed: [],
+            inventory: [],
+            materials: {},
+            turn: 'player',
+            isDefending: false,
+            specialCooldown: 0
+        };
+        
+        let currentTheme = FLOOR_THEMES[0];
+        let map = [];
+        let shopTab = 'items';
+        let currentDisplayMode = 'dark';
+        
+        // Canvas setup
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Theme Functions
+        function setTheme(mode) {
+            currentDisplayMode = mode;
+            document.body.classList.remove('light-mode', 'high-contrast');
+            
+            if (mode === 'light') {
+                document.body.classList.add('light-mode');
+            } else if (mode === 'highContrast') {
+                document.body.classList.add('high-contrast');
+            }
+            
+            // Update active state
+            document.querySelectorAll('.settings-option').forEach(opt => opt.classList.remove('active'));
+            document.getElementById('theme' + mode.charAt(0).toUpperCase() + mode.slice(1)).classList.add('active');
+            
+            render();
+            saveSettings();
+        }
+        
+        function toggleSettings() {
+            document.getElementById('settingsMenu').classList.toggle('active');
+        }
+        
+        // Initialize Game
+        function initGame() {
+            loadSettings();
+            generateFloor();
+            updateHUD();
+            render();
+            
+            document.addEventListener('keydown', handleKeyPress);
+            canvas.addEventListener('click', handleCanvasClick);
+            canvas.addEventListener('touchend', handleCanvasTouch);
+            
+            // Close settings when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.settings-btn') && !e.target.closest('.settings-menu')) {
+                    document.getElementById('settingsMenu').classList.remove('active');
+                }
+            });
+        }
+        
+        // Save/Load Settings
+        function saveSettings() {
+            localStorage.setItem('dungeonDepthsSettings', JSON.stringify({
+                theme: currentDisplayMode
+            }));
+        }
+        
+        function loadSettings() {
+            const saved = localStorage.getItem('dungeonDepthsSettings');
+            if (saved) {
+                const data = JSON.parse(saved);
+                setTheme(data.theme || 'dark');
+            }
+        }
+        
+        // Generate Procedural Floor
+        function generateFloor() {
+            currentTheme = FLOOR_THEMES[(gameState.floor - 1) % FLOOR_THEMES.length];
+            
+            map = [];
+            for (let y = 0; y < GRID_HEIGHT; y++) {
+                map[y] = [];
+                for (let x = 0; x < GRID_WIDTH; x++) {
+                    map[y][x] = 1;
+                }
+            }
+            
+            const rooms = [];
+            const numRooms = 4 + Math.floor(Math.random() * 3);
+            
+            for (let i = 0; i < numRooms; i++) {
+                const roomW = 3 + Math.floor(Math.random() * 4);
+                const roomH = 3 + Math.floor(Math.random() * 3);
+                const roomX = 1 + Math.floor(Math.random() * (GRID_WIDTH - roomW - 2));
+                const roomY = 1 + Math.floor(Math.random() * (GRID_HEIGHT - roomH - 2));
+                
+                let overlaps = false;
+                for (const room of rooms) {
+                    if (roomX < room.x + room.w + 1 && roomX + roomW + 1 > room.x &&
+                        roomY < room.y + room.h + 1 && roomY + roomH + 1 > room.y) {
+                        overlaps = true;
+                        break;
+                    }
+                }
+                
+                if (!overlaps) {
+                    rooms.push({ x: roomX, y: roomY, w: roomW, h: roomH });
+                    for (let y = roomY; y < roomY + roomH; y++) {
+                        for (let x = roomX; x < roomX + roomW; x++) {
+                            map[y][x] = 0;
+                        }
+                    }
+                }
+            }
+            
+            // Connect rooms
+            for (let i = 1; i < rooms.length; i++) {
+                const prev = rooms[i - 1];
+                const curr = rooms[i];
+                
+                const prevCenterX = Math.floor(prev.x + prev.w / 2);
+                const prevCenterY = Math.floor(prev.y + prev.h / 2);
+                const currCenterX = Math.floor(curr.x + curr.w / 2);
+                const currCenterY = Math.floor(curr.y + curr.h / 2);
+                
+                for (let x = Math.min(prevCenterX, currCenterX); x <= Math.max(prevCenterX, currCenterX); x++) {
+                    map[prevCenterY][x] = 0;
+                }
+                for (let y = Math.min(prevCenterY, currCenterY); y <= Math.max(prevCenterY, currCenterY); y++) {
+                    map[y][currCenterX] = 0;
+                }
+            }
+            
+            // Place player
+            if (rooms.length > 0) {
+                gameState.player.x = rooms[0].x + Math.floor(rooms[0].w / 2);
+                gameState.player.y = rooms[0].y + Math.floor(rooms[0].h / 2);
+            } else {
+                gameState.player.x = 2;
+                gameState.player.y = 2;
+            }
+            
+            // Initialize revealed
+            gameState.revealed = [];
+            for (let y = 0; y < GRID_HEIGHT; y++) {
+                gameState.revealed[y] = [];
+                for (let x = 0; x < GRID_WIDTH; x++) {
+                    gameState.revealed[y][x] = false;
+                }
+            }
+            revealAround(gameState.player.x, gameState.player.y);
+            
+            // Spawn enemies
+            gameState.enemies = [];
+            const numEnemies = 3 + Math.floor(gameState.floor * 0.8);
+            const enemyTypes = Object.keys(ENEMY_TYPES);
+            
+            for (let i = 0; i < numEnemies && rooms.length > 1; i++) {
+                const roomIndex = 1 + Math.floor(Math.random() * (rooms.length - 1));
+                const room = rooms[roomIndex];
+                const ex = room.x + Math.floor(Math.random() * room.w);
+                const ey = room.y + Math.floor(Math.random() * room.h);
+                
+                if (map[ey][ex] === 0 && !(ex === gameState.player.x && ey === gameState.player.y)) {
+                    let typeIndex;
+                    if (gameState.floor % 5 === 0 && i === 0) {
+                        typeIndex = enemyTypes.indexOf('dragon');
+                    } else {
+                        const maxIndex = Math.min(enemyTypes.length - 1, 2 + Math.floor(gameState.floor / 3));
+                        typeIndex = Math.floor(Math.random() * (maxIndex + 1));
+                    }
+                    
+                    const enemyType = enemyTypes[typeIndex];
+                    const baseEnemy = ENEMY_TYPES[enemyType];
+                    const scaleFactor = 1 + (gameState.floor - 1) * 0.1;
+                    
+                    gameState.enemies.push({
+                        type: enemyType,
+                        name: baseEnemy.name,
+                        icon: baseEnemy.icon,
+                        x: ex,
+                        y: ey,
+                        hp: Math.floor(baseEnemy.hp * scaleFactor),
+                        maxHp: Math.floor(baseEnemy.hp * scaleFactor),
+                        attack: Math.floor(baseEnemy.attack * scaleFactor),
+                        defense: Math.floor(baseEnemy.defense * scaleFactor),
+                        speed: baseEnemy.speed,
+                        xp: Math.floor(baseEnemy.xp * scaleFactor),
+                        gold: Math.floor(baseEnemy.gold * scaleFactor),
+                        color: baseEnemy.color,
+                        isBoss: baseEnemy.isBoss || false,
+                        hasMoved: false
+                    });
+                }
+            }
+            
+            // Spawn items
+            gameState.items = [];
+            const numItems = 2 + Math.floor(Math.random() * 3);
+            const itemKeys = Object.keys(ITEMS);
+            
+            for (let i = 0; i < numItems; i++) {
+                const roomIndex = Math.floor(Math.random() * rooms.length);
+                const room = rooms[roomIndex];
+                const ix = room.x + Math.floor(Math.random() * room.w);
+                const iy = room.y + Math.floor(Math.random() * room.h);
+                
+                if (map[iy][ix] === 0) {
+                    let itemIndex;
+                    if (Math.random() < 0.4) {
+                        const materials = itemKeys.filter(k => ITEMS[k].type === 'material');
+                        itemIndex = itemKeys.indexOf(materials[Math.floor(Math.random() * materials.length)]);
+                    } else if (Math.random() < 0.3) {
+                        const consumables = itemKeys.filter(k => ITEMS[k].type === 'consumable');
+                        itemIndex = itemKeys.indexOf(consumables[Math.floor(Math.random() * consumables.length)]);
+                    } else {
+                        itemIndex = Math.floor(Math.random() * itemKeys.length);
+                    }
+                    
+                    gameState.items.push({
+                        key: itemKeys[itemIndex],
+                        x: ix,
+                        y: iy
+                    });
+                }
+            }
+            
+            gameState.turn = 'player';
+            gameState.isDefending = false;
+        }
+        
+        function revealAround(x, y) {
+            for (let dy = -2; dy <= 2; dy++) {
+                for (let dx = -2; dx <= 2; dx++) {
+                    const nx = x + dx;
+                    const ny = y + dy;
+                    if (nx >= 0 && nx < GRID_WIDTH && ny >= 0 && ny < GRID_HEIGHT) {
+                        gameState.revealed[ny][nx] = true;
+                    }
+                }
+            }
+        }
+        
+        function getThemeColor(type) {
+            const style = getComputedStyle(document.body);
+            switch(type) {
+                case 'bg': return style.getPropertyValue('--tile-bg').trim() || '#1a1a2a';
+                case 'wall': return style.getPropertyValue('--tile-wall').trim() || '#3a3a4a';
+                case 'floor': return style.getPropertyValue('--tile-floor').trim() || '#2a2a3a';
+                case 'fog': return style.getPropertyValue('--fog-color').trim() || 'rgba(0,0,0,0.9)';
+                default: return currentTheme[type] || '#2a2a3a';
+            }
+        }
+        
+        // Render
+        function render() {
+            const bgColor = getThemeColor('bg');
+            ctx.fillStyle = bgColor;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            for (let y = 0; y < GRID_HEIGHT; y++) {
+                for (let x = 0; x < GRID_WIDTH; x++) {
+                    const px = x * TILE_SIZE;
+                    const py = y * TILE_SIZE;
+                    
+                    if (!gameState.revealed[y][x]) {
+                        ctx.fillStyle = getThemeColor('fog');
+                        ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+                        continue;
+                    }
+                    
+                    if (map[y][x] === 1) {
+                        ctx.fillStyle = getThemeColor('wall');
+                        ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+                        ctx.fillStyle = currentTheme.accent + '30';
+                        ctx.fillRect(px + 2, py + 2, TILE_SIZE - 4, TILE_SIZE - 4);
+                    } else {
+                        ctx.fillStyle = getThemeColor('floor');
+                        ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+                        ctx.fillStyle = currentTheme.accent + '15';
+                        if ((x + y) % 2 === 0) {
+                            ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+                        }
+                    }
+                }
+            }
+            
+            // Draw items
+            for (const item of gameState.items) {
+                if (gameState.revealed[item.y][item.x]) {
+                    const itemData = ITEMS[item.key];
+                    ctx.font = '24px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(itemData.icon, item.x * TILE_SIZE + TILE_SIZE / 2, item.y * TILE_SIZE + TILE_SIZE / 2);
+                }
+            }
+            
+            // Draw enemies
+            for (const enemy of gameState.enemies) {
+                if (gameState.revealed[enemy.y][enemy.x]) {
+                    ctx.font = '28px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(enemy.icon, enemy.x * TILE_SIZE + TILE_SIZE / 2, enemy.y * TILE_SIZE + TILE_SIZE / 2);
+                    
+                    const hpPercent = enemy.hp / enemy.maxHp;
+                    ctx.fillStyle = '#333';
+                    ctx.fillRect(enemy.x * TILE_SIZE + 4, enemy.y * TILE_SIZE + 2, TILE_SIZE - 8, 4);
+                    ctx.fillStyle = hpPercent > 0.5 ? '#2ecc71' : hpPercent > 0.25 ? '#f1c40f' : '#e74c3c';
+                    ctx.fillRect(enemy.x * TILE_SIZE + 4, enemy.y * TILE_SIZE + 2, (TILE_SIZE - 8) * hpPercent, 4);
+                }
+            }
+            
+            // Draw player
+            ctx.font = '30px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('🧙', gameState.player.x * TILE_SIZE + TILE_SIZE / 2, gameState.player.y * TILE_SIZE + TILE_SIZE / 2);
+            
+            const playerHpPercent = gameState.player.hp / getPlayerMaxHp();
+            ctx.fillStyle = '#333';
+            ctx.fillRect(gameState.player.x * TILE_SIZE + 2, gameState.player.y * TILE_SIZE + TILE_SIZE - 6, TILE_SIZE - 4, 5);
+            ctx.fillStyle = '#e74c3c';
+            ctx.fillRect(gameState.player.x * TILE_SIZE + 2, gameState.player.y * TILE_SIZE + TILE_SIZE - 6, (TILE_SIZE - 4) * playerHpPercent, 5);
+        }
+        
+        function handleKeyPress(e) {
+            if (document.getElementById('inventoryModal').classList.contains('active') ||
+                document.getElementById('craftingModal').classList.contains('active') ||
+                document.getElementById('shopModal').classList.contains('active')) {
+                if (e.key === 'Escape') closeAllModals();
+                return;
+            }
+            
+            let dx = 0, dy = 0;
+            
+            switch (e.key.toLowerCase()) {
+                case 'w': case 'arrowup': dy = -1; break;
+                case 's': case 'arrowdown': dy = 1; break;
+                case 'a': case 'arrowleft': dx = -1; break;
+                case 'd': case 'arrowright': dx = 1; break;
+                case 'i': openInventory(); return;
+                case 'c': openCrafting(); return;
+                case 'q': useHealthPotion(); return;
+                case ' ': e.preventDefault(); break;
+                case 'escape': closeAllModals(); return;
+                default: return;
+            }
+            
+            if (dx !== 0 || dy !== 0) {
+                movePlayer(dx, dy);
+            }
+        }
+        
+        function handleCanvasClick(e) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const x = Math.floor((e.clientX - rect.left) * scaleX / TILE_SIZE);
+            const y = Math.floor((e.clientY - rect.top) * scaleY / TILE_SIZE);
+            
+            if (x >= 0 && x < GRID_WIDTH && y >= 0 && y < GRID_HEIGHT) {
+                const dx = x - gameState.player.x;
+                const dy = y - gameState.player.y;
+                
+                if (Math.abs(dx) <= 1 && Math.abs(dy) <= 1 && (dx !== 0 || dy !== 0)) {
+                    movePlayer(dx, dy);
+                }
+            }
+        }
+        
+        function handleCanvasTouch(e) {
+            e.preventDefault();
+            const touch = e.changedTouches[0];
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const x = Math.floor((touch.clientX - rect.left) * scaleX / TILE_SIZE);
+            const y = Math.floor((touch.clientY - rect.top) * scaleY / TILE_SIZE);
+            
+            if (x >= 0 && x < GRID_WIDTH && y >= 0 && y < GRID_HEIGHT) {
+                const dx = x - gameState.player.x;
+                const dy = y - gameState.player.y;
+                
+                if (Math.abs(dx) <= 1 && Math.abs(dy) <= 1 && (dx !== 0 || dy !== 0)) {
+                    movePlayer(dx, dy);
+                }
+            }
+        }
+        
+        function movePlayer(dx, dy) {
+            if (gameState.turn !== 'player') return;
+            
+            const newX = gameState.player.x + dx;
+            const newY = gameState.player.y + dy;
+            
+            if (newX < 0 || newX >= GRID_WIDTH || newY < 0 || newY >= GRID_HEIGHT) return;
+            if (map[newY][newX] === 1) return;
+            
+            const enemy = gameState.enemies.find(e => e.x === newX && e.y === newY);
+            if (enemy) {
+                playerAttackEnemy(enemy);
+                return;
+            }
+            
+            gameState.player.x = newX;
+            gameState.player.y = newY;
+            revealAround(newX, newY);
+            
+            const itemIndex = gameState.items.findIndex(i => i.x === newX && i.y === newY);
+            if (itemIndex !== -1) pickupItem(itemIndex);
+            
+            if (gameState.enemies.length === 0) {
+                showShop();
+                return;
+            }
+            
+            render();
+            endPlayerTurn();
+        }
+        
+        function pickupItem(index) {
+            const item = gameState.items[index];
+            const itemData = ITEMS[item.key];
+            
+            if (itemData.type === 'material') {
+                gameState.materials[item.key] = (gameState.materials[item.key] || 0) + 1;
+                addLog(`Picked up ${itemData.name}!`, 'loot');
+            } else {
+                if (gameState.inventory.length < MAX_INV_SLOTS) {
+                    gameState.inventory.push(item.key);
+                    addLog(`Picked up ${itemData.name}!`, 'loot');
+                } else {
+                    addLog('Inventory full!', 'info');
+                    return;
+                }
+            }
+            
+            gameState.items.splice(index, 1);
+            updateHUD();
+        }
+        
+        function playerAttack() {
+            const adjacent = gameState.enemies.filter(e => 
+                Math.abs(e.x - gameState.player.x) <= 1 && 
+                Math.abs(e.y - gameState.player.y) <= 1
+            );
+            
+            if (adjacent.length === 0) {
+                setMessage('No enemies nearby!');
+                return;
+            }
+            
+            playerAttackEnemy(adjacent[0]);
+        }
+        
+        function playerAttackEnemy(enemy) {
+            const playerAtk = getPlayerAttack();
+            const playerCrit = getPlayerCrit();
+            
+            let damage = playerAtk - enemy.defense;
+            const isCrit = Math.random() * 100 < playerCrit;
+            
+            if (isCrit) damage *= 2;
+            damage = Math.max(1, damage);
+            enemy.hp -= damage;
+            
+            if (isCrit) {
+                addLog(`CRIT! ${damage} damage to ${enemy.name}!`, 'damage');
+                showDamageNumber(enemy.x, enemy.y, damage, 'crit');
+            } else {
+                addLog(`${damage} damage to ${enemy.name}.`, 'damage');
+                showDamageNumber(enemy.x, enemy.y, damage, 'damage');
+            }
+            
+            if (enemy.hp <= 0) defeatEnemy(enemy);
+            
+            render();
+            endPlayerTurn();
+        }
+        
+        function defeatEnemy(enemy) {
+            addLog(`${enemy.name} defeated!`, 'info');
+            gameState.player.xp += enemy.xp;
+            checkLevelUp();
+            gameState.player.gold += enemy.gold;
+            addLog(`Found ${enemy.gold} gold!`, 'loot');
+            
+            if (Math.random() < 0.3 || enemy.isBoss) {
+                const itemKeys = Object.keys(ITEMS);
+                const dropKey = itemKeys[Math.floor(Math.random() * itemKeys.length)];
+                gameState.items.push({ key: dropKey, x: enemy.x, y: enemy.y });
+                addLog(`Dropped ${ITEMS[dropKey].name}!`, 'loot');
+            }
+            
+            const index = gameState.enemies.indexOf(enemy);
+            if (index !== -1) gameState.enemies.splice(index, 1);
+            
+            updateHUD();
+            
+            if (gameState.enemies.length === 0) {
+                addLog('Floor cleared!', 'info');
+                setMessage('Floor cleared! Find the stairs.');
+            }
+        }
+        
+        function checkLevelUp() {
+            while (gameState.player.xp >= gameState.player.xpToLevel) {
+                gameState.player.xp -= gameState.player.xpToLevel;
+                gameState.player.level++;
+                gameState.player.xpToLevel = Math.floor(gameState.player.xpToLevel * 1.5);
+                gameState.player.maxHp += 20;
+                gameState.player.maxMp += 10;
+                gameState.player.hp = gameState.player.maxHp;
+                gameState.player.mp = gameState.player.maxMp;
+                gameState.player.baseAttack += 3;
+                gameState.player.baseDefense += 2;
+                gameState.player.baseCrit += 2;
+                
+                addLog(`LEVEL UP! Level ${gameState.player.level}!`, 'levelup');
+                showLevelUp();
+            }
+        }
+        
+        function showLevelUp() {
+            const overlay = document.getElementById('levelUpOverlay');
+            const statsDiv = document.getElementById('levelUpStats');
+            statsDiv.innerHTML = `
+                <div style="margin:5px 0;">Lvl ${gameState.player.level}</div>
+                <div style="margin:5px 0;color:var(--hp-color);">+20 Max HP</div>
+                <div style="margin:5px 0;color:var(--mp-color);">+10 Max MP</div>
+            `;
+            overlay.style.display = 'block';
+        }
+        
+        function closeLevelUp() {
+            document.getElementById('levelUpOverlay').style.display = 'none';
+        }
+        
+        function endPlayerTurn() {
+            const regen = getPlayerRegen();
+            if (regen > 0 && gameState.player.hp < gameState.player.maxHp) {
+                const healed = Math.min(regen, gameState.player.maxHp - gameState.player.hp);
+                gameState.player.hp += healed;
+                if (healed > 0) addLog(`Regen ${healed} HP.`, 'heal');
+            }
+            
+            if (gameState.specialCooldown > 0) gameState.specialCooldown--;
+            
+            gameState.turn = 'enemy';
+            gameState.isDefending = false;
+            setTimeout(enemyTurn, 300);
+        }
+        
+        function enemyTurn() {
+            for (const enemy of gameState.enemies) {
+                const dx = gameState.player.x - enemy.x;
+                const dy = gameState.player.y - enemy.y;
+                
+                if (Math.abs(dx) <= 1 && Math.abs(dy) <= 1) {
+                    enemyAttack(enemy);
+                } else {
+                    const moveX = dx !== 0 ? (dx > 0 ? 1 : -1) : 0;
+                    const moveY = dy !== 0 ? (dy > 0 ? 1 : -1) : 0;
+                    
+                    if (moveX !== 0) {
+                        const newX = enemy.x + moveX;
+                        if (canMoveTo(newX, enemy.y) && !isEnemyAt(newX, enemy.y)) enemy.x = newX;
+                    } else if (moveY !== 0) {
+                        const newY = enemy.y + moveY;
+                        if (canMoveTo(enemy.x, newY) && !isEnemyAt(enemy.x, newY)) enemy.y = newY;
+                    }
+                    
+                    const newDx = gameState.player.x - enemy.x;
+                    const newDy = gameState.player.y - enemy.y;
+                    if (Math.abs(newDx) <= 1 && Math.abs(newDy) <= 1) enemyAttack(enemy);
+                }
+            }
+            
+            revealAllVisible();
+            render();
+            gameState.turn = 'player';
+        }
+        
+        function enemyAttack(enemy) {
+            let damage = enemy.attack - getPlayerDefense();
+            
+            if (Math.random() * 100 < getPlayerEvasion()) {
+                addLog(`Dodged ${enemy.name}'s attack!`, 'info');
+                showDamageNumber(gameState.player.x, gameState.player.y, 'MISS', 'heal');
+                return;
+            }
+            
+            if (gameState.isDefending) damage = Math.floor(damage * 0.5);
+            damage = Math.max(1, damage);
+            gameState.player.hp -= damage;
+            
+            addLog(`${enemy.name} deals ${damage}!`, 'damage');
+            showDamageNumber(gameState.player.x, gameState.player.y, damage, 'damage');
+            updateHUD();
+            
+            if (gameState.player.hp <= 0) gameOver();
+        }
+        
+        function playerDefend() {
+            gameState.isDefending = true;
+            addLog('Defending!', 'info');
+            setMessage('Defending - 50% damage taken.');
+            endPlayerTurn();
+        }
+        
+        function useSpecialAbility() {
+            if (gameState.specialCooldown > 0) {
+                setMessage(`Cooldown: ${gameState.specialCooldown} turns`);
+                return;
+            }
+            if (gameState.player.mp < 20) {
+                setMessage('Need 20 MP!');
+                return;
+            }
+            
+            gameState.player.mp -= 20;
+            gameState.specialCooldown = 3;
+            
+            const adjacent = gameState.enemies.filter(e => 
+                Math.abs(e.x - gameState.player.x) <= 1 && 
+                Math.abs(e.y - gameState.player.y) <= 1
+            );
+            
+            if (adjacent.length === 0) {
+                addLog('No enemies in range!', 'info');
+            } else {
+                for (const enemy of adjacent) {
+                    const damage = Math.max(1, getPlayerAttack() * 2 - enemy.defense);
+                    enemy.hp -= damage;
+                    addLog(`Power Strike hits ${enemy.name} for ${damage}!`, 'damage');
+                    showDamageNumber(enemy.x, enemy.y, damage, 'crit');
+                    if (enemy.hp <= 0) defeatEnemy(enemy);
+                }
+            }
+            
+            render();
+            updateHUD();
+            endPlayerTurn();
+        }
+        
+        function useHealthPotion() {
+            const potionIndex = gameState.inventory.indexOf('health_potion');
+            if (potionIndex === -1) {
+                const superPotionIndex = gameState.inventory.indexOf('super_potion');
+                if (superPotionIndex === -1) {
+                    setMessage('No potions!');
+                    return;
+                } else {
+                    gameState.inventory.splice(superPotionIndex, 1);
+                    const heal = Math.min(80, gameState.player.maxHp - gameState.player.hp);
+                    gameState.player.hp += heal;
+                    addLog(`Super Potion +${heal} HP!`, 'heal');
+                    showDamageNumber(gameState.player.x, gameState.player.y, '+' + heal, 'heal');
+                }
+            } else {
+                gameState.inventory.splice(potionIndex, 1);
+                const heal = Math.min(40, gameState.player.maxHp - gameState.player.hp);
+                gameState.player.hp += heal;
+                addLog(`Health Potion +${heal} HP!`, 'heal');
+                showDamageNumber(gameState.player.x, gameState.player.y, '+' + heal, 'heal');
+            }
+            
+            updateHUD();
+        }
+        
+        function showDamageNumber(x, y, value, type) {
+            const div = document.createElement('div');
+            div.className = 'damage-number ' + type;
+            div.textContent = value;
+            const rect = canvas.getBoundingClientRect();
+            div.style.left = (rect.left + x * TILE_SIZE + TILE_SIZE / 2) + 'px';
+            div.style.top = (rect.top + y * TILE_SIZE) + 'px';
+            document.body.appendChild(div);
+            setTimeout(() => div.remove(), 1000);
+        }
+        
+        function canMoveTo(x, y) {
+            return x >= 0 && x < GRID_WIDTH && y >= 0 && y < GRID_HEIGHT && map[y][x] === 0;
+        }
+        
+        function isEnemyAt(x, y) {
+            return gameState.enemies.some(e => e.x === x && e.y === y);
+        }
+        
+        function getPlayerAttack() {
+            let atk = gameState.player.baseAttack;
+            if (gameState.player.weapon) atk += ITEMS[gameState.player.weapon].attack || 0;
+            if (gameState.player.accessory) atk += ITEMS[gameState.player.accessory].attack || 0;
+            return atk;
+        }
+        
+        function getPlayerDefense() {
+            let def = gameState.player.baseDefense;
+            if (gameState.player.armor) def += ITEMS[gameState.player.armor].defense || 0;
+            if (gameState.player.weapon) def += ITEMS[gameState.player.weapon].defense || 0;
+            if (gameState.player.accessory) def += ITEMS[gameState.player.accessory].defense || 0;
+            return def;
+        }
+        
+        function getPlayerCrit() {
+            let crit = gameState.player.baseCrit;
+            if (gameState.player.weapon) crit += ITEMS[gameState.player.weapon].critBonus || 0;
+            if (gameState.player.accessory) crit += ITEMS[gameState.player.accessory].critBonus || 0;
+            return crit;
+        }
+        
+        function getPlayerEvasion() {
+            let eva = gameState.player.baseEvasion;
+            if (gameState.player.accessory) eva += ITEMS[gameState.player.accessory].evasionBonus || 0;
+            return eva;
+        }
+        
+        function getPlayerRegen() {
+            return gameState.player.accessory ? (ITEMS[gameState.player.accessory].regen || 0) : 0;
+        }
+        
+        function getPlayerMaxHp() {
+            let maxHp = gameState.player.maxHp;
+            if (gameState.player.armor) maxHp += ITEMS[gameState.player.armor].hpBonus || 0;
+            return maxHp;
+        }
+        
+        function revealAllVisible() {
+            for (let y = 0; y < GRID_HEIGHT; y++) {
+                for (let x = 0; x < GRID_WIDTH; x++) {
+                    if (map[y][x] === 0 && Math.abs(x - gameState.player.x) + Math.abs(y - gameState.player.y) <= 5) {
+                        gameState.revealed[y][x] = true;
+                    }
+                }
+            }
+        }
+        
+        function gameOver() {
+            addLog('YOU DIED!', 'damage');
+            setMessage('Game Over! Refreshing...');
+            setTimeout(() => location.reload(), 2000);
+        }
+        
+        function updateHUD() {
+            const maxHp = getPlayerMaxHp();
+            document.getElementById('hpBar').style.width = (gameState.player.hp / maxHp * 100) + '%';
+            document.getElementById('hpText').textContent = `${gameState.player.hp}/${maxHp}`;
+            document.getElementById('mpBar').style.width = (gameState.player.mp / gameState.player.maxMp * 100) + '%';
+            document.getElementById('mpText').textContent = `${gameState.player.mp}/${gameState.player.maxMp}`;
+            document.getElementById('xpBar').style.width = (gameState.player.xp / gameState.player.xpToLevel * 100) + '%';
+            document.getElementById('xpText').textContent = `${gameState.player.xp}/${gameState.player.xpToLevel}`;
+            document.getElementById('goldDisplay').textContent = gameState.player.gold;
+            document.getElementById('floorDisplay').textContent = gameState.floor;
+            document.getElementById('progressInfo').textContent = `Lvl ${gameState.player.level} | XP: ${gameState.player.xpToLevel} | ${gameState.specialCooldown > 0 ? 'CD:' + gameState.specialCooldown : 'SKL Ready'}`;
+        }
+        
+        function addLog(message, type = 'info') {
+            const log = document.getElementById('combatLog');
+            const entry = document.createElement('div');
+            entry.className = 'log-entry ' + type;
+            entry.textContent = message;
+            log.appendChild(entry);
+            log.scrollTop = log.scrollHeight;
+        }
+        
+        function setMessage(msg) {
+            document.getElementById('messageDisplay').textContent = msg;
+        }
+        
+        // Inventory
+        function openInventory() {
+            const modal = document.getElementById('inventoryModal');
+            document.getElementById('weaponIcon').textContent = gameState.player.weapon ? ITEMS[gameState.player.weapon].icon : '-';
+            document.getElementById('armorIcon').textContent = gameState.player.armor ? ITEMS[gameState.player.armor].icon : '-';
+            document.getElementById('accIcon').textContent = gameState.player.accessory ? ITEMS[gameState.player.accessory].icon : '-';
+            document.getElementById('weaponIcon').parentElement.classList.toggle('equipped', !!gameState.player.weapon);
+            document.getElementById('armorIcon').parentElement.classList.toggle('equipped', !!gameState.player.armor);
+            document.getElementById('accIcon').parentElement.classList.toggle('equipped', !!gameState.player.accessory);
+            
+            const grid = document.getElementById('inventoryGrid');
+            grid.innerHTML = '';
+            for (let i = 0; i < MAX_INV_SLOTS; i++) {
+                const slot = document.createElement('div');
+                slot.className = 'inv-slot';
+                if (gameState.inventory[i]) {
+                    const item = ITEMS[gameState.inventory[i]];
+                    slot.innerHTML = `<span class="item-icon">${item.icon}</span>
+                        <div class="item-tooltip">
+                            <div class="item-name">${item.name}</div>
+                            <div class="item-desc">${item.desc}</div>
+                            ${item.attack ? `<div class="item-stats">+${item.attack} ATK</div>` : ''}
+                            ${item.defense ? `<div class="item-stats">+${item.defense} DEF</div>` : ''}
+                            ${item.heal ? `<div class="item-stats">+${item.heal} HP</div>` : ''}
+                            <button class="action-btn" onclick="useItemFromInventory(${i})" style="margin-top:5px;padding:5px;font-size:9px;">USE</button>
+                            ${item.type !== 'consumable' && item.type !== 'material' ? `<button class="action-btn" onclick="equipItemFromInventory(${i})" style="margin-top:3px;padding:5px;font-size:9px;">EQUIP</button>` : ''}
+                        </div>`;
+                }
+                grid.appendChild(slot);
+            }
+            modal.classList.add('active');
+        }
+        
+        function closeInventory() {
+            document.getElementById('inventoryModal').classList.remove('active');
+        }
+        
+        function useItemFromInventory(index) {
+            const itemKey = gameState.inventory[index];
+            const item = ITEMS[itemKey];
+            
+            if (item.type === 'consumable') {
+                gameState.inventory.splice(index, 1);
+                if (item.heal) {
+                    const heal = Math.min(item.heal, gameState.player.maxHp - gameState.player.hp);
+                    gameState.player.hp += heal;
+                    addLog(`Used ${item.name}! +${heal} HP.`, 'heal');
+                }
+                if (item.manaRestore) {
+                    gameState.player.mp = Math.min(gameState.player.maxMp, gameState.player.mp + item.manaRestore);
+                    addLog(`+${item.manaRestore} MP.`, 'heal');
+                }
+                if (item.damage) {
+                    const adjacent = gameState.enemies.filter(e => Math.abs(e.x - gameState.player.x) <= 2 && Math.abs(e.y - gameState.player.y) <= 2);
+                    if (adjacent.length > 0) {
+                        const target = adjacent[0];
+                        target.hp -= item.damage;
+                        addLog(`Bomb dealt ${item.damage} to ${target.name}!`, 'damage');
+                        showDamageNumber(target.x, target.y, item.damage, 'damage');
+                        if (target.hp <= 0) defeatEnemy(target);
+                    }
+                }
+                updateHUD();
+                render();
+                openInventory();
+            }
+        }
+        
+        function equipItemFromInventory(index) {
+            const itemKey = gameState.inventory[index];
+            const item = ITEMS[itemKey];
+            
+            if (item.type === 'weapon') {
+                if (gameState.player.weapon) gameState.inventory.push(gameState.player.weapon);
+                gameState.player.weapon = itemKey;
+            } else if (item.type === 'armor') {
+                if (gameState.player.armor) gameState.inventory.push(gameState.player.armor);
+                gameState.player.armor = itemKey;
+            } else if (item.type === 'accessory') {
+                if (gameState.player.accessory) gameState.inventory.push(gameState.player.accessory);
+                gameState.player.accessory = itemKey;
+            }
+            
+            gameState.inventory.splice(index, 1);
+            addLog(`Equipped ${item.name}!`, 'info');
+            updateHUD();
+            render();
+            openInventory();
+        }
+        
+        function unequipItem(slot) {
+            if (gameState.player[slot]) {
+                gameState.inventory.push(gameState.player[slot]);
+                addLog(`Unequipped ${ITEMS[gameState.player[slot]].name}.`, 'info');
+                gameState.player[slot] = null;
+                updateHUD();
+                render();
+                openInventory();
+            }
+        }
+        
+        // Crafting
+        function openCrafting() {
+            const modal = document.getElementById('craftingModal');
+            document.getElementById('matIron').textContent = gameState.materials.iron_ingot || 0;
+            document.getElementById('matWood').textContent = gameState.materials.wood_handle || 0;
+            document.getElementById('matHerbs').textContent = gameState.materials.herb || 0;
+            document.getElementById('matGems').textContent = gameState.materials.gem || 0;
+            document.getElementById('matHide').textContent = gameState.materials.hide || 0;
+            document.getElementById('matGold').textContent = gameState.materials.gold_ore || 0;
+            
+            const list = document.getElementById('recipeList');
+            list.innerHTML = '';
+            for (const recipe of RECIPES) {
+                const resultItem = ITEMS[recipe.result];
+                const canCraft = canCraftRecipe(recipe);
+                
+                const div = document.createElement('div');
+                div.className = 'recipe-item' + (canCraft ? ' craftable' : '');
+                let materialsStr = '';
+                for (const mat in recipe.materials) materialsStr += `${ITEMS[mat].icon}${recipe.materials[mat]} `;
+                
+                div.innerHTML = `
+                    <div>
+                        <div class="recipe-name">${resultItem.icon} ${recipe.desc}</div>
+                        <div class="recipe-materials">${materialsStr}</div>
+                    </div>
+                    <button class="action-btn" ${canCraft ? '' : 'disabled'} onclick="craftItem('${recipe.result}')">CRAFT</button>
+                `;
+                list.appendChild(div);
+            }
+            modal.classList.add('active');
+        }
+        
+        function canCraftRecipe(recipe) {
+            for (const mat in recipe.materials) {
+                if ((gameState.materials[mat] || 0) < recipe.materials[mat]) return false;
+            }
+            return true;
+        }
+        
+        function craftItem(itemKey) {
+            const recipe = RECIPES.find(r => r.result === itemKey);
+            if (!recipe || !canCraftRecipe(recipe)) return;
+            
+            for (const mat in recipe.materials) gameState.materials[mat] -= recipe.materials[mat];
+            
+            if (gameState.inventory.length < MAX_INV_SLOTS) {
+                gameState.inventory.push(itemKey);
+                addLog(`Crafted ${ITEMS[itemKey].name}!`, 'loot');
+            } else {
+                addLog('Inventory full!', 'info');
+                for (const mat in recipe.materials) gameState.materials[mat] += recipe.materials[mat];
+                return;
+            }
+            openCrafting();
+        }
+        
+        function closeCrafting() {
+            document.getElementById('craftingModal').classList.remove('active');
+        }
+        
+        // Shop
+        function showShop() {
+            const modal = document.getElementById('shopModal');
+            document.getElementById('shopGold').textContent = gameState.player.gold;
+            document.getElementById('nextFloorNum').textContent = gameState.floor + 1;
+            showShopTab('items');
+            modal.classList.add('active');
+        }
+        
+        function showShopTab(tab) {
+            shopTab = tab;
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            const content = document.getElementById('shopContent');
+            content.innerHTML = '';
+            
+            if (tab === 'items') {
+                content.innerHTML = `<div class="shop-grid">
+                    <div class="shop-item ${gameState.player.gold >= 20 ? 'can-afford' : 'cant-afford'}" onclick="buyItem('health_potion', 20)"><div class="shop-item-icon">🧪</div><div class="shop-item-name">Health Potion</div><div class="shop-item-price">20 G</div></div>
+                    <div class="shop-item ${gameState.player.gold >= 15 ? 'can-afford' : 'cant-afford'}" onclick="buyItem('mana_potion', 15)"><div class="shop-item-icon">💙</div><div class="shop-item-name">Mana Potion</div><div class="shop-item-price">15 G</div></div>
+                    <div class="shop-item ${gameState.player.gold >= 50 ? 'can-afford' : 'cant-afford'}" onclick="buyItem('super_potion', 50)"><div class="shop-item-icon">💖</div><div class="shop-item-name">Super Potion</div><div class="shop-item-price">50 G</div></div>
+                    <div class="shop-item ${gameState.player.gold >= 30 ? 'can-afford' : 'cant-afford'}" onclick="buyItem('bomb', 30)"><div class="shop-item-icon">💣</div><div class="shop-item-name">Bomb</div><div class="shop-item-price">30 G</div></div>
+                    <div class="shop-item ${gameState.player.gold >= 60 ? 'can-afford' : 'cant-afford'}" onclick="buyItem('elixir', 60)"><div class="shop-item-icon">⚗️</div><div class="shop-item-name">Elixir</div><div class="shop-item-price">60 G</div></div>
+                </div>`;
+            } else if (tab === 'weapons') {
+                const weapons = [{key:'rusty_sword',price:40},{key:'iron_sword',price:80},{key:'steel_sword',price:150},{key:'fire_blade',price:300},{key:'crystal_sword',price:500}];
+                content.innerHTML = '<div class="shop-grid">' + weapons.map(w => `<div class="shop-item ${gameState.player.gold >= w.price ? 'can-afford' : 'cant-afford'}" onclick="buyItem('${w.key}',${w.price})"><div class="shop-item-icon">${ITEMS[w.key].icon}</div><div class="shop-item-name">${ITEMS[w.key].name}</div><div class="shop-item-price">${w.price} G</div></div>`).join('') + '</div>';
+            } else if (tab === 'armor') {
+                const armors = [{key:'leather_armor',price:35},{key:'chainmail',price:90},{key:'plate_armor',price:180},{key:'dragon_scale',price:400}];
+                content.innerHTML = '<div class="shop-grid">' + armors.map(a => `<div class="shop-item ${gameState.player.gold >= a.price ? 'can-afford' : 'cant-afford'}" onclick="buyItem('${a.key}',${a.price})"><div class="shop-item-icon">${ITEMS[a.key].icon}</div><div class="shop-item-name">${ITEMS[a.key].name}</div><div class="shop-item-price">${a.price} G</div></div>`).join('') + '</div>';
+            } else if (tab === 'upgrades') {
+                content.innerHTML = `
+                    <div class="player-stats-display">
+                        <div class="stat-item"><span class="stat-label">Max HP</span><span class="stat-value">${getPlayerMaxHp()}</span></div>
+                        <div class="stat-item"><span class="stat-label">Attack</span><span class="stat-value">${getPlayerAttack()}</span></div>
+                        <div class="stat-item"><span class="stat-label">Defense</span><span class="stat-value">${getPlayerDefense()}</span></div>
+                        <div class="stat-item"><span class="stat-label">Crit %</span><span class="stat-value">${getPlayerCrit()}%</span></div>
+                    </div>
+                    <div style="text-align:center;margin-top:10px;">
+                        <button class="upgrade-btn" onclick="buyUpgrade('maxHp',50)" ${gameState.player.gold >= 50 ? '' : 'disabled'}>+20 HP (50G)</button>
+                        <button class="upgrade-btn" onclick="buyUpgrade('attack',40)" ${gameState.player.gold >= 40 ? '' : 'disabled'}>+5 ATK (40G)</button>
+                        <button class="upgrade-btn" onclick="buyUpgrade('defense',40)" ${gameState.player.gold >= 40 ? '' : 'disabled'}>+3 DEF (40G)</button>
+                        <button class="upgrade-btn" onclick="buyUpgrade('crit',60)" ${gameState.player.gold >= 60 ? '' : 'disabled'}>+5 CRIT (60G)</button>
+                        <button class="upgrade-btn" onclick="buyUpgrade('evasion',60)" ${gameState.player.gold >= 60 ? '' : 'disabled'}>+3 EVA (60G)</button>
+                    </div>`;
+            }
+        }
+        
+        function buyItem(itemKey, price) {
+            if (gameState.player.gold < price) { setMessage('Not enough gold!'); return; }
+            if (gameState.inventory.length >= MAX_INV_SLOTS) { setMessage('Inventory full!'); return; }
+            
+            gameState.player.gold -= price;
+            gameState.inventory.push(itemKey);
+            addLog(`Bought ${ITEMS[itemKey].name}!`, 'loot');
+            
+            document.getElementById('shopGold').textContent = gameState.player.gold;
+            showShopTab(shopTab);
+            updateHUD();
+        }
+        
+        function buyUpgrade(type, price) {
+            if (gameState.player.gold < price) { setMessage('Not enough gold!'); return; }
+            gameState.player.gold -= price;
+            
+            switch (type) {
+                case 'maxHp': gameState.player.maxHp += 20; gameState.player.hp += 20; break;
+                case 'attack': gameState.player.baseAttack += 5; break;
+                case 'defense': gameState.player.baseDefense += 3; break;
+                case 'crit': gameState.player.baseCrit += 5; break;
+                case 'evasion': gameState.player.baseEvasion += 3; break;
+            }
+            addLog(`Upgrade purchased!`, 'info');
+            document.getElementById('shopGold').textContent = gameState.player.gold;
+            showShopTab('upgrades');
+            updateHUD();
+        }
+        
+        function continueToNextFloor() {
+            document.getElementById('shopModal').classList.remove('active');
+            
+            const transition = document.getElementById('floorTransition');
+            document.getElementById('floorTransitionNum').textContent = gameState.floor + 1;
+            transition.classList.add('active');
+            
+            setTimeout(() => {
+                gameState.floor++;
+                gameState.player.hp = getPlayerMaxHp();
+                gameState.player.mp = gameState.player.maxMp;
+                
+                document.getElementById('combatLog').innerHTML = '';
+                addLog(`Floor ${gameState.floor}: ${currentTheme.name}`, 'info');
+                
+                generateFloor();
+                transition.classList.remove('active');
+                updateHUD();
+                render();
+            }, 1500);
+        }
+        
+        function closeAllModals() {
+            document.getElementById('inventoryModal').classList.remove('active');
+            document.getElementById('craftingModal').classList.remove('active');
+            document.getElementById('shopModal').classList.remove('active');
+        }
+        
+        // Save/Load
+        function saveGame() {
+            const saveData = {
+                player: gameState.player,
+                floor: gameState.floor,
+                inventory: gameState.inventory,
+                materials: gameState.materials
+            };
+            localStorage.setItem('dungeonDepths', JSON.stringify(saveData));
+        }
+        
+        function loadGame() {
+            const saved = localStorage.getItem('dungeonDepths');
+            if (saved) {
+                const data = JSON.parse(saved);
+                gameState.player = data.player;
+                gameState.floor = data.floor;
+                gameState.inventory = data.inventory;
+                gameState.materials = data.materials;
+                return true;
+            }
+            return false;
+        }
+        
+        setInterval(saveGame, 30000);
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!loadGame()) {
+                addLog('Welcome to Dungeon Depths!', 'levelup');
+                addLog('Use WASD or tap to move.', 'info');
+            } else {
+                addLog(`Floor ${gameState.floor} - ${FLOOR_THEMES[(gameState.floor - 1) % FLOOR_THEMES.length].name}`, 'info');
+            }
+            initGame();
+        });
+    </script>
+</body>
+</html>
