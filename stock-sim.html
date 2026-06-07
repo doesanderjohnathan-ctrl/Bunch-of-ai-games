@@ -167,6 +167,10 @@ h3 {
   min-width: 220px;
 }
 
+.mode-card {
+  min-width: 220px;
+}
+
 .pill {
   display: inline-flex;
   align-items: center;
@@ -649,7 +653,20 @@ code {
           <strong id="cash-value">$0.00</strong>
           <span id="bp-value">BP: $0.00</span>
         </div>
+        <div class="stat-card mode-card">
+          <span class="label">Data Mode</span>
+          <strong id="mode-value">Offline</strong>
+          <span id="mode-detail">Procedural simulation</span>
+        </div>
         <div class="controls-group">
+          <label>
+            Mode
+            <select id="mode-select">
+              <option value="auto" selected>Auto</option>
+              <option value="offline">Offline</option>
+              <option value="replay">Online Replay</option>
+            </select>
+          </label>
           <button id="toggle-run" class="primary">Pause</button>
           <label>
             Speed
@@ -934,7 +951,11 @@ code {
           <p>You begin with <strong>$100,000</strong> in cash, a live watchlist seeded with recent real-world market levels, and a simulated calendar that progresses only when the market is open. Your game auto-saves locally every few seconds and after every trade.</p>
         </section>
         <section>
-          <h3>2) Price Formation</h3>
+          <h3>2) Offline vs Online Replay</h3>
+          <p><strong>Offline mode</strong> runs entirely from the built-in market generator. <strong>Online Replay mode</strong> attempts to fetch about six months of historical daily data for the watchlist and replays it session by session. Once the historical data ends, the simulator continues forward procedurally using volatility, trend, and gap patterns calibrated from the replayed dataset.</p>
+        </section>
+        <section>
+          <h3>3) Price Formation</h3>
           <p>Every tick combines a market factor, sector factor, stock-specific volatility, mean reversion to a valuation anchor, and active news/event impacts. The result drives intraday candles, volume, spreads, and option pricing.</p>
           <ul>
             <li><strong>Market factor:</strong> broad sentiment plus macro variables such as VIX, oil, and rates.</li>
@@ -979,8 +1000,8 @@ code {
 (() => {
   'use strict';
 
-  const STORAGE_KEY = 'arena_market_sim_v2';
-  const VERSION = 2;
+  const STORAGE_KEY = 'arena_market_sim_v3';
+  const VERSION = 3;
   const STARTING_CASH = 100000;
   const MARKET_OPEN_MIN = 9 * 60 + 30;
   const MARKET_CLOSE_MIN = 16 * 60;
@@ -1411,6 +1432,9 @@ code {
     equityChange: document.getElementById('equity-change'),
     cashValue: document.getElementById('cash-value'),
     bpValue: document.getElementById('bp-value'),
+    modeValue: document.getElementById('mode-value'),
+    modeDetail: document.getElementById('mode-detail'),
+    modeSelect: document.getElementById('mode-select'),
     toggleRun: document.getElementById('toggle-run'),
     speedSelect: document.getElementById('speed-select'),
     saveBtn: document.getElementById('save-btn'),
@@ -1530,6 +1554,24 @@ code {
         currentChallenge: null,
         lastResult: { text: 'Study the chart, pick your answer, then compare it with the revealed future path.', tone: 'neutral' },
       },
+      dataMode: {
+        preference: 'auto',
+        runtime: 'offline',
+        connection: 'unknown',
+        statusText: 'Offline procedural simulation active.',
+        provider: 'Procedural',
+        replay: {
+          status: 'idle',
+          loading: false,
+          ready: false,
+          generationActivated: false,
+          startDate: null,
+          currentIndex: 0,
+          tradingDates: [],
+          datasetByTicker: {},
+          lastHistoricalDate: null,
+        },
+      },
       lastSavedAt: null,
     };
 
@@ -1582,6 +1624,10 @@ code {
       lastShock: 0,
       recentNewsTone: 0,
       lastSplitDay: -999,
+      volState: (base.annualVol ** 2) * (MICRO_STEP_MINUTES / (252 * 390)),
+      dailyVolState: (base.annualVol ** 2) / 252,
+      gapBias: 0,
+      liquiditySkew: base.sector === 'Technology' ? 1.06 : base.sector === 'Energy' ? 0.96 : 1,
     };
 
     seedHistory(asset, endDate, container);
@@ -1596,33 +1642,50 @@ code {
   }
 
   function seedHistory(asset, endDate, container) {
-    let t = new Date(endDate);
-    const bars = [];
-    let price = asset.price;
     const seedBars = 140;
+    let time = getPreviousMarketTime(endDate, BAR_MINUTES * (seedBars - 1));
+    let price = asset.price * Math.exp(randomBetween(container, -0.08, 0.08));
+    let volState = (asset.annualVol ** 2) * (BAR_MINUTES / (252 * 390));
+    const bars = [];
 
     for (let i = 0; i < seedBars; i += 1) {
-      t = getPreviousMarketTime(t, BAR_MINUTES);
+      const minuteOfSession = Math.max(0, minutesSinceOpen(time) + BAR_MINUTES / 2);
+      const volumeCurve = getIntradayVolumeCurve(minuteOfSession) * asset.liquiditySkew;
+      const liquidityVol = clamp(0.72 + volumeCurve * 0.18, 0.68, 1.55);
+      const marketShock = randomShock(container, 0.75);
+      const sectorShock = randomShock(container, 0.65);
+      const idShock = randomShock(container, 0.75);
+      const jump = rng(container) < 0.015 ? randomShock(container, Math.sqrt(volState) * 2.6) : 0;
+      const realizedShock = Math.sqrt(volState) * (0.48 * asset.beta * marketShock + 0.34 * sectorShock + 0.54 * idShock) * liquidityVol + jump;
       const drift = (asset.drift - 0.5 * asset.annualVol ** 2) * (BAR_MINUTES / (252 * 390));
-      const shock = asset.annualVol * Math.sqrt(BAR_MINUTES / (252 * 390)) * randn(container) * 0.55;
-      const marketBias = 0.002 * Math.sin(i / 14);
-      const ret = drift + shock + marketBias;
-      price = clamp(price / Math.exp(ret), 5, 5000);
-      const open = price * (1 + randomBetween(container, -0.004, 0.004));
-      const close = price;
-      const high = Math.max(open, close) * (1 + randomBetween(container, 0.001, 0.012));
-      const low = Math.min(open, close) * (1 - randomBetween(container, 0.001, 0.012));
+      const meanReversion = Math.log(asset.anchorPrice / price) * 0.00055;
+      const momentumBias = 0.00035 * Math.sin(i / 11);
+      const ret = drift + meanReversion + momentumBias + realizedShock;
+      const open = price;
+      const close = clamp(open * Math.exp(ret), 5, 5000);
+      const wickScale = Math.abs(realizedShock) * 1.45 + Math.sqrt(volState) * randomBetween(container, 0.75, 1.8);
+      const high = Math.max(open, close) * Math.exp(wickScale * randomBetween(container, 0.25, 0.75));
+      const low = Math.min(open, close) * Math.exp(-wickScale * randomBetween(container, 0.22, 0.72));
+      const baseIntervalVolume = asset.avgVolume / (390 / BAR_MINUTES);
+      const volume = baseIntervalVolume * volumeCurve * clamp(0.62 + Math.abs(ret) * 36 + randomBetween(container, -0.08, 0.16), 0.22, 4.2);
+
       bars.push({
-        time: t.toISOString(),
+        time: time.toISOString(),
         open: round2(open),
         high: round2(high),
         low: round2(low),
         close: round2(close),
-        volume: Math.round(asset.avgVolume * randomBetween(container, 0.03, 0.18)),
+        volume: Math.round(volume),
       });
+      price = close;
+      volState = clamp((asset.annualVol ** 2) * (BAR_MINUTES / (252 * 390)) * 0.08 + 0.14 * (realizedShock ** 2) + 0.82 * volState, (asset.annualVol ** 2) * (BAR_MINUTES / (252 * 390)) * 0.35, (asset.annualVol ** 2) * (BAR_MINUTES / (252 * 390)) * 8.8);
+      time = getNextMarketTime(time, BAR_MINUTES);
     }
 
-    asset.history = bars.reverse().slice(-MAX_BARS);
+    const factor = asset.price / bars[bars.length - 1].close;
+    scalePriceSeries(bars, factor);
+    asset.volState = volState;
+    asset.history = bars.slice(-MAX_BARS);
     if (asset.history.length) {
       const last = asset.history[asset.history.length - 1];
       asset.price = last.close;
@@ -1638,40 +1701,70 @@ code {
     return d;
   }
 
-  function createDailyBar(price, date, asset, container) {
-    const open = price * (1 + randomBetween(container, -0.015, 0.015));
-    const close = price;
-    const high = Math.max(open, close) * (1 + randomBetween(container, 0.002, 0.03));
-    const low = Math.min(open, close) * (1 - randomBetween(container, 0.002, 0.03));
+  function createDailyBar(prevClose, close, date, asset, container, dailySigma, gapShock = 0) {
+    const open = prevClose * Math.exp(gapShock);
+    const bodyMove = Math.abs(Math.log(close / Math.max(open, 0.01)));
+    const rangeNoise = Math.abs(randomShock(container, dailySigma * 1.25));
+    const upperExtension = Math.max(bodyMove * 0.55 + rangeNoise * randomBetween(container, 0.45, 1.05), dailySigma * 0.18);
+    const lowerExtension = Math.max(bodyMove * 0.45 + rangeNoise * randomBetween(container, 0.4, 0.95), dailySigma * 0.18);
+    const high = Math.max(open, close) * Math.exp(upperExtension);
+    const low = Math.min(open, close) * Math.exp(-lowerExtension);
+    const normalizedMove = Math.abs(Math.log(close / Math.max(prevClose, 0.01)));
+    const volume = asset.avgVolume * clamp(0.62 + normalizedMove * 75 + Math.sqrt(dailySigma * 252) * 2.4 + randomBetween(container, -0.16, 0.22), 0.28, 3.9);
     return {
       time: date.toISOString(),
       open: round2(open),
       high: round2(high),
       low: round2(low),
       close: round2(close),
-      volume: Math.round(asset.avgVolume * randomBetween(container, 0.45, 1.55)),
+      volume: Math.round(volume),
     };
   }
 
   function seedDailyArchive(asset, endDate, container) {
-    const bars = [];
-    let t = new Date(endDate);
-    t.setHours(16, 0, 0, 0);
-    let price = asset.price;
-    bars.push(createDailyBar(price, t, asset, container));
-
-    for (let i = 0; i < 320; i += 1) {
-      t = getPreviousBusinessDay(t);
-      const dt = 1 / 252;
-      const drift = (asset.drift - 0.5 * asset.annualVol ** 2) * dt;
-      const shock = asset.annualVol * Math.sqrt(dt) * randn(container) * 0.85;
-      const marketBias = 0.0025 * Math.sin(i / 20) + asset.beta * 0.0007;
-      const ret = drift + shock + marketBias;
-      price = clamp(price / Math.exp(ret), 5, 5000);
-      bars.push(createDailyBar(price, t, asset, container));
+    const totalBars = 320;
+    let firstDate = new Date(endDate);
+    firstDate.setHours(16, 0, 0, 0);
+    for (let i = 0; i < totalBars; i += 1) {
+      firstDate = getPreviousBusinessDay(firstDate);
     }
 
-    asset.dailyArchive = bars.reverse();
+    let date = new Date(firstDate);
+    let price = asset.price * Math.exp(randomBetween(container, -0.22, 0.22));
+    let dailyVolState = (asset.annualVol ** 2) / 252;
+    const bars = [];
+
+    for (let i = 0; i <= totalBars; i += 1) {
+      while (isWeekend(date)) date.setDate(date.getDate() + 1);
+      const marketFactor = 0.00045 * Math.sin(i / 17) + 0.00035 * Math.cos(i / 53);
+      const sectorBias = asset.sector === 'Technology'
+        ? 0.00018
+        : asset.sector === 'Energy'
+          ? 0.00008 * Math.sin(i / 9)
+          : asset.sector === 'Financials'
+            ? -0.00002 + 0.0001 * Math.cos(i / 16)
+            : 0;
+      const marketShock = randomShock(container, 0.8);
+      const sectorShock = randomShock(container, 0.65);
+      const idShock = randomShock(container, 0.75);
+      const jump = rng(container) < 0.028 ? randomShock(container, 0.9) * Math.sqrt(dailyVolState) * 3.2 : 0;
+      const realizedShock = Math.sqrt(dailyVolState) * (0.52 * asset.beta * marketShock + 0.33 * sectorShock + 0.58 * idShock) + jump;
+      const drift = (asset.drift - 0.5 * asset.annualVol ** 2) / 252;
+      const ret = drift + marketFactor + sectorBias + realizedShock;
+      const prevClose = price;
+      const close = clamp(prevClose * Math.exp(ret), 5, 5000);
+      const gapShock = clamp(randomShock(container, Math.sqrt(dailyVolState) * 0.28) + asset.gapBias * 0.15, -0.045, 0.045);
+      bars.push(createDailyBar(prevClose, close, date, asset, container, Math.sqrt(dailyVolState), gapShock));
+      price = close;
+      dailyVolState = clamp((asset.annualVol ** 2) / 252 * 0.08 + 0.12 * (realizedShock ** 2) + 0.84 * dailyVolState, (asset.annualVol ** 2) / 252 * 0.35, (asset.annualVol ** 2) / 252 * 7.5);
+      date = getNextOpen(new Date(date));
+      date.setHours(16, 0, 0, 0);
+    }
+
+    const factor = asset.price / bars[bars.length - 1].close;
+    scalePriceSeries(bars, factor);
+    asset.dailyVolState = dailyVolState;
+    asset.dailyArchive = bars;
   }
 
   function startNewBar(asset, time) {
@@ -1748,6 +1841,35 @@ code {
       breakout: { played: 0, correct: 0 },
     };
     loaded.training.lastResult ??= { text: 'Study the chart, pick your answer, then compare it with the revealed future path.', tone: 'neutral' };
+    loaded.dataMode ??= {
+      preference: 'auto',
+      runtime: 'offline',
+      connection: 'unknown',
+      statusText: 'Offline procedural simulation active.',
+      provider: 'Procedural',
+      replay: {
+        status: 'idle',
+        loading: false,
+        ready: false,
+        generationActivated: false,
+        startDate: null,
+        currentIndex: 0,
+        tradingDates: [],
+        datasetByTicker: {},
+        lastHistoricalDate: null,
+      },
+    };
+    loaded.dataMode.replay ??= {
+      status: 'idle',
+      loading: false,
+      ready: false,
+      generationActivated: false,
+      startDate: null,
+      currentIndex: 0,
+      tradingDates: [],
+      datasetByTicker: {},
+      lastHistoricalDate: null,
+    };
 
     for (const base of BASE_ASSETS) {
       if (!loaded.assets[base.ticker]) {
@@ -1759,6 +1881,10 @@ code {
       asset.currentBar ??= null;
       asset.recentNewsTone ??= 0;
       asset.lastSplitDay ??= -999;
+      asset.volState ??= (asset.annualVol ** 2) * (MICRO_STEP_MINUTES / (252 * 390));
+      asset.dailyVolState ??= (asset.annualVol ** 2) / 252;
+      asset.gapBias ??= 0;
+      asset.liquiditySkew ??= 1;
       if (!asset.dailyArchive || asset.dailyArchive.length < 120) seedDailyArchive(asset, new Date(loaded.market.now), loaded);
       if (!asset.currentBar) startNewBar(asset, new Date(loaded.market.now));
     }
@@ -1810,6 +1936,21 @@ code {
     while (u === 0) u = rng(container);
     while (v === 0) v = rng(container);
     return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+  }
+
+  function randStudentT(container = state, degreesOfFreedom = 5) {
+    let chiSquare = 0;
+    for (let i = 0; i < degreesOfFreedom; i += 1) {
+      const z = randn(container);
+      chiSquare += z * z;
+    }
+    return randn(container) / Math.sqrt(chiSquare / degreesOfFreedom);
+  }
+
+  function randomShock(container = state, scale = 1) {
+    const tailEvent = rng(container) < 0.055;
+    const base = tailEvent ? randStudentT(container, 4) * 0.85 : randn(container);
+    return base * scale;
   }
 
   function clamp(value, min, max) {
@@ -1905,6 +2046,64 @@ code {
     return getMinutesOfDay(date) - MARKET_OPEN_MIN;
   }
 
+  function getNextMarketTime(date, minutesForward) {
+    let remaining = minutesForward;
+    const d = new Date(date);
+    d.setSeconds(0, 0);
+
+    while (remaining > 0) {
+      if (isWeekend(d)) {
+        d.setDate(d.getDate() + 1);
+        d.setHours(9, 30, 0, 0);
+        while (isWeekend(d)) d.setDate(d.getDate() + 1);
+      }
+      const minutes = getMinutesOfDay(d);
+      if (minutes >= MARKET_CLOSE_MIN) {
+        d.setDate(d.getDate() + 1);
+        d.setHours(9, 30, 0, 0);
+        while (isWeekend(d)) d.setDate(d.getDate() + 1);
+        continue;
+      }
+      if (minutes < MARKET_OPEN_MIN) {
+        d.setHours(9, 30, 0, 0);
+      }
+      const available = MARKET_CLOSE_MIN - getMinutesOfDay(d);
+      const move = Math.min(remaining, Math.max(available, 1));
+      d.setMinutes(d.getMinutes() + move);
+      remaining -= move;
+    }
+    if (getMinutesOfDay(d) >= MARKET_CLOSE_MIN) return getNextOpen(d);
+    return d;
+  }
+
+  function getIntradayVolumeCurve(minutesFromOpen) {
+    const normalized = clamp(minutesFromOpen / (MARKET_CLOSE_MIN - MARKET_OPEN_MIN), 0, 1);
+    const openBurst = Math.exp(-(((normalized - 0.04) / 0.12) ** 2)) * 1.45;
+    const closeBurst = Math.exp(-(((normalized - 0.96) / 0.13) ** 2)) * 1.35;
+    const lunchDip = 0.28 * Math.exp(-(((normalized - 0.55) / 0.18) ** 2));
+    return 0.78 + openBurst + closeBurst - lunchDip;
+  }
+
+  function updateVolatilityState(asset, realizedShock, horizon = 'intraday') {
+    if (horizon === 'daily') {
+      const longRun = (asset.annualVol ** 2) / 252;
+      asset.dailyVolState = clamp(longRun * 0.08 + 0.12 * (realizedShock ** 2) + 0.84 * asset.dailyVolState, longRun * 0.35, longRun * 6.5);
+      return asset.dailyVolState;
+    }
+    const longRun = (asset.annualVol ** 2) * (MICRO_STEP_MINUTES / (252 * 390));
+    asset.volState = clamp(longRun * 0.08 + 0.14 * (realizedShock ** 2) + 0.82 * asset.volState, longRun * 0.3, longRun * 9);
+    return asset.volState;
+  }
+
+  function scalePriceSeries(bars, factor) {
+    bars.forEach((bar) => {
+      bar.open = round2(bar.open * factor);
+      bar.high = round2(bar.high * factor);
+      bar.low = round2(bar.low * factor);
+      bar.close = round2(bar.close * factor);
+    });
+  }
+
   function getTotalEquity() {
     let equity = state.account.cash;
     for (const ticker of Object.keys(state.assets)) {
@@ -1972,6 +2171,352 @@ code {
 
   function setOptionOrderStatus(text, tone = 'neutral') {
     state.ui.optionOrderStatus = { text, tone };
+  }
+
+  function getConnectionStatus() {
+    return typeof navigator !== 'undefined' && navigator.onLine === false ? 'offline' : 'online';
+  }
+
+  function isReplayMode() {
+    return state.dataMode?.runtime === 'replay' && state.dataMode?.replay?.ready;
+  }
+
+  function isTradingSessionActive() {
+    return isReplayMode() || isMarketOpen(getCurrentTime());
+  }
+
+  function getReplayStepCount() {
+    const map = { '0.5': 1, '1': 1, '2': 2, '4': 5, '8': 10 };
+    return map[String(state.settings.speed)] || 1;
+  }
+
+  function getReplayStartDate() {
+    const end = new Date();
+    end.setHours(0, 0, 0, 0);
+    end.setMonth(end.getMonth() - 6);
+    return end;
+  }
+
+  function getDateKeyFromBarTime(timeIso) {
+    return getCurrentDateKey(new Date(timeIso));
+  }
+
+  function getIsoAtMarketClose(dateKey) {
+    return new Date(`${dateKey}T16:00:00`).toISOString();
+  }
+
+  async function fetchTextWithTimeout(url, timeoutMs = 12000) {
+    if (typeof fetch !== 'function') throw new Error('Fetch unavailable in this environment');
+    const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    const timeout = controller ? setTimeout(() => controller.abort(), timeoutMs) : null;
+    try {
+      const response = await fetch(url, controller ? { signal: controller.signal } : undefined);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return await response.text();
+    } finally {
+      if (timeout) clearTimeout(timeout);
+    }
+  }
+
+  async function fetchJsonWithTimeout(url, timeoutMs = 12000) {
+    if (typeof fetch !== 'function') throw new Error('Fetch unavailable in this environment');
+    const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    const timeout = controller ? setTimeout(() => controller.abort(), timeoutMs) : null;
+    try {
+      const response = await fetch(url, controller ? { signal: controller.signal } : undefined);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return await response.json();
+    } finally {
+      if (timeout) clearTimeout(timeout);
+    }
+  }
+
+  function normalizeFetchedBars(bars, sinceDate) {
+    return bars
+      .filter((bar) => bar && Number.isFinite(bar.open) && Number.isFinite(bar.high) && Number.isFinite(bar.low) && Number.isFinite(bar.close))
+      .filter((bar) => new Date(bar.time) >= sinceDate)
+      .sort((a, b) => new Date(a.time) - new Date(b.time));
+  }
+
+  function parseCsvBars(text) {
+    const lines = text.trim().split(/\r?\n/);
+    if (lines.length < 2) return [];
+    const header = lines[0].split(',').map((entry) => entry.trim().toLowerCase());
+    const idx = {
+      date: header.indexOf('date'),
+      open: header.indexOf('open'),
+      high: header.indexOf('high'),
+      low: header.indexOf('low'),
+      close: header.indexOf('close'),
+      volume: header.indexOf('volume'),
+    };
+    return lines.slice(1).map((line) => {
+      const parts = line.split(',');
+      const date = parts[idx.date];
+      if (!date || parts.length < 5 || /null/i.test(line)) return null;
+      return {
+        time: getIsoAtMarketClose(date),
+        open: Number(parts[idx.open]),
+        high: Number(parts[idx.high]),
+        low: Number(parts[idx.low]),
+        close: Number(parts[idx.close]),
+        volume: Number(parts[idx.volume] || 0),
+      };
+    }).filter(Boolean);
+  }
+
+  async function fetchYahooReplayBars(ticker, sinceDate) {
+    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?range=6mo&interval=1d&includePrePost=false&events=div%2Csplits`;
+    const json = await fetchJsonWithTimeout(url, 12000);
+    const result = json?.chart?.result?.[0];
+    if (!result?.timestamp?.length) throw new Error('No Yahoo chart data');
+    const quote = result.indicators?.quote?.[0];
+    const bars = result.timestamp.map((ts, index) => ({
+      time: new Date(ts * 1000).toISOString(),
+      open: Number(quote.open?.[index]),
+      high: Number(quote.high?.[index]),
+      low: Number(quote.low?.[index]),
+      close: Number(quote.close?.[index]),
+      volume: Number(quote.volume?.[index] || 0),
+    }));
+    return normalizeFetchedBars(bars, sinceDate);
+  }
+
+  async function fetchStooqReplayBars(ticker, sinceDate) {
+    const symbol = ticker === 'SPY' ? 'spy.us' : `${ticker.toLowerCase()}.us`;
+    const text = await fetchTextWithTimeout(`https://stooq.com/q/d/l/?s=${symbol}&i=d`, 12000);
+    return normalizeFetchedBars(parseCsvBars(text), sinceDate);
+  }
+
+  async function fetchFmpReplayBars(ticker, sinceDate) {
+    const url = `https://financialmodelingprep.com/api/v3/historical-price-full/${encodeURIComponent(ticker)}?timeseries=220&apikey=demo`;
+    const json = await fetchJsonWithTimeout(url, 12000);
+    const historical = json?.historical;
+    if (!historical?.length) throw new Error('No FMP data');
+    const bars = historical.map((bar) => ({
+      time: getIsoAtMarketClose(bar.date),
+      open: Number(bar.open),
+      high: Number(bar.high),
+      low: Number(bar.low),
+      close: Number(bar.close),
+      volume: Number(bar.volume || 0),
+    }));
+    return normalizeFetchedBars(bars, sinceDate);
+  }
+
+  async function fetchReplayBarsForTicker(ticker, sinceDate) {
+    const providers = [
+      { name: 'Yahoo Finance', fetcher: fetchYahooReplayBars },
+      { name: 'Stooq', fetcher: fetchStooqReplayBars },
+      { name: 'Financial Modeling Prep', fetcher: fetchFmpReplayBars },
+    ];
+    let lastError = null;
+    for (const provider of providers) {
+      try {
+        const bars = await provider.fetcher(ticker, sinceDate);
+        if (bars.length >= 40) return { provider: provider.name, bars };
+      } catch (error) {
+        lastError = error;
+      }
+    }
+    throw lastError || new Error(`No replay data available for ${ticker}`);
+  }
+
+  function buildReplayTradingDates(datasetByTicker) {
+    const spyBars = datasetByTicker.SPY || [];
+    const master = spyBars.length ? spyBars : Object.values(datasetByTicker).sort((a, b) => b.length - a.length)[0] || [];
+    return master.map((bar) => getDateKeyFromBarTime(bar.time));
+  }
+
+  function alignReplayDatasets(rawDatasetByTicker, tradingDates) {
+    const aligned = {};
+    for (const ticker of Object.keys(rawDatasetByTicker)) {
+      const sourceBars = rawDatasetByTicker[ticker];
+      const barMap = new Map(sourceBars.map((bar) => [getDateKeyFromBarTime(bar.time), bar]));
+      let lastBar = sourceBars[0] || null;
+      aligned[ticker] = tradingDates.map((dateKey) => {
+        const exact = barMap.get(dateKey);
+        if (exact) {
+          lastBar = exact;
+          return { ...exact, time: getIsoAtMarketClose(dateKey) };
+        }
+        const fallbackBar = lastBar || sourceBars[0];
+        return {
+          time: getIsoAtMarketClose(dateKey),
+          open: fallbackBar.close,
+          high: fallbackBar.close,
+          low: fallbackBar.close,
+          close: fallbackBar.close,
+          volume: Math.round((fallbackBar.volume || 0) * 0.3),
+        };
+      });
+    }
+    return aligned;
+  }
+
+  function applyReplaySnapshot(index, initializeHistory = false) {
+    const replay = state.dataMode.replay;
+    for (const ticker of Object.keys(state.assets)) {
+      const asset = state.assets[ticker];
+      const series = replay.datasetByTicker[ticker];
+      if (!series?.[index]) continue;
+      const bar = series[index];
+      const previousClose = index > 0 && series[index - 1] ? series[index - 1].close : bar.close;
+      asset.prevClose = round2(previousClose);
+      asset.open = round2(bar.open);
+      asset.high = round2(bar.high);
+      asset.low = round2(bar.low);
+      asset.price = round2(bar.close);
+      asset.dayVolume = Math.round(bar.volume || 0);
+      asset.currentBar = null;
+      if (initializeHistory) {
+        asset.history = series.slice(Math.max(0, index - 80), index + 1).map((item) => ({ ...item }));
+      } else {
+        asset.history.push({ ...bar });
+        if (asset.history.length > MAX_BARS) asset.history.shift();
+      }
+      asset.dailyArchive = series.map((item) => ({ ...item }));
+      const realized = Math.log(asset.price / Math.max(asset.prevClose, 0.01));
+      updateVolatilityState(asset, realized, 'daily');
+      asset.iv = clamp(asset.iv * 0.992 + Math.abs(realized) * 0.9, 0.12, 1.55);
+      asset.anchorPrice = round2(asset.anchorPrice * 0.985 + asset.price * 0.015);
+    }
+    state.market.now = replay.datasetByTicker.SPY?.[index]?.time || replay.datasetByTicker[state.ui.selectedTicker]?.[index]?.time || state.market.now;
+  }
+
+  function calibrateGeneratorFromReplay() {
+    const replay = state.dataMode.replay;
+    for (const ticker of Object.keys(state.assets)) {
+      const asset = state.assets[ticker];
+      const series = replay.datasetByTicker[ticker] || [];
+      if (series.length < 25) continue;
+      const recent = series.slice(-25);
+      const returns = [];
+      for (let i = 1; i < recent.length; i += 1) {
+        returns.push(Math.log(recent[i].close / Math.max(recent[i - 1].close, 0.01)));
+      }
+      const mean = returns.reduce((acc, value) => acc + value, 0) / Math.max(returns.length, 1);
+      const variance = returns.reduce((acc, value) => acc + (value - mean) ** 2, 0) / Math.max(returns.length, 1);
+      asset.anchorPrice = round2(recent[recent.length - 1].close * (1 + mean * 18));
+      asset.dailyVolState = clamp(variance, (asset.annualVol ** 2) / 252 * 0.35, (asset.annualVol ** 2) / 252 * 8);
+      asset.volState = clamp(asset.dailyVolState * (MICRO_STEP_MINUTES / 390), (asset.annualVol ** 2) * (MICRO_STEP_MINUTES / (252 * 390)) * 0.35, (asset.annualVol ** 2) * (MICRO_STEP_MINUTES / (252 * 390)) * 8);
+      asset.gapBias = clamp(mean * 8, -0.08, 0.08);
+    }
+  }
+
+  function switchToOfflineMode(reason = 'Offline procedural simulation active.') {
+    state.dataMode.runtime = 'offline';
+    state.dataMode.provider = 'Procedural';
+    state.dataMode.statusText = reason;
+    state.dataMode.replay.generationActivated = true;
+  }
+
+  function transitionReplayToGeneratedMode() {
+    calibrateGeneratorFromReplay();
+    const nextOpen = getNextOpen(new Date(state.market.now));
+    state.market.now = nextOpen.toISOString();
+    state.dataMode.replay.ready = false;
+    state.dataMode.replay.loading = false;
+    state.dataMode.replay.status = 'complete';
+    switchToOfflineMode('Historical replay completed — generation continues from learned patterns.');
+    addNewsItem(state, {
+      headline: 'Replay dataset exhausted — procedural continuation activated',
+      body: 'The simulator has reached the end of the fetched 6-month historical replay and is now extending the market using calibrated patterns from that dataset.',
+      tone: 'neutral',
+      scope: 'System',
+      now: state.market.now,
+    });
+  }
+
+  function stepReplayDay() {
+    const replay = state.dataMode.replay;
+    if (!replay.ready) return false;
+    if (replay.currentIndex + 1 >= replay.tradingDates.length) {
+      transitionReplayToGeneratedMode();
+      return false;
+    }
+    replay.currentIndex += 1;
+    applyReplaySnapshot(replay.currentIndex, false);
+    replay.lastHistoricalDate = replay.tradingDates[replay.currentIndex];
+    processOpenOrders();
+    return true;
+  }
+
+  async function loadReplayMode(forceRefresh = false) {
+    updateConnectionModeState();
+    if (state.dataMode.replay.loading) return;
+    if (state.dataMode.connection === 'offline') {
+      switchToOfflineMode('No network detected — offline procedural simulation active.');
+      renderAll();
+      return;
+    }
+    if (state.dataMode.replay.ready && !forceRefresh) {
+      state.dataMode.runtime = 'replay';
+      renderAll();
+      return;
+    }
+
+    const sinceDate = getReplayStartDate();
+    state.dataMode.replay.loading = true;
+    state.dataMode.replay.status = 'loading';
+    state.dataMode.statusText = 'Fetching ~6 months of historical market data for replay mode…';
+    renderAll();
+
+    const rawDatasetByTicker = {};
+    let providerName = 'Mixed providers';
+    try {
+      for (const asset of BASE_ASSETS) {
+        const fetched = await fetchReplayBarsForTicker(asset.ticker, sinceDate);
+        rawDatasetByTicker[asset.ticker] = fetched.bars;
+        providerName = fetched.provider || providerName;
+        state.dataMode.statusText = `Loading replay data… ${Object.keys(rawDatasetByTicker).length}/${BASE_ASSETS.length} symbols fetched.`;
+        renderAll();
+      }
+      const tradingDates = buildReplayTradingDates(rawDatasetByTicker);
+      const aligned = alignReplayDatasets(rawDatasetByTicker, tradingDates);
+      state.dataMode.replay.datasetByTicker = aligned;
+      state.dataMode.replay.tradingDates = tradingDates;
+      state.dataMode.replay.currentIndex = Math.min(12, Math.max(0, tradingDates.length - 1));
+      state.dataMode.replay.startDate = tradingDates[0] || null;
+      state.dataMode.replay.lastHistoricalDate = tradingDates[state.dataMode.replay.currentIndex] || null;
+      state.dataMode.replay.ready = true;
+      state.dataMode.replay.loading = false;
+      state.dataMode.replay.status = 'ready';
+      state.dataMode.replay.generationActivated = false;
+      state.dataMode.runtime = 'replay';
+      state.dataMode.provider = providerName;
+      state.dataMode.statusText = `Online replay ready from ${tradingDates[0] || 'historical start'} using ${providerName}. Procedural generation will resume after data runs out.`;
+      applyReplaySnapshot(state.dataMode.replay.currentIndex, true);
+      saveState(false);
+      renderAll();
+    } catch (error) {
+      console.warn('Replay mode load failed:', error);
+      state.dataMode.replay.loading = false;
+      state.dataMode.replay.ready = false;
+      state.dataMode.replay.status = 'failed';
+      switchToOfflineMode('Replay fetch failed — falling back to offline procedural simulation.');
+      renderAll();
+    }
+  }
+
+  function updateConnectionModeState() {
+    state.dataMode.connection = getConnectionStatus();
+    if (state.dataMode.preference === 'offline') {
+      switchToOfflineMode(state.dataMode.connection === 'offline' ? 'Offline mode forced — no connection detected.' : 'Offline mode forced by user.');
+      return;
+    }
+    if (state.dataMode.connection === 'offline' && !isReplayMode()) {
+      switchToOfflineMode('No connection detected — offline procedural simulation active.');
+    }
+  }
+
+  function maybeRefreshDataMode() {
+    updateConnectionModeState();
+    if (state.dataMode.preference === 'replay' || (state.dataMode.preference === 'auto' && state.dataMode.connection === 'online')) {
+      loadReplayMode(false);
+    } else {
+      renderAll();
+    }
   }
 
   function summarizeTrainingSetup(mode, visible, future) {
@@ -2141,9 +2686,16 @@ code {
   }
 
   function tickSimulation() {
-    const totalMinutes = SPEED_TO_MINUTES[String(state.settings.speed)] || 10;
-    for (let elapsed = 0; elapsed < totalMinutes; elapsed += MICRO_STEP_MINUTES) {
-      microStep();
+    if (isReplayMode()) {
+      const replaySteps = getReplayStepCount();
+      for (let i = 0; i < replaySteps; i += 1) {
+        if (!stepReplayDay()) break;
+      }
+    } else {
+      const totalMinutes = SPEED_TO_MINUTES[String(state.settings.speed)] || 10;
+      for (let elapsed = 0; elapsed < totalMinutes; elapsed += MICRO_STEP_MINUTES) {
+        microStep();
+      }
     }
 
     if (Date.now() - lastAutoSave > 4000) {
@@ -2166,38 +2718,44 @@ code {
 
     maybeGenerateIntradayEvent(now);
 
+    const minutesOpen = Math.max(0, minutesSinceOpen(now));
+    const intradayCurve = getIntradayVolumeCurve(minutesOpen + MICRO_STEP_MINUTES / 2);
     const sectorShocks = {
-      Technology: randn() * 0.35,
-      Consumer: randn() * 0.32,
-      Financials: randn() * 0.25,
-      Energy: randn() * 0.28,
-      Index: randn() * 0.18,
+      Technology: randomShock(state, 0.85),
+      Consumer: randomShock(state, 0.72),
+      Financials: randomShock(state, 0.6),
+      Energy: randomShock(state, 0.68),
+      Index: randomShock(state, 0.45),
     };
 
-    const marketVolAdj = clamp(1 + (state.market.vix - 16) / 25, 0.7, 2.4);
-    const macroDrift = (state.market.breadth - 0.5) * 0.0006 - (state.market.tenYearYield - 4.4) * 0.00005;
-    const marketShock = randn() * 0.55;
+    const marketVolAdj = clamp(1 + (state.market.vix - 16) / 23, 0.72, 2.75);
+    const macroDrift = (state.market.breadth - 0.5) * 0.00055 - (state.market.tenYearYield - 4.4) * 0.00004 + (state.market.oil - 92) * 0.000003;
+    const marketShock = randomShock(state, 0.95);
     const dt = MICRO_STEP_MINUTES / (252 * 390);
 
     for (const asset of Object.values(state.assets)) {
       const effect = getNetEffectForAsset(asset.ticker, asset.sector);
       const sectorFactor = sectorShocks[asset.sector] || 0;
-      const meanReversion = Math.log(asset.anchorPrice / asset.price) * 0.018 * dt * 390;
-      const momentum = asset.momentum * 0.0014;
+      const liquidityVol = clamp(0.74 + intradayCurve * 0.16, 0.68, 1.55);
+      const meanReversion = Math.log(asset.anchorPrice / asset.price) * 0.0007;
+      const momentum = asset.momentum * 0.0012;
       const drift = (asset.drift - 0.5 * asset.annualVol ** 2) * dt;
-      const shock = asset.annualVol * marketVolAdj * (0.45 * asset.beta * marketShock + 0.4 * sectorFactor + 0.6 * randn()) * Math.sqrt(dt) * 0.88;
+      const jump = rng(state) < (0.0018 + effect.volBoost * 0.01) ? randomShock(state, Math.sqrt(asset.volState) * 2.8) : 0;
+      const realizedShock = Math.sqrt(asset.volState) * marketVolAdj * (0.5 * asset.beta * marketShock + 0.34 * sectorFactor + 0.56 * randomShock(state, 1)) * liquidityVol + jump;
+      updateVolatilityState(asset, realizedShock, 'intraday');
       const eventDrift = effect.driftPerStep;
-      const ret = drift + shock + meanReversion + momentum + macroDrift + eventDrift;
+      const ret = drift + meanReversion + momentum + macroDrift + eventDrift + realizedShock;
       const newPrice = clamp(asset.price * Math.exp(ret), 5, 5000);
-      const tradedVolume = asset.avgVolume * randomBetween(state, 0.002, 0.018) * (1 + Math.abs(ret) * 12 + effect.volBoost);
+      const baseIntervalVolume = asset.avgVolume / (390 / MICRO_STEP_MINUTES);
+      const tradedVolume = baseIntervalVolume * intradayCurve * asset.liquiditySkew * clamp(0.55 + Math.abs(ret) * 52 + Math.abs(jump) * 120 + effect.volBoost * 1.8 + randomBetween(state, -0.08, 0.18), 0.15, 7.2);
 
       asset.price = round2(newPrice);
       asset.high = Math.max(asset.high, asset.price);
       asset.low = Math.min(asset.low, asset.price);
       asset.dayVolume += Math.round(tradedVolume);
       asset.lastShock = ret;
-      asset.momentum = clamp(asset.momentum * 0.75 + ret * 220, -4, 4);
-      asset.iv = clamp(asset.iv * 0.985 + (asset.annualVol * marketVolAdj + Math.abs(ret) * 8) * 0.015 + effect.volBoost * 0.02, 0.12, 1.45);
+      asset.momentum = clamp(asset.momentum * 0.79 + ret * 190, -4.5, 4.5);
+      asset.iv = clamp(asset.iv * 0.986 + Math.sqrt(asset.volState / Math.max(dt, 1e-9)) * 0.014 + Math.abs(jump) * 0.8 + effect.volBoost * 0.02, 0.12, 1.55);
       updateCurrentBar(asset, tradedVolume);
     }
 
@@ -2261,11 +2819,30 @@ code {
   }
 
   function onSessionClose() {
+    const now = getCurrentTime();
+    const closeStamp = new Date(now);
+    closeStamp.setHours(16, 0, 0, 0);
+
     for (const asset of Object.values(state.assets)) {
       if (asset.currentBar) {
         finalizeBar(asset);
         asset.currentBar = null;
       }
+      const dailyRet = Math.log(asset.price / Math.max(asset.prevClose, 0.01));
+      updateVolatilityState(asset, dailyRet, 'daily');
+      const sessionBar = {
+        time: closeStamp.toISOString(),
+        open: round2(asset.open),
+        high: round2(asset.high),
+        low: round2(asset.low),
+        close: round2(asset.price),
+        volume: Math.round(asset.dayVolume),
+      };
+      asset.dailyArchive ??= [];
+      const lastDaily = asset.dailyArchive[asset.dailyArchive.length - 1];
+      if (lastDaily && getCurrentDateKey(new Date(lastDaily.time)) === getCurrentDateKey(closeStamp)) asset.dailyArchive[asset.dailyArchive.length - 1] = sessionBar;
+      else asset.dailyArchive.push(sessionBar);
+      if (asset.dailyArchive.length > 420) asset.dailyArchive.shift();
       asset.prevClose = asset.price;
     }
     processExpiries();
@@ -2278,17 +2855,25 @@ code {
     updateRegime();
 
     for (const asset of Object.values(state.assets)) {
+      asset.daysToEarnings -= 1;
+      asset.daysToDividend -= 1;
+      const overnightSigma = Math.sqrt(asset.dailyVolState) * clamp(0.18 + state.market.vix / 100, 0.2, 0.48);
+      const overnightShock = randomShock(state, overnightSigma) * (0.44 * asset.beta + 0.56) + asset.gapBias * 0.28;
+      asset.price = round2(clamp(asset.price * Math.exp(overnightShock), 5, 5000));
+      asset.gapBias *= 0.4;
+      asset.iv = clamp(asset.iv * 0.993 + Math.abs(overnightShock) * 0.65, 0.12, 1.55);
+    }
+
+    maybeGenerateOpenEvent(nextOpen);
+    maybeGenerateEarningsAndDividendEvents(nextOpen);
+
+    for (const asset of Object.values(state.assets)) {
       asset.open = asset.price;
       asset.high = asset.price;
       asset.low = asset.price;
       asset.dayVolume = 0;
       startNewBar(asset, nextOpen);
-      asset.daysToEarnings -= 1;
-      asset.daysToDividend -= 1;
     }
-
-    maybeGenerateOpenEvent(nextOpen);
-    maybeGenerateEarningsAndDividendEvents(nextOpen);
   }
 
   function updateRegime() {
@@ -2422,6 +3007,8 @@ code {
       asset.anchorPrice = round2(asset.anchorPrice * (1 + jump * 0.35));
       asset.iv = clamp(asset.iv + Math.abs(jump) * 0.55 + (event.volBoost || 0) * 0.08, 0.12, 1.45);
       asset.recentNewsTone = clamp(asset.recentNewsTone * 0.5 + jump * 10, -5, 5);
+      asset.gapBias = clamp(asset.gapBias * 0.5 + jump * 1.6, -0.12, 0.12);
+      asset.dailyVolState = clamp(asset.dailyVolState * (1 + Math.abs(jump) * 1.3 + (event.volBoost || 0) * 0.35), (asset.annualVol ** 2) / 252 * 0.35, (asset.annualVol ** 2) / 252 * 9);
       if (asset.currentBar) updateCurrentBar(asset, asset.avgVolume * Math.abs(jump) * 0.3);
     }
 
@@ -2437,10 +3024,17 @@ code {
 
   function processDividend(asset) {
     const holding = state.account.holdings[asset.ticker];
+    asset.price = round2(Math.max(5, asset.price - asset.dividendPerShare));
+    asset.anchorPrice = round2(Math.max(5, asset.anchorPrice - asset.dividendPerShare * 0.85));
+    if (asset.currentBar) {
+      asset.currentBar.open = Math.min(asset.currentBar.open, asset.price);
+      asset.currentBar.low = Math.min(asset.currentBar.low, asset.price);
+      asset.currentBar.close = asset.price;
+    }
     if (!holding || !holding.shares) {
       addNewsItem(state, {
         headline: `${asset.ticker} goes ex-dividend`,
-        body: `The stock goes ex-dividend for ${formatMoney(asset.dividendPerShare)} per share.`,
+        body: `The stock goes ex-dividend for ${formatMoney(asset.dividendPerShare)} per share and its reference price is adjusted lower by the dividend amount.`,
         tone: 'neutral',
         scope: asset.ticker,
         now: state.market.now,
@@ -2451,7 +3045,7 @@ code {
     state.account.cash += cashImpact;
     addNewsItem(state, {
       headline: `${asset.ticker} pays a dividend`,
-      body: `Dividend event processed at ${formatMoney(asset.dividendPerShare)} per share. Your account ${cashImpact >= 0 ? 'receives' : 'is debited'} ${formatMoney(Math.abs(cashImpact))}.`,
+      body: `Dividend event processed at ${formatMoney(asset.dividendPerShare)} per share. The reference price is adjusted for the ex-dividend date, and your account ${cashImpact >= 0 ? 'receives' : 'is debited'} ${formatMoney(Math.abs(cashImpact))}.`,
       tone: cashImpact >= 0 ? 'positive' : 'negative',
       scope: asset.ticker,
       now: state.market.now,
@@ -2522,8 +3116,8 @@ code {
       return;
     }
 
-    if (orderType === 'market' && isMarketOpen(getCurrentTime())) {
-      const fillPrice = getStockFillPrice(asset, action);
+    if (orderType === 'market' && isTradingSessionActive()) {
+      const fillPrice = isReplayMode() ? round2(asset.price) : getStockFillPrice(asset, action);
       const ok = executeStockTrade(ticker, action, quantity, fillPrice, false);
       if (ok) {
         setStockOrderStatus(`${action.toUpperCase()} ${quantity} ${ticker} filled at ${formatMoney(fillPrice)}.`, 'positive');
@@ -2548,7 +3142,7 @@ code {
     state.account.openOrders.push(order);
     setStockOrderStatus(
       orderType === 'market'
-        ? `${action.toUpperCase()} ${quantity} ${ticker} queued for the next market open.`
+        ? `${action.toUpperCase()} ${quantity} ${ticker} queued for the next ${isReplayMode() ? 'replay session' : 'market open'}.`
         : `${orderType.toUpperCase()} ${action.toUpperCase()} ${quantity} ${ticker} queued at ${formatMoney(order.trigger)}.`,
       orderType === 'market' ? 'warning' : 'neutral',
     );
@@ -2560,7 +3154,7 @@ code {
 
   function processOpenOrders() {
     const now = getCurrentTime();
-    if (!isMarketOpen(now)) return;
+    if (!isReplayMode() && !isMarketOpen(now)) return;
 
     for (const order of state.account.openOrders) {
       if (order.status === 'filled' || order.status === 'rejected' || order.status === 'cancelled') continue;
@@ -2571,23 +3165,27 @@ code {
         setStockOrderStatus(`${order.ticker} order rejected: ${order.reason}`, 'negative');
         continue;
       }
-      const price = asset.price;
+
+      const replayBar = isReplayMode() ? state.dataMode.replay.datasetByTicker?.[order.ticker]?.[state.dataMode.replay.currentIndex] : null;
+      const referenceHigh = replayBar ? replayBar.high : asset.high;
+      const referenceLow = replayBar ? replayBar.low : asset.low;
+      const referencePrice = replayBar ? replayBar.close : asset.price;
       let shouldFill = false;
 
       if (order.orderType === 'market') shouldFill = true;
       if (order.orderType === 'limit') {
-        if (order.action === 'buy' || order.action === 'cover') shouldFill = price <= order.trigger;
-        if (order.action === 'sell' || order.action === 'short') shouldFill = price >= order.trigger;
+        if (order.action === 'buy' || order.action === 'cover') shouldFill = referenceLow <= order.trigger;
+        if (order.action === 'sell' || order.action === 'short') shouldFill = referenceHigh >= order.trigger;
       }
       if (order.orderType === 'stop') {
-        if (order.action === 'buy' || order.action === 'cover') shouldFill = price >= order.trigger;
-        if (order.action === 'sell' || order.action === 'short') shouldFill = price <= order.trigger;
+        if (order.action === 'buy' || order.action === 'cover') shouldFill = referenceHigh >= order.trigger;
+        if (order.action === 'sell' || order.action === 'short') shouldFill = referenceLow <= order.trigger;
       }
 
       if (!shouldFill) continue;
 
       const fillPrice = order.orderType === 'market'
-        ? getStockFillPrice(asset, order.action)
+        ? (isReplayMode() ? round2(referencePrice) : getStockFillPrice(asset, order.action))
         : round2(order.trigger);
       const ok = executeStockTrade(order.ticker, order.action, order.quantity, fillPrice, true);
       order.status = ok ? 'filled' : 'rejected';
@@ -3125,6 +3723,7 @@ code {
   }
 
   function syncControlsFromState() {
+    dom.modeSelect.value = state.dataMode.preference;
     dom.speedSelect.value = String(state.settings.speed);
     dom.toggleRun.textContent = state.settings.running ? 'Pause' : 'Resume';
     dom.toggleSma20.checked = !!state.settings.overlays.sma20;
@@ -3134,7 +3733,8 @@ code {
 
   function renderHeader() {
     const now = getCurrentTime();
-    const open = isMarketOpen(now);
+    const replay = isReplayMode();
+    const open = replay || isMarketOpen(now);
     dom.simClock.textContent = new Intl.DateTimeFormat('en-US', {
       weekday: 'short',
       month: 'short',
@@ -3143,8 +3743,20 @@ code {
       hour: 'numeric',
       minute: '2-digit',
     }).format(now);
-    dom.marketStatus.textContent = open ? `Open • ${state.market.regime}` : `Closed • Next session queued`;
-    dom.marketStatus.className = `pill ${open ? 'positive' : 'warning'}`;
+    dom.marketStatus.textContent = replay
+      ? `Replay • ${state.market.regime}`
+      : open
+        ? `Open • ${state.market.regime}`
+        : `Closed • Next session queued`;
+    dom.marketStatus.className = `pill ${replay ? 'neutral' : open ? 'positive' : 'warning'}`;
+
+    const replayProgress = state.dataMode.replay.tradingDates.length
+      ? `${Math.min(state.dataMode.replay.currentIndex + 1, state.dataMode.replay.tradingDates.length)}/${state.dataMode.replay.tradingDates.length} sessions`
+      : 'No replay loaded';
+    dom.modeValue.textContent = replay ? 'Online Replay' : 'Offline';
+    dom.modeDetail.textContent = replay
+      ? `${state.dataMode.provider} • ${replayProgress}`
+      : `${state.dataMode.connection} • ${state.dataMode.statusText}`;
 
     const equity = getTotalEquity();
     const change = equity - state.account.equityBaseline;
@@ -3812,6 +4424,17 @@ code {
       syncControlsFromState();
     });
 
+    dom.modeSelect.addEventListener('change', (event) => {
+      state.dataMode.preference = event.target.value;
+      if (state.dataMode.preference === 'offline') {
+        switchToOfflineMode(state.dataMode.connection === 'offline' ? 'Offline mode forced — no connection detected.' : 'Offline mode forced by user.');
+        renderAll();
+      } else {
+        maybeRefreshDataMode();
+      }
+      saveState(false);
+    });
+
     dom.speedSelect.addEventListener('change', (event) => {
       state.settings.speed = Number(event.target.value);
       saveState(false);
@@ -3927,6 +4550,8 @@ code {
       renderChart();
       drawTrainingChart();
     });
+    window.addEventListener('online', maybeRefreshDataMode);
+    window.addEventListener('offline', maybeRefreshDataMode);
   }
 
   window.marketSimDebug = {
@@ -3938,13 +4563,17 @@ code {
     startTrainingChallenge,
     answerTrainingChallenge,
     revealTrainingChallenge,
+    loadReplayMode,
+    maybeRefreshDataMode,
     tickSimulation,
     saveState,
     resetState,
   };
 
+  updateConnectionModeState();
   renderAll();
   bindEvents();
+  maybeRefreshDataMode();
   startLoop();
 })();
 
