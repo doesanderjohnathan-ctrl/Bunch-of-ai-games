@@ -28,11 +28,13 @@
 html, body {
   margin: 0;
   min-height: 100%;
+  width: 100%;
+  overflow-x: hidden;
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   background:
-    radial-gradient(circle at top right, rgba(99, 160, 255, 0.16), transparent 30%),
-    radial-gradient(circle at left center, rgba(77, 208, 168, 0.10), transparent 28%),
-    linear-gradient(180deg, #05101a 0%, #09121d 100%);
+    radial-gradient(circle at top right, color-mix(in srgb, var(--accent) 18%, transparent), transparent 30%),
+    radial-gradient(circle at left center, color-mix(in srgb, var(--positive) 10%, transparent), transparent 28%),
+    linear-gradient(180deg, var(--bg) 0%, var(--bg-soft) 100%);
   color: var(--text);
 }
 
@@ -115,6 +117,9 @@ h3 {
 .app-shell {
   display: grid;
   gap: 18px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .topbar {
@@ -125,8 +130,9 @@ h3 {
   padding: 18px 20px;
   border: 1px solid var(--border);
   border-radius: 22px;
-  background: linear-gradient(180deg, rgba(14, 25, 39, 0.96), rgba(10, 17, 28, 0.92));
+  background: linear-gradient(180deg, var(--panel), var(--panel-2));
   box-shadow: var(--shadow);
+  min-width: 0;
 }
 
 .topbar-controls {
@@ -135,11 +141,12 @@ h3 {
   justify-content: flex-end;
   gap: 12px;
   align-items: stretch;
+  min-width: 0;
 }
 
 .stat-card,
 .card {
-  min-width: 150px;
+  min-width: 0;
   background: rgba(8, 14, 23, 0.75);
   border: 1px solid var(--border);
   border-radius: 16px;
@@ -161,6 +168,7 @@ h3 {
   align-items: center;
   flex-wrap: wrap;
   justify-content: flex-end;
+  min-width: 0;
 }
 
 .clock-card {
@@ -207,11 +215,12 @@ h3 {
 
 .dashboard-grid {
   display: grid;
-  grid-template-columns: 1.1fr 1.6fr 1fr;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.6fr) minmax(0, 1fr);
   grid-template-areas:
     "market chart order"
     "news options portfolio";
   gap: 18px;
+  min-width: 0;
 }
 
 .market-panel { grid-area: market; }
@@ -229,6 +238,8 @@ h3 {
   padding: 18px;
   box-shadow: var(--shadow);
   min-height: 220px;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .panel-header {
@@ -245,6 +256,7 @@ h3 {
 
 .panel-header.wide-gap {
   align-items: flex-start;
+  min-width: 0;
 }
 
 .inline-controls {
@@ -253,6 +265,86 @@ h3 {
   gap: 14px;
   flex-wrap: wrap;
   color: var(--muted);
+  min-width: 0;
+}
+
+.chart-toolbar {
+  justify-content: flex-end;
+}
+
+.chart-toolbar label {
+  background: rgba(8, 14, 23, 0.55);
+  border: 1px solid rgba(130, 164, 199, 0.12);
+  border-radius: 12px;
+  padding: 8px 10px;
+}
+
+.chart-toolbar select,
+.chart-toolbar input[type="number"] {
+  min-width: 80px;
+}
+
+.chart-advanced-panel {
+  margin-bottom: 12px;
+  border: 1px solid rgba(130, 164, 199, 0.12);
+  border-radius: 14px;
+  background: rgba(7, 13, 22, 0.42);
+  overflow: hidden;
+}
+
+.chart-advanced-panel summary {
+  cursor: pointer;
+  padding: 12px 14px;
+  color: var(--text);
+  font-weight: 600;
+  list-style: none;
+}
+
+.chart-advanced-panel summary::-webkit-details-marker {
+  display: none;
+}
+
+.chart-advanced-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px;
+  padding: 0 14px 14px;
+}
+
+.chart-advanced-grid label,
+.chart-advanced-grid button,
+.chart-help-note {
+  background: rgba(8, 14, 23, 0.55);
+  border: 1px solid rgba(130, 164, 199, 0.12);
+  border-radius: 12px;
+  padding: 8px 10px;
+}
+
+.chart-advanced-grid input[type="color"] {
+  width: 100%;
+  min-height: 38px;
+  padding: 4px;
+  background: transparent;
+}
+
+.chart-advanced-grid .formula-label {
+  grid-column: span 2;
+}
+
+.chart-help-note {
+  color: var(--muted);
+  font-size: 0.86rem;
+  display: flex;
+  align-items: center;
+}
+
+.chart-hover-info {
+  margin-bottom: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(130, 164, 199, 0.12);
+  background: rgba(7, 13, 22, 0.42);
+  min-height: 42px;
 }
 
 .inline-controls label {
@@ -297,6 +389,7 @@ h3 {
 
 #chart-canvas {
   width: 100%;
+  max-width: 100%;
   height: auto;
   display: block;
   background: linear-gradient(180deg, rgba(5, 9, 16, 0.92), rgba(7, 13, 22, 0.94));
@@ -629,6 +722,10 @@ code {
     grid-template-columns: 1fr;
   }
 
+  .chart-advanced-grid .formula-label {
+    grid-column: span 1;
+  }
+
   .form-grid {
     grid-template-columns: 1fr;
   }
@@ -674,6 +771,7 @@ code {
             </select>
           </label>
           <button id="toggle-run" class="primary">Pause</button>
+          <button id="step-btn">Step</button>
           <label>
             Speed
             <select id="speed-select">
@@ -721,14 +819,88 @@ code {
             <h2 id="selected-name">Selected Asset</h2>
             <p id="selected-meta" class="muted">—</p>
           </div>
-          <div class="inline-controls">
+          <div class="inline-controls chart-toolbar">
+            <label>
+              Range
+              <select id="chart-range">
+                <option value="1D">1D</option>
+                <option value="5D" selected>5D</option>
+                <option value="1M">1M</option>
+                <option value="3M">3M</option>
+                <option value="6M">6M</option>
+              </select>
+            </label>
+            <label>
+              Indicator
+              <select id="indicator-pane">
+                <option value="rsi">RSI</option>
+                <option value="macd" selected>MACD</option>
+                <option value="stoch">Stochastic</option>
+                <option value="atr">ATR</option>
+                <option value="custom">Custom</option>
+              </select>
+            </label>
             <label><input type="checkbox" id="toggle-sma20" checked /> SMA 20</label>
             <label><input type="checkbox" id="toggle-sma50" checked /> SMA 50</label>
+            <label><input type="checkbox" id="toggle-ema-fast" checked /> EMA 12</label>
+            <label><input type="checkbox" id="toggle-ema-slow" /> EMA 26</label>
             <label><input type="checkbox" id="toggle-bbands" checked /> Bollinger</label>
+            <label><input type="checkbox" id="toggle-vwap" /> VWAP</label>
+            <label><input type="checkbox" id="toggle-custom-ma" /> Custom MA</label>
+            <label>
+              MA Period
+              <input id="custom-ma-period" type="number" min="2" max="120" step="1" value="34" />
+            </label>
           </div>
         </div>
         <div class="key-metrics" id="selected-metrics"></div>
-        <canvas id="chart-canvas" width="1100" height="500" aria-label="Price chart"></canvas>
+        <details class="chart-advanced-panel">
+          <summary>Advanced chart controls</summary>
+          <div class="chart-advanced-grid">
+            <label>
+              Interaction
+              <select id="chart-interaction-mode">
+                <option value="pan" selected>Pan / Inspect</option>
+                <option value="line">Trendline</option>
+                <option value="hline">Horizontal Line</option>
+                <option value="note">Text Note</option>
+                <option value="erase">Erase</option>
+              </select>
+            </label>
+            <label>
+              Theme
+              <select id="theme-select">
+                <option value="arena-dark" selected>Arena Dark</option>
+                <option value="midnight-blue">Midnight Blue</option>
+                <option value="paper-light">Paper Light</option>
+              </select>
+            </label>
+            <label>
+              Custom Name
+              <input id="custom-formula-name" type="text" value="Custom" />
+            </label>
+            <label class="formula-label">
+              Formula
+              <input id="custom-formula" type="text" value="c" placeholder="e.g. (c-sma(20))/sma(20)*100" />
+            </label>
+            <button id="apply-formula-btn" type="button">Apply Formula</button>
+            <button id="clear-annotations-btn" type="button">Clear Drawings</button>
+            <label>Up Candle <input id="color-bull" type="color" value="#31d18c" /></label>
+            <label>Down Candle <input id="color-bear" type="color" value="#ff6a6a" /></label>
+            <label>SMA 20 <input id="color-sma20" type="color" value="#62a8ff" /></label>
+            <label>SMA 50 <input id="color-sma50" type="color" value="#ffd15a" /></label>
+            <label>EMA Fast <input id="color-ema-fast" type="color" value="#4fe0c7" /></label>
+            <label>EMA Slow <input id="color-ema-slow" type="color" value="#ff9f62" /></label>
+            <label>Custom MA <input id="color-custom-ma" type="color" value="#f58cf8" /></label>
+            <label>VWAP <input id="color-vwap" type="color" value="#9af065" /></label>
+            <label>Bands <input id="color-bbands" type="color" value="#8f7cff" /></label>
+            <label>Indicator 1 <input id="color-indicator-primary" type="color" value="#7fd6ff" /></label>
+            <label>Indicator 2 <input id="color-indicator-secondary" type="color" value="#ffd15a" /></label>
+            <div class="chart-help-note">Hover for OHLC, drag to pan, mouse wheel to zoom. Formula examples: <code>c</code>, <code>(c-sma(20))/sma(20)*100</code>, <code>rsi(14)-50</code>, <code>change(5)</code>.</div>
+          </div>
+        </details>
+        <div id="chart-hover-info" class="chart-hover-info muted">Hover a candle to inspect OHLC, indicator, and volume data.</div>
+        <canvas id="chart-canvas" width="1100" height="560" aria-label="Price chart"></canvas>
         <div class="indicator-row" id="indicator-row"></div>
       </section>
 
@@ -1019,8 +1191,8 @@ code {
 (() => {
   'use strict';
 
-  const STORAGE_KEY = 'arena_market_sim_v4';
-  const VERSION = 4;
+  const STORAGE_KEY = 'arena_market_sim_v5';
+  const VERSION = 5;
   const STARTING_CASH = 100000;
   const MARKET_OPEN_MIN = 9 * 60 + 30;
   const MARKET_CLOSE_MIN = 16 * 60;
@@ -1455,6 +1627,7 @@ code {
     modeDetail: document.getElementById('mode-detail'),
     modeSelect: document.getElementById('mode-select'),
     toggleRun: document.getElementById('toggle-run'),
+    stepBtn: document.getElementById('step-btn'),
     speedSelect: document.getElementById('speed-select'),
     saveBtn: document.getElementById('save-btn'),
     helpBtn: document.getElementById('help-btn'),
@@ -1466,9 +1639,34 @@ code {
     selectedMetrics: document.getElementById('selected-metrics'),
     indicatorRow: document.getElementById('indicator-row'),
     chartCanvas: document.getElementById('chart-canvas'),
+    chartHoverInfo: document.getElementById('chart-hover-info'),
+    chartRange: document.getElementById('chart-range'),
+    indicatorPane: document.getElementById('indicator-pane'),
+    chartInteractionMode: document.getElementById('chart-interaction-mode'),
+    themeSelect: document.getElementById('theme-select'),
+    customFormula: document.getElementById('custom-formula'),
+    customFormulaName: document.getElementById('custom-formula-name'),
+    applyFormulaBtn: document.getElementById('apply-formula-btn'),
+    clearAnnotationsBtn: document.getElementById('clear-annotations-btn'),
     toggleSma20: document.getElementById('toggle-sma20'),
     toggleSma50: document.getElementById('toggle-sma50'),
+    toggleEmaFast: document.getElementById('toggle-ema-fast'),
+    toggleEmaSlow: document.getElementById('toggle-ema-slow'),
     toggleBbands: document.getElementById('toggle-bbands'),
+    toggleCustomMA: document.getElementById('toggle-custom-ma'),
+    toggleVwap: document.getElementById('toggle-vwap'),
+    customMAPeriod: document.getElementById('custom-ma-period'),
+    colorBull: document.getElementById('color-bull'),
+    colorBear: document.getElementById('color-bear'),
+    colorSma20: document.getElementById('color-sma20'),
+    colorSma50: document.getElementById('color-sma50'),
+    colorEmaFast: document.getElementById('color-ema-fast'),
+    colorEmaSlow: document.getElementById('color-ema-slow'),
+    colorCustomMA: document.getElementById('color-custom-ma'),
+    colorVwap: document.getElementById('color-vwap'),
+    colorBbands: document.getElementById('color-bbands'),
+    colorIndicatorPrimary: document.getElementById('color-indicator-primary'),
+    colorIndicatorSecondary: document.getElementById('color-indicator-secondary'),
     stockOrderForm: document.getElementById('stock-order-form'),
     stockSymbol: document.getElementById('stock-symbol'),
     stockAction: document.getElementById('stock-action'),
@@ -1514,6 +1712,56 @@ code {
   let state = loadState() || createInitialState();
   let loopHandle = null;
   let lastAutoSave = Date.now();
+  let chartRuntime = {
+    main: null,
+    drag: null,
+    previewAnnotation: null,
+  };
+
+  const THEME_PRESETS = {
+    'arena-dark': {
+      '--bg': '#071019',
+      '--bg-soft': '#0d1724',
+      '--panel': 'rgba(14, 25, 39, 0.92)',
+      '--panel-2': 'rgba(18, 33, 51, 0.95)',
+      '--border': 'rgba(130, 164, 199, 0.18)',
+      '--text': '#e7eef7',
+      '--muted': '#91a4ba',
+      '--positive': '#31d18c',
+      '--negative': '#ff6a6a',
+      '--warning': '#ffcf5a',
+      '--accent': '#62a8ff',
+      '--accent-2': '#8f7cff',
+    },
+    'midnight-blue': {
+      '--bg': '#08111f',
+      '--bg-soft': '#111c30',
+      '--panel': 'rgba(10, 22, 42, 0.95)',
+      '--panel-2': 'rgba(15, 29, 56, 0.96)',
+      '--border': 'rgba(113, 164, 255, 0.18)',
+      '--text': '#eef4ff',
+      '--muted': '#9db3d8',
+      '--positive': '#33d9a3',
+      '--negative': '#ff7b8c',
+      '--warning': '#ffd166',
+      '--accent': '#77b5ff',
+      '--accent-2': '#8da2ff',
+    },
+    'paper-light': {
+      '--bg': '#eef3f9',
+      '--bg-soft': '#f7fbff',
+      '--panel': 'rgba(255, 255, 255, 0.96)',
+      '--panel-2': 'rgba(244, 248, 253, 0.97)',
+      '--border': 'rgba(66, 94, 130, 0.16)',
+      '--text': '#18263a',
+      '--muted': '#5b6d85',
+      '--positive': '#167c57',
+      '--negative': '#cc425c',
+      '--warning': '#b48300',
+      '--accent': '#316fc8',
+      '--accent-2': '#6f58d9',
+    },
+  };
 
   function createInitialState() {
     const initialDate = new Date('2026-06-08T09:30:00');
@@ -1523,10 +1771,34 @@ code {
       settings: {
         running: true,
         speed: DEFAULT_SPEED,
+        theme: 'arena-dark',
+        chartRange: '5D',
+        indicatorPane: 'macd',
+        customMAPeriod: 34,
+        customFormula: 'c',
+        customFormulaName: 'Custom',
+        colors: {
+          bull: '#31d18c',
+          bear: '#ff6a6a',
+          sma20: '#62a8ff',
+          sma50: '#ffd15a',
+          emaFast: '#4fe0c7',
+          emaSlow: '#ff9f62',
+          customMA: '#f58cf8',
+          vwap: '#9af065',
+          bbands: '#8f7cff',
+          indicatorPrimary: '#7fd6ff',
+          indicatorSecondary: '#ffd15a',
+          annotation: '#ffcf5a',
+        },
         overlays: {
           sma20: true,
           sma50: true,
+          emaFast: true,
+          emaSlow: false,
           bbands: true,
+          customMA: false,
+          vwap: false,
         },
       },
       market: {
@@ -1547,6 +1819,10 @@ code {
         optionExpiryDays: 30,
         selectedContract: null,
         optionStrategy: 'custom',
+        chartInteractionMode: 'pan',
+        chartViewport: { key: '', start: 0, count: 0 },
+        chartHoverInfo: null,
+        chartAnnotations: {},
         stockOrderStatus: { text: 'Ready to place a stock order.', tone: 'neutral' },
         optionOrderStatus: { text: 'Ready to place an options order.', tone: 'neutral' },
       },
@@ -1650,6 +1926,7 @@ code {
       dailyVolState: (base.annualVol ** 2) / 252,
       gapBias: 0,
       liquiditySkew: base.sector === 'Technology' ? 1.06 : base.sector === 'Energy' ? 0.96 : 1,
+      trendBias: 0,
     };
 
     seedHistory(asset, endDate, container);
@@ -1831,7 +2108,43 @@ code {
     loaded.settings ??= {};
     loaded.settings.running = loaded.settings.running !== false;
     loaded.settings.speed = loaded.settings.speed || DEFAULT_SPEED;
-    loaded.settings.overlays ??= { sma20: true, sma50: true, bbands: true };
+    loaded.settings.theme ??= 'arena-dark';
+    loaded.settings.chartRange ??= '5D';
+    loaded.settings.indicatorPane ??= 'macd';
+    loaded.settings.customMAPeriod ??= 34;
+    loaded.settings.customFormula ??= 'c';
+    loaded.settings.customFormulaName ??= 'Custom';
+    loaded.settings.colors ??= {
+      bull: '#31d18c',
+      bear: '#ff6a6a',
+      sma20: '#62a8ff',
+      sma50: '#ffd15a',
+      emaFast: '#4fe0c7',
+      emaSlow: '#ff9f62',
+      customMA: '#f58cf8',
+      vwap: '#9af065',
+      bbands: '#8f7cff',
+      indicatorPrimary: '#7fd6ff',
+      indicatorSecondary: '#ffd15a',
+      annotation: '#ffcf5a',
+    };
+    loaded.settings.overlays ??= { sma20: true, sma50: true, emaFast: true, emaSlow: false, bbands: true, customMA: false, vwap: false };
+    loaded.settings.overlays.emaFast ??= true;
+    loaded.settings.overlays.emaSlow ??= false;
+    loaded.settings.overlays.customMA ??= false;
+    loaded.settings.overlays.vwap ??= false;
+    loaded.settings.colors.bull ??= '#31d18c';
+    loaded.settings.colors.bear ??= '#ff6a6a';
+    loaded.settings.colors.sma20 ??= '#62a8ff';
+    loaded.settings.colors.sma50 ??= '#ffd15a';
+    loaded.settings.colors.emaFast ??= '#4fe0c7';
+    loaded.settings.colors.emaSlow ??= '#ff9f62';
+    loaded.settings.colors.customMA ??= '#f58cf8';
+    loaded.settings.colors.vwap ??= '#9af065';
+    loaded.settings.colors.bbands ??= '#8f7cff';
+    loaded.settings.colors.indicatorPrimary ??= '#7fd6ff';
+    loaded.settings.colors.indicatorSecondary ??= '#ffd15a';
+    loaded.settings.colors.annotation ??= '#ffcf5a';
     loaded.market.activeEffects ??= [];
     loaded.news ??= [];
     loaded.account ??= { cash: STARTING_CASH, realizedPnL: 0, holdings: {}, options: [], openOrders: [], log: [] };
@@ -1841,6 +2154,10 @@ code {
     loaded.account.holdings ??= {};
     loaded.ui ??= { selectedTicker: 'AAPL', optionSymbol: 'AAPL', optionExpiryDays: 30, selectedContract: null };
     loaded.ui.optionStrategy ??= 'custom';
+    loaded.ui.chartInteractionMode ??= 'pan';
+    loaded.ui.chartViewport ??= { key: '', start: 0, count: 0 };
+    loaded.ui.chartHoverInfo ??= null;
+    loaded.ui.chartAnnotations ??= {};
     loaded.ui.stockOrderStatus ??= { text: 'Ready to place a stock order.', tone: 'neutral' };
     loaded.ui.optionOrderStatus ??= { text: 'Ready to place an options order.', tone: 'neutral' };
     loaded.training ??= {
@@ -1908,6 +2225,7 @@ code {
       asset.dailyVolState ??= (asset.annualVol ** 2) / 252;
       asset.gapBias ??= 0;
       asset.liquiditySkew ??= 1;
+      asset.trendBias ??= 0;
       if (!asset.dailyArchive || asset.dailyArchive.length < 120) seedDailyArchive(asset, new Date(loaded.market.now), loaded);
       if (!asset.currentBar) startNewBar(asset, new Date(loaded.market.now));
     }
@@ -1991,6 +2309,33 @@ code {
 
   function clamp(value, min, max) {
     return Math.max(min, Math.min(max, value));
+  }
+
+  function getReasonablePriceBand(asset) {
+    const width = clamp(0.18 + asset.annualVol * 0.55 + Math.max(0, asset.beta - 1) * 0.08 + Math.abs(asset.recentNewsTone) * 0.012, 0.22, 0.68);
+    return {
+      lower: asset.anchorPrice * (1 - width),
+      upper: asset.anchorPrice * (1 + width),
+    };
+  }
+
+  function compressExtremePrice(asset, price) {
+    const { lower, upper } = getReasonablePriceBand(asset);
+    if (price < lower) {
+      const ratio = Math.max(0.5, price / Math.max(lower, 0.01));
+      return clamp(lower * Math.pow(ratio, 0.2), lower * 0.94, upper);
+    }
+    if (price > upper) {
+      const ratio = price / Math.max(upper, 0.01);
+      return clamp(upper * Math.pow(ratio, 0.2), lower, upper * 1.06);
+    }
+    return price;
+  }
+
+  function updateAnchorPrice(asset, ret, strength = 1) {
+    const driftComponent = clamp(ret * 0.16 + asset.trendBias * 0.35 + asset.recentNewsTone * 0.00018, -0.01, 0.01) * strength;
+    const newAnchor = asset.anchorPrice * Math.exp(driftComponent) + (asset.price - asset.anchorPrice) * 0.006 * strength;
+    asset.anchorPrice = round2(clamp(newAnchor, asset.price * 0.58, asset.price * 1.72));
   }
 
   function round2(value) {
@@ -2209,6 +2554,24 @@ code {
     state.ui.optionOrderStatus = { text, tone };
   }
 
+  function applyTheme(themeName = state.settings.theme) {
+    const preset = THEME_PRESETS[themeName] || THEME_PRESETS['arena-dark'];
+    state.settings.theme = themeName in THEME_PRESETS ? themeName : 'arena-dark';
+    if (typeof document !== 'undefined' && document.documentElement) {
+      Object.entries(preset).forEach(([key, value]) => document.documentElement.style.setProperty(key, value));
+    }
+  }
+
+  function getAnnotationKey() {
+    return `${state.ui.selectedTicker}:${state.settings.chartRange}`;
+  }
+
+  function getAnnotationBucket() {
+    const key = getAnnotationKey();
+    state.ui.chartAnnotations[key] ??= [];
+    return state.ui.chartAnnotations[key];
+  }
+
   function getConnectionStatus() {
     return typeof navigator !== 'undefined' && navigator.onLine === false ? 'offline' : 'online';
   }
@@ -2372,6 +2735,41 @@ code {
     return normalizeFetchedBars(bars, sinceDate);
   }
 
+  async function fetchEodHistoricalReplayBars(ticker, sinceDate) {
+    const symbol = ticker === 'SPY' ? 'SPY.US' : `${ticker}.US`;
+    const from = sinceDate.toISOString().slice(0, 10);
+    const url = `https://eodhistoricaldata.com/api/eod/${encodeURIComponent(symbol)}?api_token=demo&from=${from}&period=d&fmt=json`;
+    const json = await fetchJsonWithTimeout(url, 15000);
+    if (!Array.isArray(json) || !json.length) throw new Error('No EOD Historical Data data');
+    const bars = json.map((bar) => ({
+      time: getIsoAtMarketClose(bar.date),
+      open: Number(bar.open),
+      high: Number(bar.high),
+      low: Number(bar.low),
+      close: Number(bar.close),
+      volume: Number(bar.volume || 0),
+    }));
+    return normalizeFetchedBars(bars, sinceDate);
+  }
+
+  async function fetchPolygonReplayBars(ticker, sinceDate) {
+    const from = sinceDate.toISOString().slice(0, 10);
+    const to = new Date().toISOString().slice(0, 10);
+    const url = `https://api.polygon.io/v2/aggs/ticker/${encodeURIComponent(ticker)}/range/1/day/${from}/${to}?adjusted=true&sort=asc&limit=500&apiKey=demo`;
+    const json = await fetchJsonWithTimeout(url, 15000);
+    const results = json?.results;
+    if (!results?.length) throw new Error('No Polygon data');
+    const bars = results.map((bar) => ({
+      time: new Date(bar.t).toISOString(),
+      open: Number(bar.o),
+      high: Number(bar.h),
+      low: Number(bar.l),
+      close: Number(bar.c),
+      volume: Number(bar.v || 0),
+    }));
+    return normalizeFetchedBars(bars, sinceDate);
+  }
+
   async function fetchReplayBarsForTicker(ticker, sinceDate) {
     const providers = [
       { name: 'Yahoo Finance', fetcher: fetchYahooReplayBars },
@@ -2379,6 +2777,8 @@ code {
       { name: 'Financial Modeling Prep', fetcher: fetchFmpReplayBars },
       { name: 'Alpha Vantage', fetcher: fetchAlphaVantageReplayBars },
       { name: 'Twelve Data', fetcher: fetchTwelveDataReplayBars },
+      { name: 'EOD Historical Data', fetcher: fetchEodHistoricalReplayBars },
+      { name: 'Polygon', fetcher: fetchPolygonReplayBars },
     ];
     let lastError = null;
     for (const provider of providers) {
@@ -2776,6 +3176,13 @@ code {
     renderAll();
   }
 
+  function stepSimulationOnce() {
+    if (isReplayMode()) stepReplayDay();
+    else microStep();
+    saveState(false);
+    renderAll();
+  }
+
   function microStep() {
     let now = getCurrentTime();
     if (!isMarketOpen(now)) {
@@ -2807,15 +3214,17 @@ code {
       const effect = getNetEffectForAsset(asset.ticker, asset.sector);
       const sectorFactor = sectorShocks[asset.sector] || 0;
       const liquidityVol = clamp(0.74 + intradayCurve * 0.16, 0.68, 1.55);
-      const meanReversion = Math.log(asset.anchorPrice / asset.price) * 0.0007;
-      const momentum = asset.momentum * 0.0012;
+      const meanReversion = Math.log(asset.anchorPrice / asset.price) * 0.00095;
+      const momentum = asset.momentum * 0.0011;
       const drift = (asset.drift - 0.5 * asset.annualVol ** 2) * dt;
-      const jump = rng(state) < (0.0018 + effect.volBoost * 0.01) ? randomShock(state, Math.sqrt(asset.volState) * 2.8) : 0;
+      const jump = rng(state) < (0.0018 + effect.volBoost * 0.01) ? randomShock(state, Math.sqrt(asset.volState) * 2.3) : 0;
+      asset.trendBias = clamp(asset.trendBias * 0.982 + (effect.driftPerStep + macroDrift + asset.recentNewsTone * 0.00015) * 0.075, -0.0028, 0.0028);
       const realizedShock = Math.sqrt(asset.volState) * marketVolAdj * (0.5 * asset.beta * marketShock + 0.34 * sectorFactor + 0.56 * randomShock(state, 1)) * liquidityVol + jump;
       updateVolatilityState(asset, realizedShock, 'intraday');
       const eventDrift = effect.driftPerStep;
-      const ret = drift + meanReversion + momentum + macroDrift + eventDrift + realizedShock;
-      const newPrice = clamp(asset.price * Math.exp(ret), 5, 5000);
+      const ret = drift + meanReversion + momentum + asset.trendBias + macroDrift + eventDrift + realizedShock;
+      const rawPrice = clamp(asset.price * Math.exp(ret), 5, 5000);
+      const newPrice = clamp(compressExtremePrice(asset, rawPrice), 5, 5000);
       const baseIntervalVolume = asset.avgVolume / (390 / MICRO_STEP_MINUTES);
       const tradedVolume = baseIntervalVolume * intradayCurve * asset.liquiditySkew * clamp(0.55 + Math.abs(ret) * 52 + Math.abs(jump) * 120 + effect.volBoost * 1.8 + randomBetween(state, -0.08, 0.18), 0.15, 7.2);
 
@@ -2824,8 +3233,9 @@ code {
       asset.low = Math.min(asset.low, asset.price);
       asset.dayVolume += Math.round(tradedVolume);
       asset.lastShock = ret;
-      asset.momentum = clamp(asset.momentum * 0.79 + ret * 190, -4.5, 4.5);
-      asset.iv = clamp(asset.iv * 0.986 + Math.sqrt(asset.volState / Math.max(dt, 1e-9)) * 0.014 + Math.abs(jump) * 0.8 + effect.volBoost * 0.02, 0.12, 1.55);
+      asset.momentum = clamp(asset.momentum * 0.83 + ret * 170, -4.2, 4.2);
+      asset.iv = clamp(asset.iv * 0.987 + Math.sqrt(asset.volState / Math.max(dt, 1e-9)) * 0.012 + Math.abs(jump) * 0.55 + effect.volBoost * 0.018, 0.12, 1.45);
+      updateAnchorPrice(asset, ret, 1);
       updateCurrentBar(asset, tradedVolume);
     }
 
@@ -2900,6 +3310,7 @@ code {
       }
       const dailyRet = Math.log(asset.price / Math.max(asset.prevClose, 0.01));
       updateVolatilityState(asset, dailyRet, 'daily');
+      updateAnchorPrice(asset, dailyRet, 1.4);
       const sessionBar = {
         time: closeStamp.toISOString(),
         open: round2(asset.open),
@@ -2929,9 +3340,10 @@ code {
       asset.daysToDividend -= 1;
       const overnightSigma = Math.sqrt(asset.dailyVolState) * clamp(0.18 + state.market.vix / 100, 0.2, 0.48);
       const overnightShock = randomShock(state, overnightSigma) * (0.44 * asset.beta + 0.56) + asset.gapBias * 0.28;
-      asset.price = round2(clamp(asset.price * Math.exp(overnightShock), 5, 5000));
+      asset.price = round2(clamp(compressExtremePrice(asset, asset.price * Math.exp(overnightShock)), 5, 5000));
       asset.gapBias *= 0.4;
-      asset.iv = clamp(asset.iv * 0.993 + Math.abs(overnightShock) * 0.65, 0.12, 1.55);
+      asset.iv = clamp(asset.iv * 0.993 + Math.abs(overnightShock) * 0.65, 0.12, 1.45);
+      updateAnchorPrice(asset, overnightShock, 1.25);
     }
 
     maybeGenerateOpenEvent(nextOpen);
@@ -3074,11 +3486,13 @@ code {
       asset.price = round2(clamp(asset.price * (1 + jump), 5, 5000));
       asset.high = Math.max(asset.high, asset.price);
       asset.low = Math.min(asset.low, asset.price);
-      asset.anchorPrice = round2(asset.anchorPrice * (1 + jump * 0.35));
-      asset.iv = clamp(asset.iv + Math.abs(jump) * 0.55 + (event.volBoost || 0) * 0.08, 0.12, 1.45);
+      asset.anchorPrice = round2(asset.anchorPrice * (1 + jump * 0.28));
+      asset.iv = clamp(asset.iv + Math.abs(jump) * 0.5 + (event.volBoost || 0) * 0.08, 0.12, 1.45);
       asset.recentNewsTone = clamp(asset.recentNewsTone * 0.5 + jump * 10, -5, 5);
-      asset.gapBias = clamp(asset.gapBias * 0.5 + jump * 1.6, -0.12, 0.12);
-      asset.dailyVolState = clamp(asset.dailyVolState * (1 + Math.abs(jump) * 1.3 + (event.volBoost || 0) * 0.35), (asset.annualVol ** 2) / 252 * 0.35, (asset.annualVol ** 2) / 252 * 9);
+      asset.gapBias = clamp(asset.gapBias * 0.5 + jump * 1.45, -0.1, 0.1);
+      asset.trendBias = clamp(asset.trendBias * 0.6 + jump * 0.12, -0.0032, 0.0032);
+      asset.dailyVolState = clamp(asset.dailyVolState * (1 + Math.abs(jump) * 1.15 + (event.volBoost || 0) * 0.28), (asset.annualVol ** 2) / 252 * 0.35, (asset.annualVol ** 2) / 252 * 8);
+      asset.price = round2(compressExtremePrice(asset, asset.price));
       if (asset.currentBar) updateCurrentBar(asset, asset.avgVolume * Math.abs(jump) * 0.3);
     }
 
@@ -3899,9 +4313,164 @@ code {
     return { basis, upper, lower };
   }
 
+  function atr(bars, period = 14) {
+    const trueRanges = bars.map((bar, index) => {
+      if (index === 0) return bar.high - bar.low;
+      const prevClose = bars[index - 1].close;
+      return Math.max(bar.high - bar.low, Math.abs(bar.high - prevClose), Math.abs(bar.low - prevClose));
+    });
+    return sma(trueRanges, period);
+  }
+
+  function stochastic(bars, period = 14, smooth = 3) {
+    const k = Array(bars.length).fill(null);
+    for (let i = period - 1; i < bars.length; i += 1) {
+      const slice = bars.slice(i - period + 1, i + 1);
+      const highestHigh = Math.max(...slice.map((bar) => bar.high));
+      const lowestLow = Math.min(...slice.map((bar) => bar.low));
+      const range = highestHigh - lowestLow || 1e-9;
+      k[i] = ((bars[i].close - lowestLow) / range) * 100;
+    }
+    return { k, d: sma(k.map((value) => value ?? 0), smooth) };
+  }
+
+  function volumeWeightedAveragePrice(bars) {
+    const result = Array(bars.length).fill(null);
+    let cumulativePv = 0;
+    let cumulativeVolume = 0;
+    for (let i = 0; i < bars.length; i += 1) {
+      const typical = (bars[i].high + bars[i].low + bars[i].close) / 3;
+      cumulativePv += typical * (bars[i].volume || 0);
+      cumulativeVolume += bars[i].volume || 0;
+      result[i] = cumulativeVolume ? cumulativePv / cumulativeVolume : bars[i].close;
+    }
+    return result;
+  }
+
+  function getChartBars(asset) {
+    const range = state.settings.chartRange;
+    const dateKey = getCurrentDateKey(new Date(state.market.now));
+    const currentBar = asset.currentBar ? [{ ...asset.currentBar, close: asset.price, high: Math.max(asset.currentBar.high, asset.price), low: Math.min(asset.currentBar.low, asset.price) }] : [];
+    if (range === '1D') {
+      const intraday = asset.history.filter((bar) => getDateKeyFromBarTime(bar.time) === dateKey).concat(currentBar);
+      return intraday.length ? intraday.slice(-14) : asset.history.slice(-14).concat(currentBar);
+    }
+    if (range === '5D') {
+      return asset.history.slice(-65).concat(currentBar).slice(-70);
+    }
+    if (range === '1M') return asset.dailyArchive.slice(-22);
+    if (range === '3M') return asset.dailyArchive.slice(-66);
+    return asset.dailyArchive.slice(-132);
+  }
+
+  function getDefaultVisibleCount(range, length) {
+    const defaults = { '1D': Math.min(length, 14), '5D': Math.min(length, 70), '1M': Math.min(length, 22), '3M': Math.min(length, 66), '6M': Math.min(length, 132) };
+    return defaults[range] || Math.min(length, 70);
+  }
+
+  function getVisibleChartBars(asset) {
+    const baseBars = getChartBars(asset);
+    const key = `${asset.ticker}:${state.settings.chartRange}`;
+    if (state.ui.chartViewport.key !== key || state.ui.chartViewport.count <= 0) {
+      const defaultCount = getDefaultVisibleCount(state.settings.chartRange, baseBars.length);
+      state.ui.chartViewport = { key, count: defaultCount, start: Math.max(0, baseBars.length - defaultCount) };
+    }
+    const minCount = Math.min(8, Math.max(1, baseBars.length));
+    const count = clamp(Math.floor(state.ui.chartViewport.count || baseBars.length), minCount, Math.max(minCount, baseBars.length || minCount));
+    const start = clamp(Math.floor(state.ui.chartViewport.start || 0), 0, Math.max(0, baseBars.length - count));
+    state.ui.chartViewport.count = count;
+    state.ui.chartViewport.start = start;
+    return { baseBars, visibleBars: baseBars.slice(start, start + count), start, count };
+  }
+
+  function compileCustomIndicator(bars) {
+    const formula = state.settings.customFormula || 'c';
+    const opens = bars.map((bar) => bar.open);
+    const highs = bars.map((bar) => bar.high);
+    const lows = bars.map((bar) => bar.low);
+    const closes = bars.map((bar) => bar.close);
+    const volumes = bars.map((bar) => bar.volume || 0);
+    const emaMemo = new Map();
+    const smaMemo = new Map();
+    const rsiMemo = new Map();
+    const atrMemo = new Map();
+    let compile;
+    try {
+      compile = new Function('o','h','l','c','v','i','sma','ema','rsi','highest','lowest','atr','change','Math', `return (${formula});`);
+    } catch (error) {
+      addLog(state, `Custom formula parse error: ${error.message}`);
+      return bars.map(() => null);
+    }
+    return bars.map((bar, index) => {
+      const helperSma = (period) => {
+        const key = `s${period}`;
+        if (!smaMemo.has(key)) smaMemo.set(key, sma(closes, period));
+        return smaMemo.get(key)[index] ?? closes[index];
+      };
+      const helperEma = (period) => {
+        const key = `e${period}`;
+        if (!emaMemo.has(key)) emaMemo.set(key, ema(closes, period));
+        return emaMemo.get(key)[index] ?? closes[index];
+      };
+      const helperRsi = (period) => {
+        const key = `r${period}`;
+        if (!rsiMemo.has(key)) {
+          rsiMemo.set(key, closes.map((_, idx) => rsi(closes.slice(0, Math.max(idx + 1, 2)), period)));
+        }
+        return rsiMemo.get(key)[index] ?? 50;
+      };
+      const helperAtr = (period) => {
+        const key = `a${period}`;
+        if (!atrMemo.has(key)) atrMemo.set(key, atr(bars, period));
+        return atrMemo.get(key)[index] ?? 0;
+      };
+      const highest = (period) => Math.max(...highs.slice(Math.max(0, index - period + 1), index + 1));
+      const lowest = (period) => Math.min(...lows.slice(Math.max(0, index - period + 1), index + 1));
+      const change = (period = 1) => {
+        const prevIndex = Math.max(0, index - period);
+        return ((closes[index] / Math.max(closes[prevIndex], 1e-9)) - 1) * 100;
+      };
+      try {
+        const value = compile(opens[index], highs[index], lows[index], closes[index], volumes[index], index, helperSma, helperEma, helperRsi, highest, lowest, helperAtr, change, Math);
+        return Number.isFinite(value) ? value : null;
+      } catch (error) {
+        return null;
+      }
+    });
+  }
+
+  function priceFromChartY(runtime, y) {
+    return priceMinMaxToValue(y, runtime.priceMin, runtime.priceMax, runtime.priceTop + runtime.priceHeight, runtime.priceTop);
+  }
+
+  function priceMinMaxToValue(y, min, max, outMin, outMax) {
+    const ratio = (y - outMin) / (outMax - outMin);
+    return min + (max - min) * ratio;
+  }
+
+  function getNearestChartIndex(runtime, x) {
+    const relative = clamp(x - runtime.leftPad, 0, runtime.plotWidth);
+    return clamp(Math.round(relative / (runtime.plotWidth / runtime.visibleBars.length) - 0.5), 0, runtime.visibleBars.length - 1);
+  }
+
+  function updateChartHover(index) {
+    const runtime = chartRuntime.main;
+    if (!runtime || !runtime.visibleBars[index]) return;
+    const bar = runtime.visibleBars[index];
+    const indicatorValue = runtime.hoverIndicatorSeries?.[index];
+    state.ui.chartHoverInfo = { index, time: bar.time };
+    dom.chartHoverInfo.innerHTML = `<strong>${formatNewsTime(bar.time)}</strong> • O ${formatMoney(bar.open)} • H ${formatMoney(bar.high)} • L ${formatMoney(bar.low)} • C ${formatMoney(bar.close)} • Vol ${formatLargeNumber(bar.volume || 0)}${indicatorValue != null ? ` • ${runtime.indicatorLabel}: ${Number(indicatorValue).toFixed(2)}` : ''}`;
+  }
+
+  function clearChartHover() {
+    state.ui.chartHoverInfo = null;
+    dom.chartHoverInfo.textContent = 'Hover a candle to inspect OHLC, indicator, and volume data.';
+  }
+
   function renderAll() {
     sanitizeUiSelection();
     ensureTrainingChallenge();
+    applyTheme(state.settings.theme);
     populateSymbolSelects();
     syncControlsFromState();
     renderHeader();
@@ -3921,11 +4490,33 @@ code {
   function syncControlsFromState() {
     dom.modeSelect.value = state.dataMode.preference;
     dom.speedSelect.value = String(state.settings.speed);
+    dom.themeSelect.value = state.settings.theme;
+    dom.chartRange.value = state.settings.chartRange;
+    dom.indicatorPane.value = state.settings.indicatorPane;
+    dom.chartInteractionMode.value = state.ui.chartInteractionMode || 'pan';
+    dom.customMAPeriod.value = String(state.settings.customMAPeriod || 34);
+    dom.customFormula.value = state.settings.customFormula || 'c';
+    dom.customFormulaName.value = state.settings.customFormulaName || 'Custom';
     dom.optionStrategy.value = state.ui.optionStrategy || 'custom';
     dom.toggleRun.textContent = state.settings.running ? 'Pause' : 'Resume';
     dom.toggleSma20.checked = !!state.settings.overlays.sma20;
     dom.toggleSma50.checked = !!state.settings.overlays.sma50;
+    dom.toggleEmaFast.checked = !!state.settings.overlays.emaFast;
+    dom.toggleEmaSlow.checked = !!state.settings.overlays.emaSlow;
     dom.toggleBbands.checked = !!state.settings.overlays.bbands;
+    dom.toggleCustomMA.checked = !!state.settings.overlays.customMA;
+    dom.toggleVwap.checked = !!state.settings.overlays.vwap;
+    dom.colorBull.value = state.settings.colors.bull;
+    dom.colorBear.value = state.settings.colors.bear;
+    dom.colorSma20.value = state.settings.colors.sma20;
+    dom.colorSma50.value = state.settings.colors.sma50;
+    dom.colorEmaFast.value = state.settings.colors.emaFast;
+    dom.colorEmaSlow.value = state.settings.colors.emaSlow;
+    dom.colorCustomMA.value = state.settings.colors.customMA;
+    dom.colorVwap.value = state.settings.colors.vwap;
+    dom.colorBbands.value = state.settings.colors.bbands;
+    dom.colorIndicatorPrimary.value = state.settings.colors.indicatorPrimary;
+    dom.colorIndicatorSecondary.value = state.settings.colors.indicatorSecondary;
   }
 
   function renderHeader() {
@@ -4031,13 +4622,20 @@ code {
       </div>
     `).join('');
 
-    const closes = asset.history.map((bar) => bar.close).concat(asset.price);
+    const chartBars = getChartBars(asset);
+    const closes = chartBars.map((bar) => bar.close);
     const currentRsi = rsi(closes);
     const currentMacd = macd(closes);
+    const currentAtr = atr(chartBars).filter((value) => value != null).slice(-1)[0] || 0;
+    const currentStoch = stochastic(chartBars);
+    const stochK = currentStoch.k.filter((value) => value != null).slice(-1)[0] || 0;
     dom.indicatorRow.innerHTML = `
       <div class="metric-card"><span class="kicker">RSI 14</span><strong class="${currentRsi > 70 ? 'warning-text' : currentRsi < 30 ? 'positive-text' : ''}">${currentRsi.toFixed(1)}</strong><span class="muted">Momentum oscillator</span></div>
       <div class="metric-card"><span class="kicker">MACD</span><strong class="${currentMacd.currentLine >= currentMacd.currentSignal ? 'positive-text' : 'negative-text'}">${currentMacd.currentLine.toFixed(2)}</strong><span class="muted">Signal ${currentMacd.currentSignal.toFixed(2)}</span></div>
+      <div class="metric-card"><span class="kicker">Stoch %K</span><strong class="${stochK > 80 ? 'warning-text' : stochK < 20 ? 'positive-text' : ''}">${stochK.toFixed(1)}</strong><span class="muted">Range momentum</span></div>
+      <div class="metric-card"><span class="kicker">ATR 14</span><strong>${formatMoney(currentAtr)}</strong><span class="muted">Average true range</span></div>
       <div class="metric-card"><span class="kicker">Anchor vs Price</span><strong>${formatPercent(((asset.anchorPrice - asset.price) / asset.price) * 100)}</strong><span class="muted">Mean-reversion gap</span></div>
+      <div class="metric-card"><span class="kicker">Chart Range</span><strong>${state.settings.chartRange}</strong><span class="muted">Indicator pane: ${state.settings.indicatorPane.toUpperCase()}</span></div>
       <div class="metric-card"><span class="kicker">Next Earnings</span><strong>${asset.daysToEarnings < 900 ? `${asset.daysToEarnings} trading days` : 'N/A'}</strong><span class="muted">Catalyst clock</span></div>
     `;
   }
@@ -4046,35 +4644,42 @@ code {
     const canvas = dom.chartCanvas;
     const rect = canvas.getBoundingClientRect();
     const dpr = window.devicePixelRatio || 1;
-    canvas.width = Math.max(800, Math.floor(rect.width * dpr));
-    canvas.height = Math.floor(500 * dpr);
+    canvas.width = Math.max(700, Math.floor(rect.width * dpr));
+    canvas.height = Math.floor(560 * dpr);
     const ctx = canvas.getContext('2d');
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.scale(dpr, dpr);
 
     const width = rect.width;
-    const height = 500;
+    const height = 560;
     ctx.clearRect(0, 0, width, height);
 
     const asset = state.assets[state.ui.selectedTicker];
-    const bars = asset.history.slice(-78);
+    const { baseBars, visibleBars, start, count } = getVisibleChartBars(asset);
+    const bars = visibleBars;
     if (!bars.length) return;
 
+    const colors = state.settings.colors;
     const closes = bars.map((bar) => bar.close);
     const sma20 = sma(closes, 20);
     const sma50 = sma(closes, 50);
+    const ema12 = ema(closes, 12);
+    const ema26 = ema(closes, 26);
+    const customMA = sma(closes, Math.max(2, Number(state.settings.customMAPeriod || 34)));
     const bb = bollinger(closes, 20, 2);
-    const rsiSeries = bars.map((_, idx) => rsi(closes.slice(0, idx + 1).length > 15 ? closes.slice(0, idx + 1) : closes.slice(0, idx + 2)));
+    const vwap = volumeWeightedAveragePrice(bars);
+    const rsiSeries = bars.map((_, idx) => rsi(closes.slice(0, Math.max(2, idx + 1))));
     const macdSeries = macd(closes);
+    const stochSeries = stochastic(bars);
+    const atrSeries = atr(bars);
+    const customIndicatorSeries = compileCustomIndicator(bars);
 
     const priceTop = 20;
-    const priceHeight = 275;
-    const volumeTop = 315;
-    const volumeHeight = 70;
-    const rsiTop = 395;
-    const rsiHeight = 45;
-    const macdTop = 450;
-    const macdHeight = 35;
+    const priceHeight = 310;
+    const volumeTop = 348;
+    const volumeHeight = 60;
+    const indicatorTop = 428;
+    const indicatorHeight = 95;
     const leftPad = 58;
     const rightPad = 18;
     const plotWidth = width - leftPad - rightPad;
@@ -4085,17 +4690,19 @@ code {
     const overlayVals = [];
     if (state.settings.overlays.sma20) overlayVals.push(...sma20.filter(Boolean));
     if (state.settings.overlays.sma50) overlayVals.push(...sma50.filter(Boolean));
+    if (state.settings.overlays.emaFast) overlayVals.push(...ema12.filter(Boolean));
+    if (state.settings.overlays.emaSlow) overlayVals.push(...ema26.filter(Boolean));
+    if (state.settings.overlays.customMA) overlayVals.push(...customMA.filter(Boolean));
+    if (state.settings.overlays.vwap) overlayVals.push(...vwap.filter(Boolean));
     if (state.settings.overlays.bbands) overlayVals.push(...bb.upper.filter(Boolean), ...bb.lower.filter(Boolean));
 
     const priceMax = Math.max(...highs, ...(overlayVals.length ? overlayVals : highs)) * 1.015;
     const priceMin = Math.min(...lows, ...(overlayVals.length ? overlayVals : lows)) * 0.985;
     const volumeMax = Math.max(...bars.map((bar) => bar.volume), 1);
-    const macdMax = Math.max(...macdSeries.hist.map((value) => Math.abs(value)), 0.0001);
 
     drawGrid(ctx, leftPad, priceTop, plotWidth, priceHeight, 5);
     drawGrid(ctx, leftPad, volumeTop, plotWidth, volumeHeight, 2);
-    drawGrid(ctx, leftPad, rsiTop, plotWidth, rsiHeight, 2);
-    drawGrid(ctx, leftPad, macdTop, plotWidth, macdHeight, 2);
+    drawGrid(ctx, leftPad, indicatorTop, plotWidth, indicatorHeight, 3);
 
     bars.forEach((bar, index) => {
       const x = leftPad + (plotWidth / bars.length) * index + plotWidth / bars.length / 2;
@@ -4104,33 +4711,85 @@ code {
       const highY = scaleValue(bar.high, priceMin, priceMax, priceTop + priceHeight, priceTop);
       const lowY = scaleValue(bar.low, priceMin, priceMax, priceTop + priceHeight, priceTop);
       const up = bar.close >= bar.open;
-      ctx.strokeStyle = up ? '#31d18c' : '#ff6a6a';
+      ctx.strokeStyle = up ? colors.bull : colors.bear;
       ctx.lineWidth = 1.2;
       ctx.beginPath();
       ctx.moveTo(x, highY);
       ctx.lineTo(x, lowY);
       ctx.stroke();
 
-      ctx.fillStyle = up ? 'rgba(49, 209, 140, 0.85)' : 'rgba(255, 106, 106, 0.85)';
+      ctx.fillStyle = up ? `${colors.bull}dd` : `${colors.bear}dd`;
       const bodyTop = Math.min(openY, closeY);
       const bodyHeight = Math.max(2, Math.abs(closeY - openY));
       ctx.fillRect(x - candleWidth / 2, bodyTop, candleWidth, bodyHeight);
 
       const volumeHeightPx = scaleValue(bar.volume, 0, volumeMax, 0, volumeHeight);
-      ctx.fillStyle = up ? 'rgba(49, 209, 140, 0.28)' : 'rgba(255, 106, 106, 0.28)';
+      ctx.fillStyle = up ? `${colors.bull}55` : `${colors.bear}55`;
       ctx.fillRect(x - candleWidth / 2, volumeTop + volumeHeight - volumeHeightPx, candleWidth, volumeHeightPx);
     });
 
     if (state.settings.overlays.bbands) {
-      drawLineSeries(ctx, bb.upper, bars.length, leftPad, plotWidth, priceTop, priceHeight, priceMin, priceMax, 'rgba(143, 124, 255, 0.55)', 1.2);
-      drawLineSeries(ctx, bb.lower, bars.length, leftPad, plotWidth, priceTop, priceHeight, priceMin, priceMax, 'rgba(143, 124, 255, 0.55)', 1.2);
+      drawLineSeries(ctx, bb.upper, bars.length, leftPad, plotWidth, priceTop, priceHeight, priceMin, priceMax, colors.bbands, 1.1);
+      drawLineSeries(ctx, bb.lower, bars.length, leftPad, plotWidth, priceTop, priceHeight, priceMin, priceMax, colors.bbands, 1.1);
     }
-    if (state.settings.overlays.sma20) drawLineSeries(ctx, sma20, bars.length, leftPad, plotWidth, priceTop, priceHeight, priceMin, priceMax, '#62a8ff', 1.6);
-    if (state.settings.overlays.sma50) drawLineSeries(ctx, sma50, bars.length, leftPad, plotWidth, priceTop, priceHeight, priceMin, priceMax, '#ffd15a', 1.4);
+    if (state.settings.overlays.sma20) drawLineSeries(ctx, sma20, bars.length, leftPad, plotWidth, priceTop, priceHeight, priceMin, priceMax, colors.sma20, 1.55);
+    if (state.settings.overlays.sma50) drawLineSeries(ctx, sma50, bars.length, leftPad, plotWidth, priceTop, priceHeight, priceMin, priceMax, colors.sma50, 1.4);
+    if (state.settings.overlays.emaFast) drawLineSeries(ctx, ema12, bars.length, leftPad, plotWidth, priceTop, priceHeight, priceMin, priceMax, colors.emaFast, 1.35);
+    if (state.settings.overlays.emaSlow) drawLineSeries(ctx, ema26, bars.length, leftPad, plotWidth, priceTop, priceHeight, priceMin, priceMax, colors.emaSlow, 1.2);
+    if (state.settings.overlays.customMA) drawLineSeries(ctx, customMA, bars.length, leftPad, plotWidth, priceTop, priceHeight, priceMin, priceMax, colors.customMA, 1.2);
+    if (state.settings.overlays.vwap) drawLineSeries(ctx, vwap, bars.length, leftPad, plotWidth, priceTop, priceHeight, priceMin, priceMax, colors.vwap, 1.2);
 
-    drawRsiSection(ctx, rsiSeries, leftPad, plotWidth, rsiTop, rsiHeight);
-    drawMacdSection(ctx, macdSeries, leftPad, plotWidth, macdTop, macdHeight, macdMax);
-    drawAxesLabels(ctx, asset, bars, leftPad, rightPad, width, priceTop, priceHeight, priceMin, priceMax, volumeTop, rsiTop, macdTop, height);
+    const indicatorType = state.settings.indicatorPane;
+    let indicatorLabel = 'MACD';
+    if (indicatorType === 'macd') {
+      const macdMax = Math.max(...macdSeries.hist.map((value) => Math.abs(value)), 0.0001);
+      drawMacdSection(ctx, macdSeries, leftPad, plotWidth, indicatorTop, indicatorHeight, macdMax, colors);
+    } else if (indicatorType === 'rsi') {
+      drawRsiSection(ctx, rsiSeries, leftPad, plotWidth, indicatorTop, indicatorHeight, colors);
+      indicatorLabel = 'RSI';
+    } else if (indicatorType === 'stoch') {
+      drawStochasticSection(ctx, stochSeries, leftPad, plotWidth, indicatorTop, indicatorHeight, colors);
+      indicatorLabel = 'Stoch';
+    } else if (indicatorType === 'custom') {
+      drawSingleLineIndicator(ctx, customIndicatorSeries, leftPad, plotWidth, indicatorTop, indicatorHeight, colors.indicatorPrimary, state.settings.customFormulaName || 'Custom');
+      indicatorLabel = state.settings.customFormulaName || 'Custom';
+    } else {
+      drawSingleLineIndicator(ctx, atrSeries, leftPad, plotWidth, indicatorTop, indicatorHeight, colors.indicatorPrimary, 'ATR');
+      indicatorLabel = 'ATR';
+    }
+
+    let hoverIndicatorSeries = null;
+    if (indicatorType === 'macd') hoverIndicatorSeries = macdSeries.line;
+    else if (indicatorType === 'rsi') hoverIndicatorSeries = rsiSeries;
+    else if (indicatorType === 'stoch') hoverIndicatorSeries = stochSeries.k;
+    else if (indicatorType === 'custom') hoverIndicatorSeries = customIndicatorSeries;
+    else hoverIndicatorSeries = atrSeries;
+
+    chartRuntime.main = {
+      assetTicker: asset.ticker,
+      range: state.settings.chartRange,
+      baseBars,
+      visibleBars: bars,
+      start,
+      count,
+      leftPad,
+      rightPad,
+      plotWidth,
+      width,
+      height,
+      priceTop,
+      priceHeight,
+      priceMin,
+      priceMax,
+      indicatorTop,
+      indicatorHeight,
+      indicatorLabel,
+      hoverIndicatorSeries,
+    };
+
+    drawChartAnnotations(ctx, chartRuntime.main);
+    drawHoverOverlay(ctx, chartRuntime.main);
+    drawAxesLabels(ctx, asset, bars, leftPad, rightPad, width, priceTop, priceHeight, priceMin, priceMax, volumeTop, indicatorTop, height, indicatorLabel, state.settings.chartRange);
   }
 
   function drawGrid(ctx, left, top, width, height, rows) {
@@ -4164,7 +4823,7 @@ code {
     if (started) ctx.stroke();
   }
 
-  function drawRsiSection(ctx, values, leftPad, plotWidth, top, height) {
+  function drawRsiSection(ctx, values, leftPad, plotWidth, top, height, colors) {
     ctx.strokeStyle = 'rgba(255, 207, 90, 0.35)';
     [30, 70].forEach((level) => {
       const y = scaleValue(level, 0, 100, top + height, top);
@@ -4173,27 +4832,127 @@ code {
       ctx.lineTo(leftPad + plotWidth, y);
       ctx.stroke();
     });
-    drawLineSeries(ctx, values, values.length, leftPad, plotWidth, top, height, 0, 100, '#7fd6ff', 1.35);
+    drawLineSeries(ctx, values, values.length, leftPad, plotWidth, top, height, 0, 100, colors.indicatorPrimary, 1.35);
   }
 
-  function drawMacdSection(ctx, macdSeries, leftPad, plotWidth, top, height, macdMax) {
+  function drawMacdSection(ctx, macdSeries, leftPad, plotWidth, top, height, macdMax, colors) {
     const bars = macdSeries.hist;
     bars.forEach((value, index) => {
       const x = leftPad + (plotWidth / bars.length) * index + plotWidth / bars.length / 2;
       const zeroY = scaleValue(0, -macdMax, macdMax, top + height, top);
       const y = scaleValue(value, -macdMax, macdMax, top + height, top);
-      ctx.strokeStyle = value >= 0 ? 'rgba(49, 209, 140, 0.8)' : 'rgba(255, 106, 106, 0.8)';
+      ctx.strokeStyle = value >= 0 ? `${colors.bull}cc` : `${colors.bear}cc`;
       ctx.lineWidth = Math.max(2, plotWidth / bars.length * 0.42);
       ctx.beginPath();
       ctx.moveTo(x, zeroY);
       ctx.lineTo(x, y);
       ctx.stroke();
     });
-    drawLineSeries(ctx, macdSeries.line, bars.length, leftPad, plotWidth, top, height, -macdMax, macdMax, '#62a8ff', 1.4);
-    drawLineSeries(ctx, macdSeries.signal, bars.length, leftPad, plotWidth, top, height, -macdMax, macdMax, '#ffd15a', 1.3);
+    drawLineSeries(ctx, macdSeries.line, bars.length, leftPad, plotWidth, top, height, -macdMax, macdMax, colors.indicatorPrimary, 1.4);
+    drawLineSeries(ctx, macdSeries.signal, bars.length, leftPad, plotWidth, top, height, -macdMax, macdMax, colors.indicatorSecondary, 1.3);
   }
 
-  function drawAxesLabels(ctx, asset, bars, leftPad, rightPad, width, priceTop, priceHeight, priceMin, priceMax, volumeTop, rsiTop, macdTop, height) {
+  function drawStochasticSection(ctx, stochSeries, leftPad, plotWidth, top, height, colors) {
+    ctx.strokeStyle = 'rgba(255, 207, 90, 0.35)';
+    [20, 80].forEach((level) => {
+      const y = scaleValue(level, 0, 100, top + height, top);
+      ctx.beginPath();
+      ctx.moveTo(leftPad, y);
+      ctx.lineTo(leftPad + plotWidth, y);
+      ctx.stroke();
+    });
+    drawLineSeries(ctx, stochSeries.k, stochSeries.k.length, leftPad, plotWidth, top, height, 0, 100, colors.indicatorPrimary, 1.35);
+    drawLineSeries(ctx, stochSeries.d, stochSeries.d.length, leftPad, plotWidth, top, height, 0, 100, colors.indicatorSecondary, 1.15);
+  }
+
+  function drawSingleLineIndicator(ctx, values, leftPad, plotWidth, top, height, color, label) {
+    const clean = values.filter((value) => value != null);
+    const min = Math.min(...clean, 0);
+    const max = Math.max(...clean, 0.0001);
+    drawLineSeries(ctx, values, values.length, leftPad, plotWidth, top, height, min, max * 1.05, color, 1.35);
+    ctx.fillStyle = 'rgba(145, 164, 186, 0.8)';
+    ctx.font = '11px Inter, system-ui, sans-serif';
+    ctx.fillText(label, leftPad + 6, top + 14);
+  }
+
+  function drawChartAnnotations(ctx, runtime) {
+    const annotations = getAnnotationBucket();
+    const timeToIndex = new Map(runtime.visibleBars.map((bar, index) => [bar.time, index]));
+    const color = state.settings.colors.annotation;
+    ctx.strokeStyle = color;
+    ctx.fillStyle = color;
+    ctx.lineWidth = 1.4;
+
+    const drawOne = (annotation) => {
+      if (annotation.type === 'line') {
+        const startIndex = timeToIndex.get(annotation.startTime);
+        const endIndex = timeToIndex.get(annotation.endTime);
+        if (startIndex == null || endIndex == null) return;
+        const startX = runtime.leftPad + (runtime.plotWidth / runtime.visibleBars.length) * startIndex + runtime.plotWidth / runtime.visibleBars.length / 2;
+        const endX = runtime.leftPad + (runtime.plotWidth / runtime.visibleBars.length) * endIndex + runtime.plotWidth / runtime.visibleBars.length / 2;
+        const startY = scaleValue(annotation.startPrice, runtime.priceMin, runtime.priceMax, runtime.priceTop + runtime.priceHeight, runtime.priceTop);
+        const endY = scaleValue(annotation.endPrice, runtime.priceMin, runtime.priceMax, runtime.priceTop + runtime.priceHeight, runtime.priceTop);
+        ctx.beginPath();
+        ctx.moveTo(startX, startY);
+        ctx.lineTo(endX, endY);
+        ctx.stroke();
+      } else if (annotation.type === 'hline') {
+        const y = scaleValue(annotation.price, runtime.priceMin, runtime.priceMax, runtime.priceTop + runtime.priceHeight, runtime.priceTop);
+        ctx.setLineDash([6, 6]);
+        ctx.beginPath();
+        ctx.moveTo(runtime.leftPad, y);
+        ctx.lineTo(runtime.leftPad + runtime.plotWidth, y);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      } else if (annotation.type === 'note') {
+        const idx = timeToIndex.get(annotation.time);
+        if (idx == null) return;
+        const x = runtime.leftPad + (runtime.plotWidth / runtime.visibleBars.length) * idx + runtime.plotWidth / runtime.visibleBars.length / 2;
+        const y = scaleValue(annotation.price, runtime.priceMin, runtime.priceMax, runtime.priceTop + runtime.priceHeight, runtime.priceTop);
+        ctx.beginPath();
+        ctx.arc(x, y, 4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillText(annotation.text || 'Note', x + 6, y - 6);
+      }
+    };
+
+    annotations.forEach(drawOne);
+    if (chartRuntime.previewAnnotation) drawOne(chartRuntime.previewAnnotation);
+  }
+
+  function drawHoverOverlay(ctx, runtime) {
+    if (!state.ui.chartHoverInfo) return;
+    const index = state.ui.chartHoverInfo.index;
+    if (index == null || !runtime.visibleBars[index]) return;
+    const bar = runtime.visibleBars[index];
+    const x = runtime.leftPad + (runtime.plotWidth / runtime.visibleBars.length) * index + runtime.plotWidth / runtime.visibleBars.length / 2;
+    const y = scaleValue(bar.close, runtime.priceMin, runtime.priceMax, runtime.priceTop + runtime.priceHeight, runtime.priceTop);
+    ctx.strokeStyle = 'rgba(145, 164, 186, 0.55)';
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.moveTo(x, runtime.priceTop);
+    ctx.lineTo(x, runtime.height - 24);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(runtime.leftPad, y);
+    ctx.lineTo(runtime.leftPad + runtime.plotWidth, y);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  function findAnnotationNear(runtime, x, y) {
+    const annotations = getAnnotationBucket();
+    const price = priceFromChartY(runtime, y);
+    const idx = getNearestChartIndex(runtime, x);
+    const time = runtime.visibleBars[idx]?.time;
+    return annotations.find((annotation) => {
+      if (annotation.type === 'hline') return Math.abs(annotation.price - price) / Math.max(price, 1) < 0.01;
+      if (annotation.type === 'note') return annotation.time === time;
+      return annotation.startTime === time || annotation.endTime === time;
+    });
+  }
+
+  function drawAxesLabels(ctx, asset, bars, leftPad, rightPad, width, priceTop, priceHeight, priceMin, priceMax, volumeTop, indicatorTop, height, indicatorLabel, rangeLabel) {
     ctx.fillStyle = 'rgba(227, 238, 247, 0.92)';
     ctx.font = '12px Inter, system-ui, sans-serif';
     ctx.textAlign = 'right';
@@ -4203,10 +4962,9 @@ code {
       ctx.fillText(formatMoney(value), leftPad - 8, y + 4);
     }
     ctx.fillText('Volume', leftPad - 8, volumeTop + 12);
-    ctx.fillText('RSI', leftPad - 8, rsiTop + 12);
-    ctx.fillText('MACD', leftPad - 8, macdTop + 12);
+    ctx.fillText(indicatorLabel, leftPad - 8, indicatorTop + 12);
     ctx.textAlign = 'left';
-    ctx.fillText(`${asset.ticker} • ${bars.length} bars`, leftPad, 14);
+    ctx.fillText(`${asset.ticker} • ${bars.length} bars • ${rangeLabel}`, leftPad, 14);
 
     ctx.textAlign = 'center';
     const step = Math.ceil(bars.length / 6);
@@ -4214,7 +4972,9 @@ code {
       const bar = bars[i];
       const x = leftPad + ((width - leftPad - rightPad) / bars.length) * i + (width - leftPad - rightPad) / bars.length / 2;
       const date = new Date(bar.time);
-      const label = `${date.getMonth() + 1}/${date.getDate()} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+      const label = rangeLabel === '1D' || rangeLabel === '5D'
+        ? `${date.getMonth() + 1}/${date.getDate()} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
+        : `${date.getMonth() + 1}/${date.getDate()}`;
       ctx.fillStyle = 'rgba(145, 164, 186, 0.8)';
       ctx.fillText(label, x, height - 8);
     }
@@ -4635,10 +5395,120 @@ code {
     placeOptionOrder(state.ui.selectedContract, dom.optionSide.value, Number(dom.optionContracts.value));
   }
 
+  function setChartColor(key, value) {
+    state.settings.colors[key] = value;
+    renderChart();
+  }
+
+  function resetChartViewport() {
+    state.ui.chartViewport = { key: '', start: 0, count: 0 };
+  }
+
+  function getCanvasRelativePosition(event) {
+    const rect = dom.chartCanvas.getBoundingClientRect();
+    return { x: event.clientX - rect.left, y: event.clientY - rect.top };
+  }
+
+  function handleChartPointerDown(event) {
+    const runtime = chartRuntime.main;
+    if (!runtime) return;
+    const { x, y } = getCanvasRelativePosition(event);
+    const index = getNearestChartIndex(runtime, x);
+    const bar = runtime.visibleBars[index];
+    if (!bar) return;
+    const price = priceFromChartY(runtime, y);
+    const mode = state.ui.chartInteractionMode || 'pan';
+
+    if (mode === 'pan') {
+      chartRuntime.drag = { type: 'pan', startX: x, startViewportStart: state.ui.chartViewport.start };
+      return;
+    }
+    if (mode === 'line') {
+      if (!chartRuntime.previewAnnotation) {
+        chartRuntime.previewAnnotation = { type: 'line', startTime: bar.time, endTime: bar.time, startPrice: price, endPrice: price };
+      } else {
+        getAnnotationBucket().push({ ...chartRuntime.previewAnnotation, endTime: bar.time, endPrice: price, id: `ann-${Date.now()}-${Math.floor(rng() * 100000)}` });
+        chartRuntime.previewAnnotation = null;
+        saveState(false);
+      }
+      renderChart();
+      return;
+    }
+    if (mode === 'hline') {
+      getAnnotationBucket().push({ id: `ann-${Date.now()}-${Math.floor(rng() * 100000)}`, type: 'hline', price });
+      renderChart();
+      saveState(false);
+      return;
+    }
+    if (mode === 'note') {
+      const text = typeof window.prompt === 'function' ? (window.prompt('Annotation text:', 'Note') || 'Note') : 'Note';
+      getAnnotationBucket().push({ id: `ann-${Date.now()}-${Math.floor(rng() * 100000)}`, type: 'note', time: bar.time, price, text });
+      renderChart();
+      saveState(false);
+      return;
+    }
+    if (mode === 'erase') {
+      const found = findAnnotationNear(runtime, x, y);
+      if (!found) return;
+      state.ui.chartAnnotations[getAnnotationKey()] = getAnnotationBucket().filter((item) => item.id !== found.id);
+      chartRuntime.previewAnnotation = null;
+      renderChart();
+      saveState(false);
+    }
+  }
+
+  function handleChartPointerMove(event) {
+    const runtime = chartRuntime.main;
+    if (!runtime) return;
+    const { x, y } = getCanvasRelativePosition(event);
+    const index = getNearestChartIndex(runtime, x);
+    updateChartHover(index);
+
+    if (chartRuntime.drag?.type === 'pan') {
+      const stepWidth = runtime.plotWidth / runtime.visibleBars.length;
+      const deltaBars = Math.round((chartRuntime.drag.startX - x) / Math.max(stepWidth, 1));
+      state.ui.chartViewport.start = clamp(chartRuntime.drag.startViewportStart + deltaBars, 0, Math.max(0, runtime.baseBars.length - runtime.count));
+      renderChart();
+      return;
+    }
+    if (chartRuntime.previewAnnotation && chartRuntime.previewAnnotation.type === 'line') {
+      const bar = runtime.visibleBars[index];
+      if (!bar) return;
+      chartRuntime.previewAnnotation.endTime = bar.time;
+      chartRuntime.previewAnnotation.endPrice = priceFromChartY(runtime, y);
+      renderChart();
+      return;
+    }
+    renderChart();
+  }
+
+  function handleChartPointerUp() {
+    chartRuntime.drag = null;
+    if (chartRuntime.previewAnnotation == null) saveState(false);
+  }
+
+  function handleChartWheel(event) {
+    const runtime = chartRuntime.main;
+    if (!runtime) return;
+    event.preventDefault();
+    const delta = event.deltaY < 0 ? -6 : 6;
+    const minCount = Math.min(8, Math.max(1, runtime.baseBars.length));
+    const nextCount = clamp(runtime.count + delta, minCount, runtime.baseBars.length);
+    const { x } = getCanvasRelativePosition(event);
+    const focusIndex = getNearestChartIndex(runtime, x);
+    const focusGlobalIndex = runtime.start + focusIndex;
+    state.ui.chartViewport.count = nextCount;
+    state.ui.chartViewport.start = clamp(focusGlobalIndex - Math.floor((focusIndex / Math.max(runtime.count - 1, 1)) * nextCount), 0, Math.max(0, runtime.baseBars.length - nextCount));
+    renderChart();
+  }
+
   function bindEvents() {
     dom.toggleRun.addEventListener('click', () => {
       state.settings.running = !state.settings.running;
       syncControlsFromState();
+    });
+    dom.stepBtn.addEventListener('click', () => {
+      stepSimulationOnce();
     });
 
     dom.modeSelect.addEventListener('change', (event) => {
@@ -4676,6 +5546,52 @@ code {
 
     dom.resetBtn.addEventListener('click', resetState);
 
+    dom.themeSelect.addEventListener('change', (event) => {
+      state.settings.theme = event.target.value;
+      applyTheme(state.settings.theme);
+      renderAll();
+    });
+    dom.chartInteractionMode.addEventListener('change', (event) => {
+      state.ui.chartInteractionMode = event.target.value;
+      chartRuntime.previewAnnotation = null;
+      renderChart();
+    });
+    dom.chartRange.addEventListener('change', (event) => {
+      state.settings.chartRange = event.target.value;
+      resetChartViewport();
+      clearChartHover();
+      renderAll();
+    });
+    dom.indicatorPane.addEventListener('change', (event) => {
+      state.settings.indicatorPane = event.target.value;
+      renderChart();
+      renderSelectedAsset();
+    });
+    dom.customMAPeriod.addEventListener('input', (event) => {
+      state.settings.customMAPeriod = clamp(Number(event.target.value || 34), 2, 120);
+      renderChart();
+    });
+    dom.customFormula.addEventListener('change', (event) => {
+      state.settings.customFormula = event.target.value || 'c';
+      if (state.settings.indicatorPane === 'custom') renderChart();
+    });
+    dom.customFormulaName.addEventListener('change', (event) => {
+      state.settings.customFormulaName = event.target.value || 'Custom';
+      if (state.settings.indicatorPane === 'custom') renderChart();
+    });
+    dom.applyFormulaBtn.addEventListener('click', () => {
+      state.settings.customFormula = dom.customFormula.value || 'c';
+      state.settings.customFormulaName = dom.customFormulaName.value || 'Custom';
+      state.settings.indicatorPane = 'custom';
+      renderChart();
+      renderSelectedAsset();
+    });
+    dom.clearAnnotationsBtn.addEventListener('click', () => {
+      state.ui.chartAnnotations[getAnnotationKey()] = [];
+      chartRuntime.previewAnnotation = null;
+      renderChart();
+      saveState(false);
+    });
     dom.toggleSma20.addEventListener('change', (event) => {
       state.settings.overlays.sma20 = event.target.checked;
       renderChart();
@@ -4684,9 +5600,40 @@ code {
       state.settings.overlays.sma50 = event.target.checked;
       renderChart();
     });
+    dom.toggleEmaFast.addEventListener('change', (event) => {
+      state.settings.overlays.emaFast = event.target.checked;
+      renderChart();
+    });
+    dom.toggleEmaSlow.addEventListener('change', (event) => {
+      state.settings.overlays.emaSlow = event.target.checked;
+      renderChart();
+    });
     dom.toggleBbands.addEventListener('change', (event) => {
       state.settings.overlays.bbands = event.target.checked;
       renderChart();
+    });
+    dom.toggleCustomMA.addEventListener('change', (event) => {
+      state.settings.overlays.customMA = event.target.checked;
+      renderChart();
+    });
+    dom.toggleVwap.addEventListener('change', (event) => {
+      state.settings.overlays.vwap = event.target.checked;
+      renderChart();
+    });
+    [
+      ['bull', dom.colorBull],
+      ['bear', dom.colorBear],
+      ['sma20', dom.colorSma20],
+      ['sma50', dom.colorSma50],
+      ['emaFast', dom.colorEmaFast],
+      ['emaSlow', dom.colorEmaSlow],
+      ['customMA', dom.colorCustomMA],
+      ['vwap', dom.colorVwap],
+      ['bbands', dom.colorBbands],
+      ['indicatorPrimary', dom.colorIndicatorPrimary],
+      ['indicatorSecondary', dom.colorIndicatorSecondary],
+    ].forEach(([key, element]) => {
+      element.addEventListener('input', (event) => setChartColor(key, event.target.value));
     });
 
     dom.watchlistBody.addEventListener('click', (event) => {
@@ -4697,11 +5644,15 @@ code {
       state.ui.optionSymbol = ticker;
       dom.stockSymbol.value = ticker;
       dom.optionSymbol.value = ticker;
+      resetChartViewport();
+      clearChartHover();
       renderAll();
     });
 
     dom.stockSymbol.addEventListener('change', (event) => {
       state.ui.selectedTicker = event.target.value;
+      resetChartViewport();
+      clearChartHover();
       renderAll();
     });
     dom.stockAction.addEventListener('change', renderStockEstimate);
@@ -4780,6 +5731,17 @@ code {
     dom.trainingRevealBtn.addEventListener('click', () => revealTrainingChallenge(true));
     dom.trainingNewBtn.addEventListener('click', () => startTrainingChallenge(state.training.mode));
 
+    dom.chartCanvas.addEventListener('mousedown', handleChartPointerDown);
+    dom.chartCanvas.addEventListener('mousemove', handleChartPointerMove);
+    dom.chartCanvas.addEventListener('mouseleave', () => {
+      chartRuntime.drag = null;
+      if (!chartRuntime.previewAnnotation) clearChartHover();
+      renderChart();
+    });
+    dom.chartCanvas.addEventListener('mouseup', handleChartPointerUp);
+    dom.chartCanvas.addEventListener('wheel', handleChartWheel, { passive: false });
+
+    window.addEventListener('mouseup', handleChartPointerUp);
     window.addEventListener('beforeunload', () => saveState(false));
     window.addEventListener('resize', () => {
       renderChart();
@@ -4801,6 +5763,7 @@ code {
     loadReplayMode,
     maybeRefreshDataMode,
     tickSimulation,
+    stepSimulationOnce,
     saveState,
     resetState,
   };
