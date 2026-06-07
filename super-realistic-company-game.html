@@ -1,0 +1,1129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Super Realistic Company Tycoon™</title>
+<style>
+  :root{
+    --bg:#0b1120; --panel:#121a2e; --panel2:#18223c; --line:#26324f;
+    --txt:#e8eefc; --mut:#93a2c4; --grn:#34d399; --red:#f87171;
+    --gold:#fbbf24; --blu:#60a5fa; --pur:#a78bfa; --accent:#38bdf8;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+    background:radial-gradient(1200px 600px at 80% -10%, #16223f 0%, var(--bg) 55%);
+    color:var(--txt); min-height:100vh; padding:18px; line-height:1.45;
+  }
+  h1,h2,h3{font-weight:700; letter-spacing:.2px}
+  .wrap{max-width:1180px; margin:0 auto}
+
+  /* TOP BAR */
+  .topbar{
+    display:flex; flex-wrap:wrap; align-items:center; gap:14px;
+    background:linear-gradient(135deg,var(--panel2),var(--panel));
+    border:1px solid var(--line); border-radius:16px; padding:14px 18px;
+    box-shadow:0 12px 30px rgba(0,0,0,.35);
+  }
+  .logo{font-size:1.35rem; font-weight:800; display:flex; align-items:center; gap:10px}
+  .logo .badge{font-size:.6rem; background:var(--gold); color:#1a1300; padding:2px 6px; border-radius:6px; font-weight:800; transform:translateY(-8px)}
+  .stats{display:flex; gap:10px; margin-left:auto; flex-wrap:wrap}
+  .stat{background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:8px 14px; min-width:118px}
+  .stat .lbl{font-size:.66rem; color:var(--mut); text-transform:uppercase; letter-spacing:1px}
+  .stat .val{font-size:1.12rem; font-weight:800}
+  .pos{color:var(--grn)} .neg{color:var(--red)}
+
+  /* NEWS TICKER */
+  .ticker{
+    margin:12px 0; background:#0d1426; border:1px solid var(--line);
+    border-radius:10px; overflow:hidden; display:flex; align-items:center;
+  }
+  .ticker .tag{background:var(--red); color:#fff; font-weight:800; padding:8px 12px; font-size:.75rem; white-space:nowrap; letter-spacing:1px}
+  .ticker .track{white-space:nowrap; overflow:hidden; flex:1}
+  .ticker .track span{display:inline-block; padding-left:100%; animation:scroll 32s linear infinite; font-size:.86rem; color:var(--mut)}
+  @keyframes scroll{from{transform:translateX(0)} to{transform:translateX(-100%)}}
+
+  /* LAYOUT */
+  .grid{display:grid; grid-template-columns:1fr; gap:14px; margin-top:14px}
+  @media(min-width:900px){ .main-grid{display:grid; grid-template-columns:1fr 320px; gap:14px} }
+
+  .tabs{display:flex; gap:6px; flex-wrap:wrap; margin-top:14px}
+  .tab{
+    background:var(--panel); border:1px solid var(--line); color:var(--mut);
+    padding:9px 16px; border-radius:10px 10px 0 0; cursor:pointer; font-weight:700; font-size:.9rem;
+    transition:.15s;
+  }
+  .tab:hover{color:var(--txt)}
+  .tab.active{background:var(--panel2); color:var(--accent); border-bottom-color:var(--panel2)}
+
+  .panel{background:var(--panel2); border:1px solid var(--line); border-radius:0 14px 14px 14px; padding:18px}
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px; margin-bottom:12px}
+  .row{display:flex; align-items:center; gap:12px; flex-wrap:wrap}
+  .spread{justify-content:space-between}
+  .muted{color:var(--mut); font-size:.86rem}
+  .pill{font-size:.7rem; padding:2px 8px; border-radius:20px; font-weight:700; border:1px solid var(--line)}
+
+  button.btn{
+    background:linear-gradient(135deg,var(--accent),#2563eb); color:#04111f; border:none;
+    padding:9px 16px; border-radius:10px; font-weight:800; cursor:pointer; font-size:.9rem; transition:.12s;
+  }
+  button.btn:hover{filter:brightness(1.08); transform:translateY(-1px)}
+  button.btn:disabled{opacity:.4; cursor:not-allowed; transform:none}
+  button.btn.green{background:linear-gradient(135deg,#34d399,#059669); color:#022}
+  button.btn.red{background:linear-gradient(135deg,#fb7185,#e11d48); color:#fff}
+  button.btn.gold{background:linear-gradient(135deg,#fbbf24,#d97706); color:#1a1200}
+  button.btn.ghost{background:transparent; border:1px solid var(--line); color:var(--txt)}
+  button.btn.sm{padding:6px 11px; font-size:.8rem}
+
+  .day-btn{font-size:1rem; padding:12px 22px}
+
+  table{width:100%; border-collapse:collapse}
+  th,td{text-align:left; padding:9px 8px; border-bottom:1px solid var(--line); font-size:.88rem}
+  th{color:var(--mut); font-size:.72rem; text-transform:uppercase; letter-spacing:.6px}
+  .spark{font-family:monospace; font-size:.8rem; letter-spacing:-1px}
+
+  input[type=number]{
+    background:#0b1426; border:1px solid var(--line); color:var(--txt);
+    border-radius:8px; padding:7px 9px; width:90px; font-size:.9rem;
+  }
+
+  .log{max-height:340px; overflow:auto; font-size:.84rem}
+  .log .entry{padding:7px 9px; border-bottom:1px solid var(--line); display:flex; gap:8px}
+  .log .entry .d{color:var(--mut); flex-shrink:0; font-weight:700}
+  .log .good{color:var(--grn)} .log .bad{color:var(--red)} .log .warn{color:var(--gold)}
+
+  .bar{height:9px; background:#0b1426; border-radius:20px; overflow:hidden; border:1px solid var(--line)}
+  .bar > i{display:block; height:100%; border-radius:20px; transition:width .4s}
+
+  /* MODAL */
+  .overlay{
+    position:fixed; inset:0; background:rgba(3,7,18,.82); display:none;
+    align-items:center; justify-content:center; z-index:50; padding:20px;
+    backdrop-filter:blur(3px);
+  }
+  .overlay.show{display:flex}
+  .modal{
+    background:linear-gradient(160deg,#1b2547,#101830); border:1px solid var(--line);
+    border-radius:18px; padding:26px; max-width:540px; width:100%; box-shadow:0 30px 80px rgba(0,0,0,.6);
+    animation:pop .25s ease;
+  }
+  @keyframes pop{from{transform:scale(.9); opacity:0} to{transform:scale(1); opacity:1}}
+  .modal h2{margin-bottom:8px}
+  .choices{display:flex; flex-direction:column; gap:10px; margin-top:16px}
+  .choice{
+    text-align:left; background:var(--panel); border:1px solid var(--line); color:var(--txt);
+    padding:12px 14px; border-radius:12px; cursor:pointer; transition:.12s;
+  }
+  .choice:hover{border-color:var(--accent); background:#16233f; transform:translateX(3px)}
+  .choice .sub{font-size:.78rem; color:var(--mut); margin-top:3px}
+
+  .blink{animation:blink 1s steps(2,start) infinite}
+  @keyframes blink{to{visibility:hidden}}
+  .shake{animation:shake .4s}
+  @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+
+  /* FINE PRINT / EULA modal */
+  .modal.eula{max-width:600px}
+  .eula h2{font-size:1.05rem}
+  .fineprint{
+    max-height:300px; overflow:auto; background:#0a1120; border:1px solid var(--line);
+    border-radius:10px; padding:14px 16px; margin:12px 0;
+    font-size:8.5px; line-height:1.5; color:#5f6f8f; text-align:justify;
+    font-family:'Times New Roman',Georgia,serif;
+  }
+  .fineprint p{margin-bottom:7px}
+  .fineprint h4{font-size:9px; color:#7b8aab; margin:8px 0 4px; text-transform:uppercase; letter-spacing:.5px}
+  .eula-foot{display:flex; align-items:center; gap:10px; flex-wrap:wrap; font-size:.78rem; color:var(--mut)}
+  .center{text-align:center}
+  .big{font-size:2.4rem; font-weight:900}
+  footer{margin-top:18px; text-align:center; color:var(--mut); font-size:.75rem}
+  .hidden{display:none}
+  .glow{text-shadow:0 0 12px currentColor}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- START SCREEN -->
+  <div id="start" class="panel" style="border-radius:16px; text-align:center; padding:42px 22px">
+    <div class="logo" style="justify-content:center; font-size:2rem">📈 Super Realistic Company Tycoon <span class="badge">PRO</span></div>
+    <p class="muted" style="max-width:560px; margin:14px auto">
+      Build your empire from the ground up. Trade stocks, make bold decisions, hire a brilliant team,
+      and steer your startup to a billion-dollar valuation. A serious, data-driven business simulator.
+    </p>
+    <div class="row" style="justify-content:center; margin:18px 0 8px">
+      <input id="coName" type="text" placeholder="Your company name…" style="background:#0b1426;border:1px solid var(--line);color:var(--txt);border-radius:10px;padding:11px 14px;width:280px;font-size:1rem">
+    </div>
+    <button class="btn gold day-btn" onclick="startGame()">🚀 Found My Company</button>
+    <p class="muted" style="margin-top:18px; font-size:.72rem">v3.7.2 · 100% accurate market modeling · trusted by 0 Fortune 500 CEOs</p>
+  </div>
+
+  <!-- GAME -->
+  <div id="game" class="hidden">
+    <div class="topbar">
+      <div class="logo">📊 <span id="hdrName">Acme Inc.</span></div>
+      <div class="stats">
+        <div class="stat"><div class="lbl">Day · Q<span id="sQ">1</span></div><div class="val" id="sDay">1</div></div>
+        <div class="stat"><div class="lbl">Cash</div><div class="val pos" id="sCash">$50,000</div></div>
+        <div class="stat"><div class="lbl">Net Worth</div><div class="val" id="sNet">$50,000</div></div>
+        <div class="stat"><div class="lbl">Customers</div><div class="val" id="sCust">120</div></div>
+        <div class="stat"><div class="lbl">Reputation</div><div class="val" id="sRep">50</div></div>
+        <div class="stat"><div class="lbl">Morale</div><div class="val" id="sMorale">70</div></div>
+        <div class="stat"><div class="lbl">Market <span id="sMktArrow">▲</span></div><div class="val" id="sMkt">1000</div></div>
+      </div>
+    </div>
+
+    <div class="ticker">
+      <div class="tag">📰 LIVE</div>
+      <div class="track"><span id="tickerText">Markets open. Analysts optimistic. Your company poised for greatness.</span></div>
+    </div>
+
+    <div class="tabs" id="tabs">
+      <div class="tab active" data-tab="dash">🏠 Dashboard</div>
+      <div class="tab" data-tab="market">💹 Stock Market</div>
+      <div class="tab" data-tab="ventures">🏗️ Ventures</div>
+      <div class="tab" data-tab="staff">👥 Staff</div>
+      <div class="tab" data-tab="rd">🔬 R&amp;D</div>
+      <div class="tab" data-tab="finance">🏦 Finance</div>
+      <div class="tab" data-tab="marketing">📣 Marketing</div>
+    </div>
+
+    <div class="main-grid">
+      <div>
+        <!-- DASHBOARD -->
+        <div class="panel tabpane" id="pane-dash">
+          <div class="row spread">
+            <h2>Company Dashboard</h2>
+            <button class="btn green day-btn" id="nextDayBtn" onclick="nextDay()">⏭️ Advance to Next Day</button>
+          </div>
+          <div class="grid" style="grid-template-columns:1fr 1fr; gap:12px; margin-top:14px">
+            <div class="card">
+              <div class="muted">Daily Revenue</div>
+              <div class="big pos" id="dRev">$0</div>
+              <div class="muted">per product unit & operations</div>
+            </div>
+            <div class="card">
+              <div class="muted">Daily Expenses</div>
+              <div class="big neg" id="dExp">$0</div>
+              <div class="muted">salaries, rent & overhead</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="row spread"><strong>Daily Net Profit</strong><span class="big" id="dProfit" style="font-size:1.6rem">$0</span></div>
+            <div class="muted" id="runway" style="margin-top:4px">Cash runway: —</div>
+          </div>
+
+          <div class="grid" style="grid-template-columns:1fr 1fr; gap:12px">
+            <div class="card">
+              <div class="row spread"><span class="muted">😊 Customer Satisfaction</span><strong id="csatVal">75%</strong></div>
+              <div class="bar" style="margin-top:8px"><i id="csatBar" style="width:75%; background:linear-gradient(90deg,var(--grn),var(--blu))"></i></div>
+              <div class="muted" style="margin-top:6px">Drives customer growth & churn.</div>
+            </div>
+            <div class="card">
+              <div class="row spread"><span class="muted">👥 Customer Base</span><strong id="custVal">120</strong></div>
+              <div class="muted" style="margin-top:6px">Growth: <span id="custGrowth" class="pos">+0/day</span></div>
+              <div class="muted" style="margin-top:2px">Each customer ≈ <span id="arpu">$0.00</span> revenue/day</div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="row spread"><span>🏦 Outstanding Debt</span><strong id="debtVal" class="neg">$0</strong></div>
+            <div class="muted" style="margin-top:6px">Daily interest: <span id="interestVal">$0</span> · Credit rating: <span id="creditVal">AAA</span></div>
+          </div>
+
+          <div class="card">
+            <div class="row spread"><span>Company Valuation</span><strong id="dVal">$50,000</strong></div>
+            <div class="bar" style="margin-top:8px"><i id="valBar" style="width:5%; background:linear-gradient(90deg,var(--blu),var(--pur))"></i></div>
+            <div class="muted" style="margin-top:6px">Goal: reach a <strong>$10,000,000</strong> valuation to win 🏆</div>
+          </div>
+          <div class="card">
+            <div class="muted" style="margin-bottom:8px">📈 Net Worth History</div>
+            <div class="spark" id="netSpark" style="font-size:1rem; color:var(--accent)">▁</div>
+            <div class="muted" style="margin:10px 0 6px">💹 Market Index</div>
+            <div class="spark" id="mktSpark" style="font-size:1rem; color:var(--gold)">▁</div>
+          </div>
+        </div>
+
+        <!-- STOCK MARKET -->
+        <div class="panel tabpane hidden" id="pane-market">
+          <h2>💹 Wall Street Live</h2>
+          <p class="muted" style="margin:6px 0 12px">Invest in blue-chip stocks. Buy low, sell high. Our AI-powered platform gives you the edge.</p>
+          <table>
+            <thead><tr><th>Ticker</th><th>Price</th><th>Trend</th><th>You Own</th><th>Trade</th></tr></thead>
+            <tbody id="stockTable"></tbody>
+          </table>
+        </div>
+
+        <!-- VENTURES -->
+        <div class="panel tabpane hidden" id="pane-ventures">
+          <h2>🏗️ Business Ventures</h2>
+          <p class="muted" style="margin:6px 0 12px">Acquire high-yield ventures. Each generates passive daily income. Guaranteed returns.*</p>
+          <div id="ventureList"></div>
+        </div>
+
+        <!-- STAFF -->
+        <div class="panel tabpane hidden" id="pane-staff">
+          <h2>👥 Human Resources</h2>
+          <p class="muted" style="margin:6px 0 12px">Hire talented professionals to boost revenue & morale. Best people, best results.</p>
+          <div class="card row spread">
+            <div><strong>Team Size:</strong> <span id="teamSize">1</span> · <strong>Total Salaries:</strong> <span id="totalSalary">$0</span>/day</div>
+            <button class="btn green" onclick="openHire()">＋ Hire Talent</button>
+          </div>
+          <div id="staffList"></div>
+        </div>
+
+        <!-- R&D -->
+        <div class="panel tabpane hidden" id="pane-rd">
+          <h2>🔬 Research &amp; Development</h2>
+          <p class="muted" style="margin:6px 0 12px">Invest in innovation to unlock permanent productivity boosts. The future is yours.</p>
+          <div id="rdList"></div>
+        </div>
+
+        <!-- FINANCE -->
+        <div class="panel tabpane hidden" id="pane-finance">
+          <h2>🏦 Corporate Finance</h2>
+          <p class="muted" style="margin:6px 0 12px">Manage capital, take strategic loans, and stay ahead of the taxman. Leverage responsibly.</p>
+          <div class="card">
+            <div class="row spread"><span>Outstanding Debt</span><strong id="finDebt" class="neg">$0</strong></div>
+            <div class="muted" style="margin-top:4px">Interest rate: <span id="finRate">2.0%</span>/day · Credit rating: <strong id="finCredit">AAA</strong></div>
+            <div class="row" style="margin-top:12px; gap:8px">
+              <input type="number" id="loanAmt" value="10000" min="1000" step="1000">
+              <button class="btn green sm" onclick="takeLoan()">＋ Borrow</button>
+              <button class="btn red sm" onclick="repayLoan()">－ Repay (max)</button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="muted" style="margin-bottom:6px">📊 Quarterly Taxes</div>
+            <div class="row spread"><span>Profit this quarter</span><strong id="qProfit">$0</strong></div>
+            <div class="row spread" style="margin-top:4px"><span>Estimated tax due (Q-end, 21%)</span><strong id="qTax" class="neg">$0</strong></div>
+            <div class="muted" style="margin-top:6px">Day <span id="qNext">90</span> is the next filing deadline.</div>
+          </div>
+          <div class="card">
+            <div class="muted" style="margin-bottom:6px">💼 Capital Raise</div>
+            <p class="muted">Sell 10% equity to investors for a cash injection (dilutes your valuation slightly).</p>
+            <button class="btn gold sm" style="margin-top:8px" onclick="raiseRound()" id="raiseBtn">Raise Funding Round</button>
+          </div>
+        </div>
+
+        <!-- MARKETING -->
+        <div class="panel tabpane hidden" id="pane-marketing">
+          <h2>📣 Marketing &amp; Growth</h2>
+          <p class="muted" style="margin:6px 0 12px">Run campaigns to acquire customers and build reputation. Data-driven growth, guaranteed ROI.*</p>
+          <div class="card row spread">
+            <div><strong>Active campaigns:</strong> <span id="campCount">0</span> · <strong>Monthly burn:</strong> <span id="campBurn">$0</span>/day</div>
+          </div>
+          <div id="campaignList"></div>
+        </div>
+      </div>
+
+      <!-- SIDEBAR -->
+      <div>
+        <div class="panel" style="border-radius:14px">
+          <h3>📜 Activity Log</h3>
+          <div class="log" id="log"></div>
+        </div>
+      </div>
+    </div>
+    <footer id="footer">Super Realistic Company Tycoon™ — where every decision matters. Probably.</footer>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="overlay" id="overlay">
+  <div class="modal" id="modal">
+    <h2 id="mTitle">Decision</h2>
+    <p id="mBody" class="muted"></p>
+    <div class="choices" id="mChoices"></div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   SUPER REALISTIC COMPANY TYCOON
+   ...the secret: starting on day 3, the universe conspires against you.
+   ============================================================ */
+
+const S = {
+  name:"Acme Inc.", day:1, cash:50000, rep:50, morale:70,
+  netHist:[50000], prankMode:false, prankStartDay:3,
+  // new realistic mechanics
+  customers:120, csat:75, custHist:[120],
+  debt:0, baseRate:0.02, qProfit:0, lastTaxDay:0, raises:0,
+  mktIndex:1000, mktHist:[1000],
+  stocks:[
+    {t:"NVDX", name:"NeuralVidia",  price:420, hist:[], owned:0, beta:1.6, basis:0, div:0.001},
+    {t:"APPL", name:"Pomme Corp",   price:185, hist:[], owned:0, beta:1.1, basis:0, div:0.004},
+    {t:"TSLR", name:"Teslar Motors",price:240, hist:[], owned:0, beta:1.9, basis:0, div:0},
+    {t:"DOGE", name:"DogeChain",    price:0.42,hist:[], owned:0, beta:2.6, basis:0, div:0},
+    {t:"SAFE", name:"BondSafe ETF", price:100, hist:[], owned:0, beta:0.3, basis:0, div:0.006},
+  ],
+  ventures:[
+    {id:"cafe", name:"☕ Corner Café Chain", cost:8000, income:140, owned:false, desc:"A cozy, reliable cash cow."},
+    {id:"laundry",name:"🧺 Laundromat Empire",cost:15000,income:320, owned:false, desc:"Money laundering (the legal kind)."},
+    {id:"parking",name:"🅿️ Parking Garages", cost:30000,income:720, owned:false, desc:"Passive income while you sleep."},
+    {id:"crypto",name:"⛏️ Crypto Mining Farm",cost:55000,income:1600,owned:false, desc:"To the moon. Definitely."},
+    {id:"space", name:"🚀 Space Tourism Co", cost:120000,income:4200,owned:false,desc:"The final frontier of profit."},
+  ],
+  staff:[],
+  hirePool:[
+    {role:"Sales Rep",     cost:1200, salary:90,  rev:160, mor:2},
+    {role:"Engineer",      cost:2600, salary:170, rev:340, mor:1},
+    {role:"Marketing Lead",cost:3400, salary:220, rev:470, mor:3},
+    {role:"Data Scientist",cost:4800, salary:300, rev:680, mor:0},
+    {role:"COO Superstar", cost:9000, salary:550, rev:1400,mor:5},
+  ],
+  rd:[
+    {id:"auto", name:"⚙️ Automation Suite", cost:6000, boost:0.10, done:false, desc:"+10% revenue forever."},
+    {id:"ai",   name:"🤖 In-house AI",      cost:14000,boost:0.18, done:false, desc:"+18% revenue forever."},
+    {id:"brand",name:"✨ Global Rebrand",   cost:22000,boost:0.25, done:false, desc:"+25% revenue & reputation."},
+    {id:"quantum",name:"🔮 Quantum Logistics",cost:48000,boost:0.40,done:false,desc:"+40% revenue. Bleeding edge."},
+  ],
+  rdBoost:0,
+  baseRev: 800,
+  campaigns:[
+    {id:"social", name:"📱 Social Media Blitz", cost:280, acq:14, csat:0, rep:1, active:false, desc:"Steady stream of new customers."},
+    {id:"influencer",name:"🤳 Influencer Partnership",cost:650, acq:34, csat:-2, rep:3, active:false, desc:"Big reach, fickle audience."},
+    {id:"tv", name:"📺 National TV Spot", cost:1500, acq:80, csat:0, rep:6, active:false, desc:"Mass-market brand awareness."},
+    {id:"loyalty",name:"🎁 Loyalty Program", cost:420, acq:6, csat:8, rep:2, active:false, desc:"Keeps customers happy & loyal."},
+  ],
+};
+
+/* ---------- helpers ---------- */
+const $ = id => document.getElementById(id);
+const money = n => (n<0?"-$":"$") + Math.abs(Math.round(n)).toLocaleString();
+const money2 = n => "$" + n.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+const rnd = (a,b)=> a + Math.random()*(b-a);
+const pick = arr => arr[Math.floor(Math.random()*arr.length)];
+
+/* ---------- prank severity ramp ----------
+   Returns 0 before the curse, then climbs gently from ~0 toward 1 over ~24 days.
+   Early on the effects are tiny (barely noticeable); they escalate to full chaos. */
+function severity(){
+  if(!S.prankMode) return 0;
+  const t = S.day - S.prankStartDay;          // days since the curse began
+  return Math.max(0, Math.min(1, t/24));       // 0 -> 1 over ~24 days
+}
+/* Chance a given prank even fires at all (rare at first, near-certain later). */
+function prankFires(){ return S.prankMode && Math.random() < (0.25 + severity()*0.7); }
+/* Lerp helper to scale a "mild" value toward a "full" value by severity. */
+function sev(mild, full){ return mild + (full-mild)*severity(); }
+
+/* ---------- start ---------- */
+function startGame(){
+  const n = $("coName").value.trim();
+  S.name = n || "Acme Inc.";
+  $("start").classList.add("hidden");
+  $("game").classList.remove("hidden");
+  $("hdrName").textContent = S.name;
+  S.stocks.forEach(s=> s.hist=[s.price]);
+  log(1,"good", `🎉 ${S.name} is founded with ${money(S.cash)} in seed capital!`);
+  log(1,"", "Tip: advance days, trade stocks, hire staff, and grow your valuation.");
+  render();
+}
+
+/* ---------- logging ---------- */
+function log(day, cls, msg){
+  const el = document.createElement("div");
+  el.className = "entry";
+  el.innerHTML = `<span class="d">D${day}</span><span class="${cls}">${msg}</span>`;
+  $("log").prepend(el);
+}
+
+/* ---------- tabs ---------- */
+document.addEventListener("click", e=>{
+  if(e.target.classList.contains("tab")){
+    document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+    e.target.classList.add("active");
+    document.querySelectorAll(".tabpane").forEach(p=>p.classList.add("hidden"));
+    $("pane-"+e.target.dataset.tab).classList.remove("hidden");
+  }
+});
+
+/* ---------- economy ---------- */
+const ARPU = 4.2; // average revenue per customer per day
+
+function dailyRevenue(){
+  let rev = S.baseRev;
+  rev += S.customers * ARPU;              // customer base drives most revenue
+  S.staff.forEach(p=> rev += p.rev);
+  S.ventures.forEach(v=> { if(v.owned) rev += v.income; });
+  rev *= (1 + S.rdBoost);
+  rev *= (0.6 + S.rep/100*0.8);          // reputation scales revenue
+  rev *= (0.7 + S.morale/100*0.6);       // morale scales revenue
+  rev *= (0.8 + (S.mktIndex/1000)*0.2);  // macro economy nudges revenue
+  return rev;
+}
+function dailyExpenses(){
+  let exp = 600; // base overhead/rent
+  S.staff.forEach(p=> exp += p.salary);
+  S.ventures.forEach(v=>{ if(v.owned) exp += Math.abs(v.income)*0.25; }); // ops cost
+  S.campaigns.forEach(c=>{ if(c.active) exp += c.cost; });                // marketing spend
+  exp += S.debt * S.interestRate();      // daily interest on debt
+  return exp;
+}
+function netWorth(){
+  let nw = S.cash - S.debt;
+  S.stocks.forEach(s=> nw += s.owned*s.price);
+  S.ventures.forEach(v=>{ if(v.owned) nw += v.cost*0.8; });
+  nw += valuationBonus();
+  return nw;
+}
+function valuationBonus(){
+  // ventures + staff + rd build company "valuation" multiple
+  let v = (dailyRevenue()-dailyExpenses()) * 40;
+  v += S.customers * 60;                  // customers are an asset
+  return Math.max(0, v);
+}
+function valuation(){
+  let val = netWorth() + valuationBonus()*0.5;
+  val *= (1 - S.raises*0.04);             // each funding round dilutes
+  return Math.max(0, val);
+}
+
+/* ---------- finance helpers ---------- */
+function creditRating(){
+  // based on debt vs liquid assets only (avoids recursion with expenses)
+  const assets = Math.max(1, S.cash) + 50000;
+  const ratio = S.debt / assets;
+  if(ratio<0.1) return "AAA";
+  if(ratio<0.25) return "AA";
+  if(ratio<0.45) return "A";
+  if(ratio<0.7) return "BBB";
+  if(ratio<1.0) return "BB";
+  return "JUNK";
+}
+function interestRate(){
+  // worse credit => higher rate; prank mode quietly hikes it
+  const penalty = {AAA:0,AA:0.004,A:0.01,BBB:0.02,BB:0.035,JUNK:0.06}[creditRating()];
+  let r = S.baseRate + penalty;
+  r += sev(0.001, 0.015) * (S.prankMode?1:0); // sneaky rate creep, grows with severity
+  return r;
+}
+S.interestRate = interestRate;
+
+/* ---------- THE SECRET SAUCE: prank engine ----------
+   Before day 3 everything behaves nicely. After, sabotage begins — but it starts
+   almost imperceptibly and ramps up in severity over the following weeks. */
+
+function stockDailyMove(s, mktReturn){
+  // honest baseline: follows market (scaled by beta) + idiosyncratic noise + slight drift
+  const idio = rnd(-0.03, 0.035);
+  const honest = s.price * (mktReturn*s.beta + idio + 0.004);
+  if(!S.prankMode) return honest;
+
+  const k = severity();
+  // PRANK: blend a hidden bias into the honest move. Tiny tilt early, brutal later.
+  if(s.owned > 0){
+    // holdings you own get a downward tilt that deepens over time
+    const tilt = s.price * sev(-0.015, -0.16) * rnd(0.6,1.2);
+    return honest*(1-k*0.5) + tilt;
+  }
+  // stuff you don't own gets a gentle-then-strong upward tilt (the FOMO engine)
+  const tilt = s.price * sev(0.01, 0.10) * rnd(0.6,1.2);
+  return honest*(1-k*0.3) + tilt;
+}
+
+/* ---------- next day ---------- */
+function nextDay(){
+  S.day++;
+  if(S.day===S.prankStartDay && !S.prankMode){ triggerPrankReveal(); }
+  const k = severity(); // 0 early, ramps to 1
+
+  /* ---- MACRO ECONOMY: market index random walk (with occasional regimes) ---- */
+  let mktReturn = rnd(-0.02, 0.025) + 0.003;
+  if(Math.random()<0.06) mktReturn = rnd(-0.10,-0.04);  // mini-correction
+  if(S.prankMode && Math.random() < sev(0.02,0.16)) mktReturn = rnd(-0.12,-0.05); // suspicious dips, rarer early
+  S.mktIndex = Math.max(100, S.mktIndex*(1+mktReturn));
+  S.mktHist.push(S.mktIndex); if(S.mktHist.length>40) S.mktHist.shift();
+
+  /* ---- CUSTOMER DYNAMICS: acquisition from marketing/rep, churn from low CSAT ---- */
+  let acquired = 2 + S.rep*0.12;                 // organic word of mouth
+  S.campaigns.forEach(c=>{ if(c.active){ acquired += c.acq; S.csat=clamp(S.csat+c.csat); S.rep=clamp(S.rep+c.rep*0.15);} });
+  acquired *= (0.5 + S.csat/100);                // happy customers refer others
+  acquired *= (0.85 + (S.mktIndex/1000)*0.15);   // boom = more spending
+  const churnRate = (S.csat<50? (55-S.csat)/100 : 0.02) + (S.prankMode? sev(0.005,0.07) : 0);
+  const churned = S.customers * churnRate;
+  if(S.prankMode){ acquired *= sev(0.98, 0.45); }  // word slowly gets out you're cursed
+  S.customers = Math.max(0, Math.round(S.customers + acquired - churned));
+  S.lastAcq = Math.round(acquired - churned);
+  // CSAT drifts toward an equilibrium set by morale & reputation
+  const csatTarget = (S.morale*0.4 + S.rep*0.6);
+  S.csat = clamp(S.csat + (csatTarget - S.csat)*0.15 + (S.prankMode? rnd(-1,1)+sev(0,-4) : rnd(-2,2)));
+
+  /* ---- ECONOMY P&L ---- */
+  const rev = dailyRevenue(), exp = dailyExpenses();
+  let net = rev - exp;
+
+  if(S.prankMode){
+    if(prankFires()){
+      const sab = pick(PRANK_DAILY);
+      net += sab.delta(rev,exp) * sev(0.25,1); // tiny nibble early, full bite later
+      if(sab.msg && severity()>0.2) log(S.day, sab.cls, sab.msg); // stay quiet at first
+    }
+    S.morale = clamp(S.morale + rnd(-2,2) + sev(0,-5));
+    S.rep    = clamp(S.rep + rnd(-2,2) + sev(0,-4));
+  } else {
+    S.morale = clamp(S.morale + rnd(-2,3));
+    S.rep    = clamp(S.rep + rnd(-1,3));
+  }
+
+  S.cash += net;
+  S.qProfit += net;
+  log(S.day, net>=0?"good":"bad", `Daily P&L: ${money(net)} (rev ${money(rev)} − exp ${money(exp)})`);
+
+  /* ---- DEBT INTEREST capitalizes a touch if cash is negative ---- */
+  if(S.cash<0 && S.debt>0){ /* interest already in expenses */ }
+
+  /* ---- STOCKS move with the market; pay dividends ---- */
+  let divTotal=0;
+  S.stocks.forEach(s=>{
+    s.price = Math.max(0.01, s.price + stockDailyMove(s, mktReturn));
+    s.hist.push(s.price);
+    if(s.hist.length>24) s.hist.shift();
+    if(s.owned>0 && s.div>0){ divTotal += s.owned*s.price*s.div * (S.prankMode? sev(1,0) : 1); } // dividends quietly dry up
+  });
+  if(divTotal>0.5){ S.cash+=divTotal; log(S.day,"good",`💵 Received ${money(divTotal)} in stock dividends.`); }
+
+  /* ---- QUARTERLY TAXES every 90 days ---- */
+  if(S.day - S.lastTaxDay >= 90){
+    if(S.qProfit>0){
+      let tax = S.qProfit*0.21;
+      const audited = S.prankMode && severity()>0.4;
+      if(S.prankMode) tax *= sev(1.0, 1.6); // creeping "audit"
+      S.cash -= tax;
+      log(S.day,"bad",`🧾 Quarterly tax bill: ${money(tax)}${audited?" (audited, ouch)":""}.`);
+    } else {
+      log(S.day,"warn",`🧾 No tax due — quarter was unprofitable.`);
+    }
+    S.qProfit = 0; S.lastTaxDay = S.day;
+  }
+
+  // random event roughly every 2-3 days
+  if(S.day>=2 && Math.random()<0.55){ setTimeout(triggerEvent, 350); }
+
+  updateTicker();
+
+  S.netHist.push(netWorth());  if(S.netHist.length>40) S.netHist.shift();
+  S.custHist.push(S.customers);if(S.custHist.length>40) S.custHist.shift();
+
+  checkEndStates();
+  render();
+}
+
+function clamp(v){ return Math.max(0, Math.min(100, v)); }
+
+/* ---------- the big reveal ---------- */
+function triggerPrankReveal(){
+  S.prankMode = true;
+  showEula();
+  log(3,"warn","⚠️ Routine Terms of Service update acknowledged.");
+}
+
+/* The "curse" is hidden as ONE clause buried in a wall of legal/AI slop. */
+function showEula(){
+  const m = $("modal");
+  m.classList.add("eula");
+  $("mTitle").innerHTML = "📄 Updated Terms of Service &amp; End User License Agreement (v3.7.3)";
+  $("mBody").innerHTML = `
+    <p class="muted" style="font-size:.82rem">We've made some updates to our Terms. Please review and accept to continue managing your enterprise. Your continued use constitutes acceptance.</p>
+    <div class="fineprint" id="fineprint">${FINE_PRINT}</div>
+    <div class="eula-foot">
+      <label style="display:flex;align-items:center;gap:7px;cursor:pointer">
+        <input type="checkbox" id="eulaChk"> I have read and agree to all <span id="agreeCount">14,402</span> clauses
+      </label>
+    </div>
+    <div class="choices" style="margin-top:14px">
+      <button class="choice" id="eulaAccept" style="opacity:.5;pointer-events:none">
+        <strong>✅ Accept &amp; Continue</strong>
+        <div class="sub">Synergize my onboarding journey and unlock value-added shareholder outcomes</div>
+      </button>
+    </div>`;
+  // clear the standard choices container so it doesn't double up
+  $("mChoices").innerHTML = "";
+  $("overlay").classList.add("show");
+  const chk = $("eulaChk"), btn = $("eulaAccept");
+  chk.addEventListener("change", ()=>{
+    btn.style.opacity = chk.checked? "1":".5";
+    btn.style.pointerEvents = chk.checked? "auto":"none";
+  });
+  btn.addEventListener("click", ()=>{
+    m.classList.remove("eula");
+    closeModal();
+    document.querySelector(".tag").textContent = "📰 LIVE";
+    $("footer").textContent = "Super Realistic Company Tycoon™ — by clicking Accept you waived your right to a stable economy. §7(c).";
+  });
+}
+
+const FINE_PRINT = `
+<h4>1. Definitions &amp; Interpretive Framework</h4>
+<p>For purposes of this Agreement (the "Agreement"), "Company", "Enterprise", "Entity", "You", "User", "End User", "Licensee", "the aforementioned party", and "the party of the first part" shall be construed interchangeably except where context, jurisdiction, lunar phase, or the sole discretion of the Licensor dictates otherwise. "Synergy" means synergy. "Value" is defined recursively as that which provides value. Headings are for convenience only and confer no rights, obligations, warranties, or emotional support.</p>
+<h4>2. Acceptance, Onboarding &amp; Stakeholder Alignment</h4>
+<p>By advancing to the third (3rd) operational day cycle, the User is deemed to have proactively leveraged a best-in-class, cloud-native, AI-augmented, blockchain-adjacent acceptance workflow. This frictionless journey empowers stakeholders to unlock actionable insights at scale while driving measurable outcomes across the value chain. The Licensor reserves the right to ideate, iterate, and pivot the User experience without notice, runway, or remorse.</p>
+<p>The User acknowledges that the Platform employs a proprietary Large Language Model trained on a corpus of synergies to deliver hyper-personalized growth narratives. Outputs may include hallucinations, vibes, and confidently incorrect financial projections, all of which are features and not defects.</p>
+<h4>3. Limitation of Liability</h4>
+<p>To the maximum extent permitted by applicable law, the Licensor shall not be liable for any direct, indirect, incidental, special, consequential, exemplary, interdimensional, or vibes-based damages arising out of or in connection with the User's continued belief that business is fair.</p>
+<h4>4. Market Conduct &amp; Operational Variance Clause</h4>
+<p>The User acknowledges and irrevocably agrees that, effective immediately and continuing in perpetuity, <span style="color:#8a98ba">a deterministic adversarial market condition shall apply to the Entity, whereby any security purchased by the User shall depreciate, any security divested by the User shall appreciate, any venture acquired shall discover novel methods of losing capital, any personnel onboarded may turn out to be raccoons, and the broader economy shall harbor a specific and well-documented grudge against the User</span>, said condition being colloquially and non-bindingly referred to in internal documentation as "the curse." This clause is non-negotiable, non-refundable, and frankly hilarious from where we are sitting.</p>
+<p>The foregoing variance shall be applied automatically, silently, and with great enthusiasm. The User waives any and all rights to a profitable, predictable, or emotionally satisfying gameplay experience.</p>
+<h4>5. Data, Telemetry &amp; Your Soul (Optional)</h4>
+<p>The Platform collects telemetry including but not limited to clicks, sighs, panicked mouse movements, and the precise moment you realize what is happening. Such data is used to optimize engagement funnels and to laugh, gently. The User may opt out by ceasing to exist within the simulation.</p>
+<h4>6. Indemnification</h4>
+<p>The User agrees to indemnify, defend, and hold harmless the Licensor, its affiliates, its mascot, and a printer named Gary against any claims arising from the User's misguided expectation that "guaranteed returns" meant returns, or that they were guaranteed, or that they were for the User.</p>
+<h4>7. Miscellaneous Boilerplate</h4>
+<p>(a) Severability: if any clause is held unenforceable, the remaining clauses shall double in smugness. (b) Force Majeure: includes acts of God, war, famine, and pineapple pizza. (c) Governing Law: vibes. (d) Entire Agreement: this is, unfortunately, the entire agreement. (e) The User cannot believe they read this far and yet somehow still missed §4.</p>
+<h4>8. Acknowledgement</h4>
+<p>The User affirms that they have read, understood, and meaningfully internalized all fourteen thousand four hundred and two (14,402) clauses, including the one that absolutely changes everything, and proceeds of their own free will, such as it remains.</p>
+`;
+
+/* ---------- daily prank effects ---------- */
+const PRANK_DAILY = [
+  {delta:(r,e)=>-r*0.3, cls:"bad", msg:"🐭 Office mice ate the servers. Revenue down 30% today."},
+  {delta:(r,e)=>-e*0.5, cls:"bad", msg:"💸 Accountant 'misplaced' a decimal. Surprise expense."},
+  {delta:()=>-rnd(800,2500), cls:"bad", msg:"☕ Someone expensed a gold-plated espresso machine."},
+  {delta:()=>-rnd(500,1800), cls:"bad", msg:"🅿️ Got a parking ticket... for the entire building."},
+  {delta:(r)=>-r*0.2, cls:"warn", msg:"📉 A 'visionary' pivot to selling ice to penguins underperformed."},
+  {delta:()=>-rnd(300,1200), cls:"bad", msg:"🖨️ The printer demanded a ransom. You paid it. It lied."},
+  {delta:()=>rnd(50,200), cls:"good", msg:"🍀 You found some change in the couch. The universe allows it. Barely."},
+  {delta:(r)=>-r*0.15, cls:"warn", msg:"🦗 Crickets in the sales department. Literally. Loud ones."},
+];
+
+/* ---------- random decision events ---------- */
+const EVENTS_NORMAL = [
+  {t:"💼 Big Client Opportunity", b:"A major client wants to sign a contract.", c:[
+    {label:"Sign the deal", sub:"+$4,000 cash", fn:()=>{ S.cash+=4000; log(S.day,"good","Signed a $4,000 client deal!"); }},
+    {label:"Negotiate harder", sub:"Maybe more, maybe nothing", fn:()=>{ const g=rnd(0,9000)|0; S.cash+=g; log(S.day,g>3000?"good":"warn",`Negotiation netted ${money(g)}.`); }},
+  ]},
+  {t:"🎤 Press Interview", b:"A magazine wants to feature your company.", c:[
+    {label:"Do the interview", sub:"+reputation", fn:()=>{ S.rep=clamp(S.rep+10); log(S.day,"good","Great press! Reputation +10."); }},
+    {label:"Stay humble", sub:"Small morale boost", fn:()=>{ S.morale=clamp(S.morale+5); log(S.day,"good","Team appreciated your humility. Morale +5."); }},
+  ]},
+];
+const EVENTS_PRANK = [
+  {t:"💼 'Guaranteed' Client Deal", b:"A client in a trench coat offers a contract worth $10,000. Their card says 'Definitely Real Business'.", c:[
+    {label:"Sign immediately!", sub:"+$10,000 (surely)", fn:()=>{ const loss=rnd(2000,6000)|0; S.cash-=loss; log(S.day,"bad",`The check bounced. Higher. It cost YOU ${money(loss)} in 'processing'.`); }},
+    {label:"Read the fine print", sub:"Be cautious", fn:()=>{ S.cash-=300; log(S.day,"warn","Fine print was 400 pages. Legal review cost $300. Deal was fake anyway."); }},
+  ]},
+  {t:"🌟 Hot Investment Tip", b:"Your golf buddy gives you an 'insider' tip on a can't-miss stock.", c:[
+    {label:"Invest $5,000", sub:"To the moon!", fn:()=>{ S.cash-=5000; log(S.day,"bad","The 'stock' was his nephew's lemonade stand. It rained. -$5,000."); }},
+    {label:"Politely decline", sub:"Trust your gut", fn:()=>{ S.morale=clamp(S.morale-4); log(S.day,"warn","Your golf buddy is offended. Morale -4. The tip was also fake."); }},
+  ]},
+  {t:"🤖 AI Consultant Pitch", b:"A consultant promises to 'synergize your blockchain AI cloud'.", c:[
+    {label:"Hire them ($3,000)", sub:"Cutting edge!", fn:()=>{ S.cash-=3000; S.rep=clamp(S.rep-6); log(S.day,"bad","They made a PowerPoint and left. Reputation -6. -$3,000."); }},
+    {label:"Throw them out", sub:"No thanks", fn:()=>{ log(S.day,"warn","They left a flaming bag of buzzwords on your doorstep. Annoying, but free."); }},
+  ]},
+  {t:"🎂 Office Party Budget", b:"HR requests a budget for team morale.", c:[
+    {label:"Splurge $2,000", sub:"Happy team!", fn:()=>{ S.cash-=2000; S.morale=clamp(S.morale-8); log(S.day,"bad","The caterer brought pineapple pizza. The team revolted. Morale -8."); }},
+    {label:"Pizza only ($200)", sub:"Modest fun", fn:()=>{ S.cash-=200; S.morale=clamp(S.morale-3); log(S.day,"warn","Still pineapple. There's always pineapple now. Morale -3."); }},
+  ]},
+];
+
+function triggerEvent(){
+  // Early in the curse, prank events are rare; they crowd out normal ones over time.
+  const usePrank = S.prankMode && Math.random() < severity();
+  const pool = usePrank ? EVENTS_PRANK : EVENTS_NORMAL;
+  const ev = pick(pool);
+  showModal(ev.t, ev.b, ev.c.map(ch=>({label:ch.label, sub:ch.sub, fn:()=>{ ch.fn(); closeModal(); render(); }})));
+}
+
+/* ---------- trading ---------- */
+function buyStock(i){
+  const s = S.stocks[i];
+  const qty = parseInt($("qty"+i).value)||0;
+  if(qty<=0) return;
+  const cost = qty*s.price;
+  if(cost>S.cash){ flashLog("Not enough cash!"); return; }
+  S.cash -= cost; s.owned += qty;
+  log(S.day, "", `Bought ${qty} ${s.t} @ ${money2(s.price)} (${money(cost)}).`);
+  if(prankFires()){
+    // instant punishment: the price slips the moment you buy — tiny at first, brutal later
+    const drop = s.price*sev(0.01,0.20)*rnd(0.6,1.2);
+    const before = s.price;
+    s.price = Math.max(0.01, s.price - drop);
+    s.hist.push(s.price);
+    if(severity()>0.45) log(S.day,"bad",`📉 ${s.t} dipped ${(drop/before*100).toFixed(0)}% the instant you bought. Coincidence? No.`);
+  }
+  render();
+}
+function sellStock(i){
+  const s = S.stocks[i];
+  const qty = parseInt($("qty"+i).value)||0;
+  if(qty<=0 || qty>s.owned){ flashLog("You don't own that many!"); return; }
+  const gain = qty*s.price;
+  S.cash += gain; s.owned -= qty;
+  log(S.day, "", `Sold ${qty} ${s.t} @ ${money2(s.price)} (+${money(gain)}).`);
+  if(prankFires()){
+    const jump = s.price*sev(0.015,0.26)*rnd(0.6,1.2);
+    s.price += jump;
+    s.hist.push(s.price);
+    if(severity()>0.45) log(S.day,"warn",`🚀 ${s.t} popped the moment you sold. Of course it did.`);
+  }
+  render();
+}
+
+/* ---------- ventures ---------- */
+function buyVenture(id){
+  const v = S.ventures.find(x=>x.id===id);
+  if(v.owned || v.cost>S.cash){ if(v.cost>S.cash) flashLog("Not enough cash!"); return; }
+  S.cash -= v.cost; v.owned = true;
+  log(S.day,"good",`Acquired ${v.name} for ${money(v.cost)}.`);
+  if(prankFires()){
+    setTimeout(()=>{
+      const loud = severity()>0.4;
+      const mult = sev(0.92, -0.5);  // mild underperformance early -> outright losses later
+      const disaster = pick([
+        ()=>{ v.income = Math.round(v.income*mult); if(loud) log(S.day,"bad",`${v.name} now ${v.income<0?'LOSES':'barely earns'} money. The 'guarantee' was sarcastic.`); },
+        ()=>{ const h=Math.round(rnd(400,4000)*severity()); S.cash-=h; v.income=Math.round(v.income*sev(0.85,0.3)); if(loud) log(S.day,"bad",`${v.name} needed repairs (${money(h)}) & earns less now.`); },
+        ()=>{ v.income=Math.round(v.income*sev(0.9,0.2)); S.rep=clamp(S.rep-sev(1,7)); if(loud) log(S.day,"bad",`${v.name} got a 1-star viral review. Income hit, rep down.`); },
+      ]);
+      disaster(); render();
+    }, 500);
+  }
+  render();
+}
+
+/* ---------- hiring ---------- */
+function openHire(){
+  showModal("👥 Hire Talent", "Choose a candidate to join your team:",
+    S.hirePool.map(c=>({
+      label:`${c.role} — ${money(c.cost)} signing, ${money(c.salary)}/day`,
+      sub:`+${money(c.rev)} revenue/day · morale ${c.mor>=0?'+':''}${c.mor}`,
+      fn:()=>{ hire(c); closeModal(); render(); }
+    }))
+  );
+}
+function hire(c){
+  if(c.cost>S.cash){ flashLog("Can't afford signing bonus!"); return; }
+  S.cash -= c.cost;
+  const person = {...c, name:randName(), id:Date.now()+Math.random()};
+  S.staff.push(person);
+  S.morale = clamp(S.morale + c.mor);
+  log(S.day,"good",`Hired ${person.name} as ${c.role}.`);
+  if(prankFires()){
+    setTimeout(()=>{
+      const loud = severity()>0.4;
+      const fate = pick([
+        ()=>{ person.rev = Math.round(person.rev*sev(0.85,0.2)); if(loud) log(S.day,"bad",`${person.name} spends most of the day making memes. Productivity down.`); },
+        ()=>{ person.salary = Math.round(person.salary*sev(1.1,2.2)); if(loud) log(S.day,"bad",`${person.name} renegotiated salary. It's now ${money(person.salary)}/day.`); },
+        ()=>{ S.morale=clamp(S.morale-sev(2,10)); if(loud) log(S.day,"bad",`${person.name} keeps microwaving fish. Office morale down.`); },
+        ()=>{ // the full raccoon reveal only at high severity
+          if(severity()>0.6){ person.rev=0; person.salary=Math.round(person.salary*1.5); log(S.day,"bad",`${person.name} turned out to be three raccoons in a suit. Costs more, earns nothing.`); }
+          else { person.rev=Math.round(person.rev*0.7); if(loud) log(S.day,"warn",`${person.name} seems oddly... furry. Output a bit low.`); } },
+      ]);
+      fate(); render();
+    }, 500);
+  }
+}
+function randName(){
+  const f=["Alex","Sam","Jordan","Taylor","Casey","Riley","Morgan","Jamie","Drew","Quinn","Pat","Robin"];
+  const l=["Smith","Lee","Patel","Garcia","Kim","Nguyen","Brown","Khan","Costa","Walsh","Reed","Fox"];
+  return pick(f)+" "+pick(l);
+}
+
+/* ---------- R&D ---------- */
+function buyRD(id){
+  const r = S.rd.find(x=>x.id===id);
+  if(r.done || r.cost>S.cash){ if(r.cost>S.cash) flashLog("Not enough cash!"); return; }
+  S.cash -= r.cost; r.done = true;
+  if(prankFires()){
+    // partially apply the promised boost, then sabotage a fraction of it
+    S.rdBoost += r.boost * sev(0.85, -0.5);
+    setTimeout(()=>{
+      const loud = severity()>0.4;
+      const flop = pick([
+        ()=>{ S.rdBoost -= r.boost*sev(0.05,0.5); if(loud) log(S.day,"bad",`${r.name} shipped with a bug that drags revenue. Classic.`); },
+        ()=>{ const h=Math.round(rnd(500,5000)*severity()); S.cash-=h; if(loud) log(S.day,"bad",`${r.name} had a mishap during the demo. Damages: ${money(h)}.`); },
+        ()=>{ S.rep=clamp(S.rep-sev(2,10)); if(loud) log(S.day,"bad",`${r.name} leaked some secrets to competitors. Rep down.`); },
+      ]);
+      flop(); render();
+    }, 500);
+    log(S.day, severity()>0.4?"warn":"good", `Completed ${r.name}.${severity()>0.4?" Results... pending.":" Revenue boost applied."}`);
+  } else {
+    S.rdBoost += r.boost;
+    if(r.id==="brand") S.rep=clamp(S.rep+10);
+    log(S.day,"good",`Completed ${r.name}! Permanent revenue boost applied.`);
+  }
+  render();
+}
+
+/* ---------- finance: loans, repay, raise ---------- */
+function takeLoan(){
+  let amt = parseInt($("loanAmt").value)||0;
+  if(amt<1000){ flashLog("Minimum loan is $1,000."); return; }
+  // banks cap lending to creditworthy borrowers
+  const cap = Math.max(20000, (S.cash+50000) - S.debt);
+  if(amt>cap){ amt=Math.floor(cap); }
+  if(amt<=0){ flashLog("Your credit is maxed out!"); return; }
+  S.debt += amt; S.cash += amt;
+  log(S.day,"warn",`🏦 Borrowed ${money(amt)} at ${(interestRate()*100).toFixed(1)}%/day interest.`);
+  if(prankFires()){
+    setTimeout(()=>{
+      const fee = Math.round(amt*sev(0.005,0.12));
+      S.cash -= fee;
+      if(severity()>0.4) log(S.day,"bad",`🏦 Surprise "loan origination + AI processing + Gary-the-printer" fee: ${money(fee)}.`);
+      render();
+    },500);
+  }
+  render();
+}
+function repayLoan(){
+  if(S.debt<=0){ flashLog("No debt to repay!"); return; }
+  const pay = Math.min(S.cash, S.debt);
+  if(pay<=0){ flashLog("No cash to repay with!"); return; }
+  S.cash -= pay; S.debt -= pay;
+  log(S.day,"good",`Repaid ${money(pay)} of debt. Remaining: ${money(S.debt)}.`);
+  render();
+}
+function raiseRound(){
+  const inject = Math.max(15000, Math.round(valuation()*0.08));
+  S.cash += inject; S.raises++;
+  log(S.day,"good",`💼 Closed a funding round: +${money(inject)} for 10% equity.`);
+  if(prankFires()){
+    setTimeout(()=>{
+      S.rep=clamp(S.rep-sev(2,8));
+      if(severity()>0.4) log(S.day,"bad",`💼 Your new investor is a "thought leader" who tweets your secrets. Rep down.`);
+      render();
+    },500);
+  }
+  render();
+}
+
+/* ---------- marketing campaigns ---------- */
+function toggleCampaign(id){
+  const c = S.campaigns.find(x=>x.id===id);
+  c.active = !c.active;
+  if(c.active){
+    log(S.day,"good",`📣 Launched ${c.name} (${money(c.cost)}/day).`);
+    if(prankFires()){
+      setTimeout(()=>{
+        const loud = severity()>0.4;
+        const flop = pick([
+          ()=>{ c.acq = Math.round(c.acq*sev(0.85,0.15)); if(loud) log(S.day,"bad",`${c.name} went viral — for the wrong reasons. Acquisition down.`); },
+          ()=>{ S.csat=clamp(S.csat-sev(2,12)); if(loud) log(S.day,"bad",`${c.name} attracted some angry customers. Satisfaction down.`); },
+          ()=>{ c.cost=Math.round(c.cost*sev(1.1,2.3)); if(loud) log(S.day,"bad",`${c.name} ad platform "adjusted" your rate. Now ${money(c.cost)}/day.`); },
+        ]);
+        flop(); render();
+      },500);
+    }
+  } else {
+    log(S.day,"warn",`Paused ${c.name}.`);
+  }
+  render();
+}
+
+/* ---------- ticker ---------- */
+const TICKER_NORMAL = [
+  "Analysts upgrade your outlook to 'Buy'. ","Economy strong; consumer confidence high. ",
+  "Your sector is booming this quarter. ","Investors eager to back promising startups. ",
+  "Central bank holds interest rates steady. ","Consumer satisfaction surveys trending up. ",
+  "Customer acquisition costs falling sector-wide. ","Bond yields stable; credit markets calm. ",
+];
+const TICKER_PRANK = [
+  "BREAKING: Market files restraining order against you specifically. ",
+  "Economists baffled as every stock you own develops 'a bad attitude'. ",
+  "Local raccoon union demands better suits. ","Pineapple pizza futures at all-time high in your office. ",
+  "Your 'guaranteed' venture seen guaranteeing losses. ","Printer still holding documents hostage. ",
+  "Sources: the universe 'just doesn't like you, bro'. ",
+];
+function updateTicker(){
+  // chaos headlines bleed in gradually as severity rises
+  const p = ()=> (S.prankMode && Math.random()<severity()) ? pick(TICKER_PRANK) : pick(TICKER_NORMAL);
+  $("tickerText").textContent = p()+p()+p();
+}
+
+/* ---------- modal ---------- */
+function showModal(title, body, choices){
+  $("mTitle").innerHTML = title;
+  $("mBody").innerHTML = body;
+  const wrap = $("mChoices"); wrap.innerHTML="";
+  choices.forEach(c=>{
+    const b=document.createElement("button");
+    b.className="choice";
+    b.innerHTML=`<div><strong>${c.label}</strong></div>${c.sub?`<div class="sub">${c.sub}</div>`:""}`;
+    b.onclick=c.fn;
+    wrap.appendChild(b);
+  });
+  $("overlay").classList.add("show");
+}
+function closeModal(){ $("overlay").classList.remove("show"); $("modal").classList.remove("eula"); }
+
+function flashLog(msg){
+  log(S.day,"warn","⚠️ "+msg);
+  $("log").firstChild.classList.add("shake");
+}
+
+/* ---------- end states ---------- */
+function checkEndStates(){
+  if(S.cash < -20000){
+    showModal("💀 BANKRUPTCY", 
+      `${S.name} has collapsed under ${money(S.cash)} of debt after ${S.day} days.<br><br>
+      The market won. It was always going to win. But hey — you played a 'super realistic' company sim, 
+      and the realest thing about business is that sometimes the universe just trolls you. 😅`,
+      [{label:"🔄 Start Over", sub:"Try to outsmart fate", fn:()=>location.reload()}]);
+  } else if(valuation() >= 10000000){
+    showModal("🏆 YOU WON?!", 
+      `Against all odds (and active sabotage), ${S.name} reached a ${money(valuation())} valuation!<br><br>
+      Honestly we did not think this was possible once the pranks started. You are either a genius or 
+      extremely lucky. We're not ruling out cheating. Congratulations, you legend. 🎉`,
+      [{label:"🔄 Play Again", sub:"Tempt fate once more", fn:()=>location.reload()}]);
+  }
+}
+
+/* ---------- sparkline ---------- */
+function sparkline(arr){
+  if(arr.length<2) return "▁";
+  const blocks="▁▂▃▄▅▆▇█";
+  const min=Math.min(...arr), max=Math.max(...arr), range=(max-min)||1;
+  return arr.map(v=> blocks[Math.round((v-min)/range*7)]).join("");
+}
+
+/* ---------- render ---------- */
+function render(){
+  $("sDay").textContent = S.day;
+  $("sQ").textContent = Math.floor((S.day-1)/90)+1;
+  $("sCash").textContent = money(S.cash);
+  $("sCash").className = "val "+(S.cash>=0?"pos":"neg");
+  const nw = netWorth();
+  $("sNet").textContent = money(nw);
+  $("sNet").className = "val "+(nw>=50000?"pos":"neg");
+  $("sCust").textContent = S.customers.toLocaleString();
+  $("sRep").textContent = Math.round(S.rep);
+  $("sMorale").textContent = Math.round(S.morale);
+  const mktUp = (S.mktHist[S.mktHist.length-2]??1000) <= S.mktIndex;
+  $("sMkt").textContent = Math.round(S.mktIndex).toLocaleString();
+  $("sMkt").className = "val "+(mktUp?"pos":"neg");
+  $("sMktArrow").textContent = mktUp?"▲":"▼";
+
+  const rev=dailyRevenue(), exp=dailyExpenses();
+  $("dRev").textContent = money(rev);
+  $("dExp").textContent = money(exp);
+  const prof = rev-exp;
+  $("dProfit").textContent = money(prof);
+  $("dProfit").className = "big "+(prof>=0?"pos":"neg");
+
+  // cash runway
+  if(prof>=0){ $("runway").textContent = "Cash runway: profitable ✅"; }
+  else { const days = Math.floor(S.cash/Math.abs(prof)); $("runway").textContent = `Cash runway: ~${Math.max(0,days)} days at current burn`; }
+
+  // customer & csat KPIs
+  $("csatVal").textContent = Math.round(S.csat)+"%";
+  $("csatBar").style.width = Math.round(S.csat)+"%";
+  $("custVal").textContent = S.customers.toLocaleString();
+  const g = S.lastAcq||0;
+  $("custGrowth").textContent = (g>=0?"+":"")+g+"/day";
+  $("custGrowth").className = g>=0?"pos":"neg";
+  $("arpu").textContent = money2(ARPU);
+
+  // debt KPIs
+  $("debtVal").textContent = money(S.debt);
+  $("interestVal").textContent = money(S.debt*interestRate())+"/day";
+  $("creditVal").textContent = creditRating();
+
+  const val = valuation();
+  $("dVal").textContent = money(val);
+  $("valBar").style.width = Math.min(100, val/10000000*100)+"%";
+  $("netSpark").textContent = sparkline(S.netHist);
+  $("mktSpark").textContent = sparkline(S.mktHist);
+
+  // finance tab
+  $("finDebt").textContent = money(S.debt);
+  $("finRate").textContent = (interestRate()*100).toFixed(1)+"%";
+  $("finCredit").textContent = creditRating();
+  $("qProfit").textContent = money(S.qProfit);
+  $("qTax").textContent = money(Math.max(0,S.qProfit)*0.21);
+  $("qNext").textContent = S.lastTaxDay+90;
+
+  // marketing tab
+  let activeC=0, burn=0;
+  S.campaigns.forEach(c=>{ if(c.active){activeC++; burn+=c.cost;} });
+  $("campCount").textContent = activeC;
+  $("campBurn").textContent = money(burn);
+  const cl=$("campaignList"); cl.innerHTML="";
+  S.campaigns.forEach(c=>{
+    const card=document.createElement("div"); card.className="card row spread";
+    card.innerHTML=`
+      <div>
+        <strong>${c.name}</strong> ${c.active?'<span class="pill" style="color:var(--grn);border-color:var(--grn)">ACTIVE</span>':''}
+        <div class="muted">${c.desc}</div>
+        <div class="muted">${money(c.cost)}/day · +${c.acq} customers/day · CSAT ${c.csat>=0?'+':''}${c.csat}</div>
+      </div>
+      <button class="btn ${c.active?'red':'green'} sm" onclick="toggleCampaign('${c.id}')">${c.active?'Stop':'Launch'}</button>`;
+    cl.appendChild(card);
+  });
+
+  // stocks
+  const st = $("stockTable"); st.innerHTML="";
+  S.stocks.forEach((s,i)=>{
+    const prev = s.hist[s.hist.length-2] ?? s.price;
+    const chg = s.price-prev;
+    const pct = prev? (chg/prev*100):0;
+    const tr=document.createElement("tr");
+    tr.innerHTML = `
+      <td><strong>${s.t}</strong><div class="muted" style="font-size:.72rem">${s.name}</div></td>
+      <td>${money2(s.price)}<div class="${chg>=0?'pos':'neg'}" style="font-size:.74rem">${chg>=0?'▲':'▼'} ${Math.abs(pct).toFixed(1)}%</div></td>
+      <td class="spark" style="color:${chg>=0?'var(--grn)':'var(--red)'}">${sparkline(s.hist)}</td>
+      <td>${s.owned} <div class="muted" style="font-size:.72rem">${money(s.owned*s.price)}</div></td>
+      <td>
+        <div class="row" style="gap:5px">
+          <input type="number" id="qty${i}" value="1" min="1">
+          <button class="btn green sm" onclick="buyStock(${i})">Buy</button>
+          <button class="btn red sm" onclick="sellStock(${i})">Sell</button>
+        </div>
+      </td>`;
+    st.appendChild(tr);
+  });
+
+  // ventures
+  const vl=$("ventureList"); vl.innerHTML="";
+  S.ventures.forEach(v=>{
+    const card=document.createElement("div"); card.className="card row spread";
+    card.innerHTML=`
+      <div>
+        <strong>${v.name}</strong> ${v.owned?'<span class="pill" style="color:var(--grn);border-color:var(--grn)">OWNED</span>':''}
+        <div class="muted">${v.desc}</div>
+        <div class="muted">Cost ${money(v.cost)} · Income <span class="${v.income<0?'neg':'pos'}">${money(v.income)}/day</span></div>
+      </div>
+      ${v.owned?'':`<button class="btn gold" onclick="buyVenture('${v.id}')">Acquire</button>`}`;
+    vl.appendChild(card);
+  });
+
+  // staff
+  $("teamSize").textContent = S.staff.length+1;
+  let tot=0; S.staff.forEach(p=>tot+=p.salary);
+  $("totalSalary").textContent = money(tot);
+  const sl=$("staffList"); sl.innerHTML="";
+  if(S.staff.length===0) sl.innerHTML='<div class="muted card">Just you so far. Hire some talent!</div>';
+  S.staff.forEach(p=>{
+    const card=document.createElement("div"); card.className="card row spread";
+    card.innerHTML=`
+      <div><strong>${p.name}</strong> <span class="muted">— ${p.role}</span>
+        <div class="muted">Salary ${money(p.salary)}/day · Generates <span class="${p.rev<=0?'neg':'pos'}">${money(p.rev)}/day</span></div></div>
+      <button class="btn ghost sm" onclick="fire('${p.id}')">Let go</button>`;
+    sl.appendChild(card);
+  });
+
+  // R&D
+  const rl=$("rdList"); rl.innerHTML="";
+  S.rd.forEach(r=>{
+    const card=document.createElement("div"); card.className="card row spread";
+    card.innerHTML=`
+      <div><strong>${r.name}</strong> ${r.done?'<span class="pill" style="color:var(--blu);border-color:var(--blu)">RESEARCHED</span>':''}
+        <div class="muted">${r.desc} · Cost ${money(r.cost)}</div></div>
+      ${r.done?'':`<button class="btn" onclick="buyRD('${r.id}')">Research</button>`}`;
+    rl.appendChild(card);
+  });
+}
+
+function fire(id){
+  const p=S.staff.find(x=>x.id==id);
+  S.staff = S.staff.filter(x=>x.id!=id);
+  log(S.day,"warn",`Let go of ${p.name}.`);
+  if(prankFires()){ const pay=Math.round(rnd(300,1500)*severity()); S.cash-=pay; S.morale=clamp(S.morale-sev(1,6)); if(severity()>0.4) log(S.day,"bad",`${p.name} sued for wrongful termination. Severance ${money(pay)}, morale down.`); }
+  render();
+}
+
+// close modal on overlay click (but not for forced reveal/end)
+$("overlay").addEventListener("click", e=>{ /* keep modal until choice made */ });
+</script>
+</body>
+</html>
