@@ -1,0 +1,3248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Arena Market Simulator</title>
+  <style>
+:root {
+  --bg: #071019;
+  --bg-soft: #0d1724;
+  --panel: rgba(14, 25, 39, 0.92);
+  --panel-2: rgba(18, 33, 51, 0.95);
+  --border: rgba(130, 164, 199, 0.18);
+  --text: #e7eef7;
+  --muted: #91a4ba;
+  --positive: #31d18c;
+  --negative: #ff6a6a;
+  --warning: #ffcf5a;
+  --accent: #62a8ff;
+  --accent-2: #8f7cff;
+  --shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  min-height: 100%;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background:
+    radial-gradient(circle at top right, rgba(99, 160, 255, 0.16), transparent 30%),
+    radial-gradient(circle at left center, rgba(77, 208, 168, 0.10), transparent 28%),
+    linear-gradient(180deg, #05101a 0%, #09121d 100%);
+  color: var(--text);
+}
+
+body {
+  padding: 18px;
+}
+
+button, input, select {
+  font: inherit;
+}
+
+button {
+  border: 1px solid var(--border);
+  background: linear-gradient(180deg, rgba(35, 54, 78, 0.9), rgba(19, 31, 48, 0.95));
+  color: var(--text);
+  border-radius: 12px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+button:hover {
+  transform: translateY(-1px);
+  border-color: rgba(120, 177, 255, 0.4);
+}
+
+button.primary {
+  background: linear-gradient(180deg, rgba(73, 133, 255, 0.95), rgba(47, 88, 202, 0.95));
+  border-color: rgba(126, 173, 255, 0.5);
+}
+
+button.danger {
+  border-color: rgba(255, 119, 119, 0.35);
+}
+
+button.ghost {
+  background: rgba(34, 47, 68, 0.65);
+}
+
+input, select {
+  width: 100%;
+  background: rgba(9, 15, 24, 0.95);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  padding: 10px 12px;
+}
+
+label {
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+h1, h2, h3, p {
+  margin-top: 0;
+}
+
+h1 {
+  margin-bottom: 6px;
+  font-size: clamp(1.6rem, 2vw, 2.3rem);
+}
+
+h2 {
+  margin-bottom: 0;
+  font-size: 1.1rem;
+}
+
+h3 {
+  font-size: 0.98rem;
+  margin-bottom: 10px;
+}
+
+.subtitle,
+.muted {
+  color: var(--muted);
+}
+
+.app-shell {
+  display: grid;
+  gap: 18px;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: flex-start;
+  padding: 18px 20px;
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  background: linear-gradient(180deg, rgba(14, 25, 39, 0.96), rgba(10, 17, 28, 0.92));
+  box-shadow: var(--shadow);
+}
+
+.topbar-controls {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 12px;
+  align-items: stretch;
+}
+
+.stat-card,
+.card {
+  min-width: 150px;
+  background: rgba(8, 14, 23, 0.75);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 12px 14px;
+  display: grid;
+  gap: 4px;
+}
+
+.stat-card .label {
+  color: var(--muted);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.controls-group {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.clock-card {
+  min-width: 220px;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  width: fit-content;
+  background: rgba(55, 71, 92, 0.6);
+  border: 1px solid var(--border);
+}
+
+.pill.positive {
+  color: #d9fff0;
+  background: rgba(49, 209, 140, 0.16);
+  border-color: rgba(49, 209, 140, 0.35);
+}
+
+.pill.negative {
+  color: #ffe5e5;
+  background: rgba(255, 106, 106, 0.14);
+  border-color: rgba(255, 106, 106, 0.32);
+}
+
+.pill.warning {
+  color: #fff4cf;
+  background: rgba(255, 207, 90, 0.12);
+  border-color: rgba(255, 207, 90, 0.3);
+}
+
+.pill.neutral {
+  color: #dbe8f7;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1.1fr 1.6fr 1fr;
+  grid-template-areas:
+    "market chart order"
+    "news options portfolio";
+  gap: 18px;
+}
+
+.market-panel { grid-area: market; }
+.chart-panel { grid-area: chart; }
+.order-panel { grid-area: order; }
+.news-panel { grid-area: news; }
+.options-panel { grid-area: options; }
+.portfolio-panel { grid-area: portfolio; }
+
+.panel {
+  background: linear-gradient(180deg, var(--panel), var(--panel-2));
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  padding: 18px;
+  box-shadow: var(--shadow);
+  min-height: 220px;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: baseline;
+  margin-bottom: 14px;
+}
+
+.panel-header.compact {
+  margin-bottom: 10px;
+}
+
+.panel-header.wide-gap {
+  align-items: flex-start;
+}
+
+.inline-controls {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  color: var(--muted);
+}
+
+.inline-controls label {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.inline-controls input[type="checkbox"] {
+  width: auto;
+}
+
+.macro-grid,
+.key-metrics,
+.indicator-row,
+.portfolio-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.metric-card {
+  background: rgba(7, 13, 22, 0.76);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 12px;
+  display: grid;
+  gap: 5px;
+}
+
+.metric-card .kicker {
+  color: var(--muted);
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.metric-card strong {
+  font-size: 1rem;
+}
+
+#chart-canvas {
+  width: 100%;
+  height: auto;
+  display: block;
+  background: linear-gradient(180deg, rgba(5, 9, 16, 0.92), rgba(7, 13, 22, 0.94));
+  border: 1px solid rgba(136, 174, 214, 0.14);
+  border-radius: 18px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.form-grid .full-width,
+.form-grid .ticket-estimate,
+.form-grid .selected-contract {
+  grid-column: 1 / -1;
+}
+
+.ticket-estimate {
+  color: var(--muted);
+}
+
+.watchlist-wrapper,
+.scroll-table {
+  overflow: auto;
+  border-radius: 14px;
+  border: 1px solid rgba(130, 164, 199, 0.12);
+  background: rgba(5, 10, 17, 0.45);
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.data-table th,
+.data-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(130, 164, 199, 0.09);
+  white-space: nowrap;
+}
+
+.data-table th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: rgba(11, 18, 29, 0.98);
+  color: var(--muted);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.data-table tbody tr {
+  cursor: pointer;
+}
+
+.data-table tbody tr:hover,
+.data-table tbody tr.selected {
+  background: rgba(98, 168, 255, 0.08);
+}
+
+.positive-text { color: var(--positive); }
+.negative-text { color: var(--negative); }
+.warning-text { color: var(--warning); }
+
+.news-feed,
+.activity-log {
+  display: grid;
+  gap: 10px;
+  max-height: 520px;
+  overflow: auto;
+}
+
+.news-item,
+.log-item {
+  background: rgba(7, 13, 22, 0.78);
+  border: 1px solid rgba(130, 164, 199, 0.12);
+  border-radius: 16px;
+  padding: 12px 14px;
+}
+
+.news-item h4 {
+  margin: 0 0 6px;
+  font-size: 0.95rem;
+}
+
+.news-meta,
+.log-meta {
+  color: var(--muted);
+  font-size: 0.8rem;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.subsection {
+  margin-top: 18px;
+}
+
+.options-table td small {
+  display: block;
+  color: var(--muted);
+}
+
+.contract-button-row {
+  display: flex;
+  gap: 8px;
+}
+
+.contract-button-row button {
+  padding: 6px 10px;
+  border-radius: 10px;
+  font-size: 0.82rem;
+}
+
+.option-ticket {
+  margin-top: 14px;
+}
+
+.selected-contract {
+  min-height: 72px;
+  align-content: center;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border-radius: 999px;
+  padding: 4px 8px;
+  font-size: 0.74rem;
+  border: 1px solid rgba(130, 164, 199, 0.16);
+  color: var(--muted);
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 28px;
+  background: rgba(2, 7, 13, 0.7);
+  backdrop-filter: blur(10px);
+}
+
+.modal.hidden {
+  display: none;
+}
+
+.modal-card {
+  width: min(980px, 100%);
+  max-height: 88vh;
+  overflow: auto;
+  background: linear-gradient(180deg, rgba(12, 23, 37, 0.98), rgba(8, 16, 26, 0.98));
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  box-shadow: var(--shadow);
+  padding: 22px;
+}
+
+.help-content {
+  display: grid;
+  gap: 16px;
+}
+
+.help-content section {
+  background: rgba(6, 12, 19, 0.7);
+  border: 1px solid rgba(130, 164, 199, 0.1);
+  border-radius: 16px;
+  padding: 14px 16px;
+}
+
+.help-content ul {
+  margin: 10px 0 0 18px;
+  padding: 0;
+  color: #d8e5f5;
+}
+
+code {
+  background: rgba(98, 168, 255, 0.12);
+  border-radius: 8px;
+  padding: 2px 6px;
+}
+
+@media (max-width: 1440px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr 1.25fr;
+    grid-template-areas:
+      "market chart"
+      "order chart"
+      "news options"
+      "portfolio portfolio";
+  }
+}
+
+@media (max-width: 980px) {
+  body {
+    padding: 12px;
+  }
+
+  .topbar {
+    flex-direction: column;
+  }
+
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "market"
+      "chart"
+      "order"
+      "news"
+      "options"
+      "portfolio";
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div>
+        <h1>Arena Market Simulator</h1>
+        <p class="subtitle">An event-driven stock and options trading sandbox with realistic seed data, technical indicators, and automatic saving.</p>
+      </div>
+      <div class="topbar-controls">
+        <div class="clock-card stat-card">
+          <span class="label">Sim Time</span>
+          <strong id="sim-clock">—</strong>
+          <span id="market-status" class="pill neutral">Loading…</span>
+        </div>
+        <div class="stat-card">
+          <span class="label">Equity</span>
+          <strong id="equity-value">$0.00</strong>
+          <span id="equity-change">—</span>
+        </div>
+        <div class="stat-card">
+          <span class="label">Cash</span>
+          <strong id="cash-value">$0.00</strong>
+          <span id="bp-value">BP: $0.00</span>
+        </div>
+        <div class="controls-group">
+          <button id="toggle-run" class="primary">Pause</button>
+          <label>
+            Speed
+            <select id="speed-select">
+              <option value="0.5">0.5×</option>
+              <option value="1" selected>1×</option>
+              <option value="2">2×</option>
+              <option value="4">4×</option>
+              <option value="8">8×</option>
+            </select>
+          </label>
+          <button id="save-btn">Save</button>
+          <button id="help-btn">Walkthrough</button>
+          <button id="reset-btn" class="danger ghost">Reset</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="dashboard-grid">
+      <section class="panel market-panel">
+        <div class="panel-header">
+          <h2>Market Overview</h2>
+          <span class="muted">Macro + watchlist</span>
+        </div>
+        <div class="macro-grid" id="macro-grid"></div>
+        <div class="watchlist-wrapper">
+          <table class="data-table watchlist-table">
+            <thead>
+              <tr>
+                <th>Ticker</th>
+                <th>Price</th>
+                <th>Day %</th>
+                <th>Volume</th>
+                <th>RSI</th>
+                <th>Beta</th>
+              </tr>
+            </thead>
+            <tbody id="watchlist-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel chart-panel">
+        <div class="panel-header wide-gap">
+          <div>
+            <h2 id="selected-name">Selected Asset</h2>
+            <p id="selected-meta" class="muted">—</p>
+          </div>
+          <div class="inline-controls">
+            <label><input type="checkbox" id="toggle-sma20" checked /> SMA 20</label>
+            <label><input type="checkbox" id="toggle-sma50" checked /> SMA 50</label>
+            <label><input type="checkbox" id="toggle-bbands" checked /> Bollinger</label>
+          </div>
+        </div>
+        <div class="key-metrics" id="selected-metrics"></div>
+        <canvas id="chart-canvas" width="1100" height="500" aria-label="Price chart"></canvas>
+        <div class="indicator-row" id="indicator-row"></div>
+      </section>
+
+      <section class="panel order-panel">
+        <div class="panel-header">
+          <h2>Stock Ticket</h2>
+          <span class="muted">Market, limit, stop, and shorting</span>
+        </div>
+        <form id="stock-order-form" class="form-grid">
+          <label>
+            Symbol
+            <select id="stock-symbol"></select>
+          </label>
+          <label>
+            Action
+            <select id="stock-action">
+              <option value="buy">Buy</option>
+              <option value="sell">Sell</option>
+              <option value="short">Short</option>
+              <option value="cover">Cover</option>
+            </select>
+          </label>
+          <label>
+            Quantity
+            <input id="stock-qty" type="number" min="1" step="1" value="10" />
+          </label>
+          <label>
+            Order Type
+            <select id="stock-order-type">
+              <option value="market">Market</option>
+              <option value="limit">Limit</option>
+              <option value="stop">Stop</option>
+            </select>
+          </label>
+          <label id="stock-trigger-wrap">
+            Limit / Stop Price
+            <input id="stock-trigger" type="number" min="0.01" step="0.01" value="0.00" />
+          </label>
+          <div class="ticket-estimate card" id="stock-ticket-estimate">Estimated cost: —</div>
+          <button type="submit" class="primary full-width">Place Stock Order</button>
+        </form>
+
+        <div class="subsection">
+          <div class="panel-header compact">
+            <h3>Open Orders</h3>
+            <span class="muted">Queued and conditional orders</span>
+          </div>
+          <div class="scroll-table">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Type</th>
+                  <th>Side</th>
+                  <th>Symbol</th>
+                  <th>Qty</th>
+                  <th>Trigger</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="orders-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel news-panel">
+        <div class="panel-header">
+          <h2>News & Events</h2>
+          <span class="muted">Macro releases, earnings, and company catalysts</span>
+        </div>
+        <div id="news-feed" class="news-feed"></div>
+      </section>
+
+      <section class="panel options-panel">
+        <div class="panel-header wide-gap">
+          <div>
+            <h2>Options Chain</h2>
+            <p id="option-chain-meta" class="muted">—</p>
+          </div>
+          <div class="inline-controls">
+            <label>
+              Underlying
+              <select id="option-symbol"></select>
+            </label>
+            <label>
+              Expiry
+              <select id="option-expiry"></select>
+            </label>
+          </div>
+        </div>
+        <div class="scroll-table options-table-wrapper">
+          <table class="data-table options-table">
+            <thead>
+              <tr>
+                <th>Call Bid</th>
+                <th>Call Ask</th>
+                <th>Δ</th>
+                <th>Strike</th>
+                <th>Δ</th>
+                <th>Put Bid</th>
+                <th>Put Ask</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="options-body"></tbody>
+          </table>
+        </div>
+        <form id="option-order-form" class="form-grid option-ticket">
+          <div class="card selected-contract" id="selected-contract">Select a contract from the chain.</div>
+          <label>
+            Side
+            <select id="option-side">
+              <option value="long">Long</option>
+              <option value="short">Short</option>
+            </select>
+          </label>
+          <label>
+            Contracts
+            <input id="option-contracts" type="number" min="1" step="1" value="1" />
+          </label>
+          <button type="submit" class="primary">Submit Options Order</button>
+        </form>
+      </section>
+
+      <section class="panel portfolio-panel">
+        <div class="panel-header">
+          <h2>Portfolio</h2>
+          <span class="muted">Holdings, Greeks, and risk</span>
+        </div>
+        <div class="portfolio-summary" id="portfolio-summary"></div>
+        <div class="subsection">
+          <h3>Equity Positions</h3>
+          <div class="scroll-table">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Symbol</th>
+                  <th>Shares</th>
+                  <th>Avg Cost</th>
+                  <th>Mark</th>
+                  <th>Unrealized</th>
+                </tr>
+              </thead>
+              <tbody id="positions-body"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="subsection">
+          <h3>Options Positions</h3>
+          <div class="scroll-table">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Contract</th>
+                  <th>Side</th>
+                  <th>Qty</th>
+                  <th>Entry</th>
+                  <th>Mark</th>
+                  <th>P/L</th>
+                </tr>
+              </thead>
+              <tbody id="option-positions-body"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="subsection">
+          <h3>Activity Log</h3>
+          <div id="activity-log" class="activity-log"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="help-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="help-title">
+    <div class="modal-card">
+      <div class="panel-header wide-gap">
+        <h2 id="help-title">Walkthrough: How the Simulator Works</h2>
+        <button id="close-help">Close</button>
+      </div>
+      <div class="help-content">
+        <section>
+          <h3>1) Start State</h3>
+          <p>You begin with <strong>$100,000</strong> in cash, a live watchlist seeded with recent real-world market levels, and a simulated calendar that progresses only when the market is open. Your game auto-saves locally every few seconds and after every trade.</p>
+        </section>
+        <section>
+          <h3>2) Price Formation</h3>
+          <p>Every tick combines a market factor, sector factor, stock-specific volatility, mean reversion to a valuation anchor, and active news/event impacts. The result drives intraday candles, volume, spreads, and option pricing.</p>
+          <ul>
+            <li><strong>Market factor:</strong> broad sentiment plus macro variables such as VIX, oil, and rates.</li>
+            <li><strong>Sector factor:</strong> technology, financials, energy, consumer, and index-level moves.</li>
+            <li><strong>Idiosyncratic factor:</strong> company-specific drift, volatility, and catalyst risk.</li>
+          </ul>
+        </section>
+        <section>
+          <h3>3) Trading Stocks</h3>
+          <p>Use the stock ticket to submit <strong>market</strong>, <strong>limit</strong>, or <strong>stop</strong> orders. You can go long, sell existing shares, short stock, or cover a short. Orders placed while the market is closed remain queued until the next session.</p>
+        </section>
+        <section>
+          <h3>4) Options Trading</h3>
+          <p>The options chain is generated from the current underlying price, time to expiry, implied volatility, and the risk-free rate using a Black-Scholes style model. You can trade long or short calls and puts. Short premium positions reserve margin; covered calls use eligible long shares as collateral.</p>
+        </section>
+        <section>
+          <h3>5) News, Events, Earnings, and Dividends</h3>
+          <p>The feed generates company-specific stories, macro releases, OPEC-style energy shocks, guidance changes, analyst notes, earnings surprises, dividends, and rare splits. Events can raise volatility, change trend, and push prices over multiple sessions.</p>
+        </section>
+        <section>
+          <h3>6) Indicators and Risk</h3>
+          <p>The chart displays candles with optional SMA 20, SMA 50, and Bollinger Bands. Below it, the simulator computes RSI and MACD. The portfolio view tracks equity, margin used, available buying power, realized P/L, unrealized P/L, and approximate portfolio Greeks.</p>
+        </section>
+        <section>
+          <h3>7) Saving</h3>
+          <p>Your portfolio, market state, open orders, news feed, and price history are saved automatically to <code>localStorage</code>. Use <strong>Save</strong> for a manual snapshot or <strong>Reset</strong> to clear the save and start a fresh simulation.</p>
+        </section>
+        <section>
+          <h3>8) Tips</h3>
+          <ul>
+            <li>Watch the news feed before taking leverage.</li>
+            <li>Short options create income but also add margin risk and assignment risk.</li>
+            <li>High RSI and stretched Bollinger bands can mark overbought conditions, but momentum can persist.</li>
+            <li>Use expiries and strikes that match your thesis: momentum, hedge, income, or speculation.</li>
+          </ul>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <script>
+(() => {
+  'use strict';
+
+  const STORAGE_KEY = 'arena_market_sim_v1';
+  const VERSION = 1;
+  const STARTING_CASH = 100000;
+  const MARKET_OPEN_MIN = 9 * 60 + 30;
+  const MARKET_CLOSE_MIN = 16 * 60;
+  const MICRO_STEP_MINUTES = 5;
+  const BAR_MINUTES = 30;
+  const TICK_INTERVAL_MS = 850;
+  const MAX_LOG_ITEMS = 120;
+  const MAX_NEWS_ITEMS = 90;
+  const MAX_BARS = 220;
+  const STOCK_COMMISSION = 1.0;
+  const OPTION_FEE = 0.65;
+  const DEFAULT_SPEED = 1;
+  const SPEED_TO_MINUTES = {
+    '0.5': 5,
+    '1': 10,
+    '2': 20,
+    '4': 40,
+    '8': 80,
+  };
+
+  const BASE_ASSETS = [
+    {
+      ticker: 'SPY',
+      name: 'SPDR S&P 500 ETF Trust',
+      sector: 'Index',
+      description: 'Large-cap U.S. equity ETF proxy for the broad market.',
+      price: 737.55,
+      marketCap: 'ETF',
+      pe: 24.2,
+      beta: 1.0,
+      divYield: 1.23,
+      annualVol: 0.18,
+      iv: 0.19,
+      avgVolume: 68000000,
+      baseVolume: 93678100,
+      anchorPrice: 742,
+      drift: 0.08,
+      tickSize: 1,
+      daysToEarnings: 999,
+      daysToDividend: 25,
+      dividendPerShare: 2.32,
+      startRange: [735.53, 752.82],
+    },
+    {
+      ticker: 'AAPL',
+      name: 'Apple Inc.',
+      sector: 'Technology',
+      description: 'Consumer hardware and services megacap with recurring ecosystem revenue.',
+      price: 273.40,
+      marketCap: '4.06T',
+      pe: 31.8,
+      beta: 1.18,
+      divYield: 0.47,
+      annualVol: 0.27,
+      iv: 0.26,
+      avgVolume: 23000000,
+      baseVolume: 21522000,
+      anchorPrice: 278,
+      drift: 0.11,
+      tickSize: 5,
+      daysToEarnings: 18,
+      daysToDividend: 29,
+      dividendPerShare: 0.27,
+      startRange: [272.87, 275.37],
+    },
+    {
+      ticker: 'MSFT',
+      name: 'Microsoft Corporation',
+      sector: 'Technology',
+      description: 'Cloud, software, and AI platform leader.',
+      price: 487.71,
+      marketCap: '3.63T',
+      pe: 38.5,
+      beta: 0.95,
+      divYield: 0.72,
+      annualVol: 0.24,
+      iv: 0.24,
+      avgVolume: 9000000,
+      baseVolume: 8842000,
+      anchorPrice: 495,
+      drift: 0.12,
+      tickSize: 10,
+      daysToEarnings: 21,
+      daysToDividend: 24,
+      dividendPerShare: 0.83,
+      startRange: [485.96, 488.12],
+    },
+    {
+      ticker: 'NVDA',
+      name: 'NVIDIA Corporation',
+      sector: 'Technology',
+      description: 'High-growth semiconductor and AI accelerator leader.',
+      price: 190.53,
+      marketCap: '4.64T',
+      pe: 54.6,
+      beta: 2.01,
+      divYield: 0.03,
+      annualVol: 0.52,
+      iv: 0.47,
+      avgVolume: 115000000,
+      baseVolume: 139740000,
+      anchorPrice: 196,
+      drift: 0.18,
+      tickSize: 5,
+      daysToEarnings: 11,
+      daysToDividend: 41,
+      dividendPerShare: 0.01,
+      startRange: [189.61, 192.69],
+    },
+    {
+      ticker: 'AMZN',
+      name: 'Amazon.com, Inc.',
+      sector: 'Consumer',
+      description: 'E-commerce and cloud computing platform.',
+      price: 232.52,
+      marketCap: '2.49T',
+      pe: 44.3,
+      beta: 1.28,
+      divYield: 0,
+      annualVol: 0.34,
+      iv: 0.31,
+      avgVolume: 17000000,
+      baseVolume: 15995000,
+      anchorPrice: 238,
+      drift: 0.12,
+      tickSize: 5,
+      daysToEarnings: 16,
+      daysToDividend: 999,
+      dividendPerShare: 0,
+      startRange: [231.18, 232.99],
+    },
+    {
+      ticker: 'GOOGL',
+      name: 'Alphabet Inc. Class A',
+      sector: 'Technology',
+      description: 'Digital advertising, search, and cloud platform.',
+      price: 313.51,
+      marketCap: '3.80T',
+      pe: 28.2,
+      beta: 1.03,
+      divYield: 0.42,
+      annualVol: 0.26,
+      iv: 0.27,
+      avgVolume: 12000000,
+      baseVolume: 10899000,
+      anchorPrice: 318,
+      drift: 0.10,
+      tickSize: 5,
+      daysToEarnings: 17,
+      daysToDividend: 33,
+      dividendPerShare: 0.32,
+      startRange: [312.28, 315.09],
+    },
+    {
+      ticker: 'META',
+      name: 'Meta Platforms, Inc.',
+      sector: 'Technology',
+      description: 'Advertising and consumer platform business with AI spending exposure.',
+      price: 663.29,
+      marketCap: '1.67T',
+      pe: 29.1,
+      beta: 1.13,
+      divYield: 0.33,
+      annualVol: 0.33,
+      iv: 0.31,
+      avgVolume: 7500000,
+      baseVolume: 7134000,
+      anchorPrice: 675,
+      drift: 0.13,
+      tickSize: 25,
+      daysToEarnings: 20,
+      daysToDividend: 30,
+      dividendPerShare: 0.53,
+      startRange: [661.32, 668.95],
+    },
+    {
+      ticker: 'TSLA',
+      name: 'Tesla, Inc.',
+      sector: 'Consumer',
+      description: 'High-beta EV and autonomy focused manufacturer.',
+      price: 475.19,
+      marketCap: '1.58T',
+      pe: 88.0,
+      beta: 2.08,
+      divYield: 0,
+      annualVol: 0.60,
+      iv: 0.54,
+      avgVolume: 60000000,
+      baseVolume: 58781000,
+      anchorPrice: 468,
+      drift: 0.16,
+      tickSize: 10,
+      daysToEarnings: 14,
+      daysToDividend: 999,
+      dividendPerShare: 0,
+      startRange: [473.82, 489.09],
+    },
+    {
+      ticker: 'JPM',
+      name: 'JPMorgan Chase & Co.',
+      sector: 'Financials',
+      description: 'Money-center bank with rate sensitivity and credit exposure.',
+      price: 324.27,
+      marketCap: '892B',
+      pe: 15.0,
+      beta: 1.04,
+      divYield: 2.14,
+      annualVol: 0.24,
+      iv: 0.23,
+      avgVolume: 8000000,
+      baseVolume: 3926000,
+      anchorPrice: 320,
+      drift: 0.09,
+      tickSize: 5,
+      daysToEarnings: 22,
+      daysToDividend: 26,
+      dividendPerShare: 1.40,
+      startRange: [324.04, 327.77],
+    },
+    {
+      ticker: 'XOM',
+      name: 'Exxon Mobil Corporation',
+      sector: 'Energy',
+      description: 'Integrated energy major tied to crude and refining margins.',
+      price: 149.56,
+      marketCap: '610B',
+      pe: 14.9,
+      beta: 0.91,
+      divYield: 3.20,
+      annualVol: 0.28,
+      iv: 0.26,
+      avgVolume: 17000000,
+      baseVolume: 10462400,
+      anchorPrice: 147,
+      drift: 0.07,
+      tickSize: 2.5,
+      daysToEarnings: 24,
+      daysToDividend: 19,
+      dividendPerShare: 0.95,
+      startRange: [148.50, 150.83],
+    },
+  ];
+
+  const MACRO_EVENT_TEMPLATES = [
+    {
+      tone: 'positive',
+      headline: 'Cooler CPI print boosts rate-cut hopes',
+      body: 'Treasury yields ease, volatility compresses, and growth stocks catch a bid as inflation data surprises to the downside.',
+      marketImpact: 0.014,
+      sectorImpacts: { Technology: 0.01, Financials: -0.003, Consumer: 0.004 },
+      vixDelta: -1.6,
+      rateDelta: -0.10,
+      oilDelta: -0.4,
+      duration: 18,
+      volBoost: -0.05,
+    },
+    {
+      tone: 'negative',
+      headline: 'Hot payrolls report pushes yields higher',
+      body: 'A resilient labor market rekindles hawkish-rate fears. Duration-heavy and high-valuation names fade while financials hold up better.',
+      marketImpact: -0.012,
+      sectorImpacts: { Technology: -0.01, Financials: 0.004, Consumer: -0.003 },
+      vixDelta: 1.4,
+      rateDelta: 0.12,
+      oilDelta: 0.3,
+      duration: 16,
+      volBoost: 0.08,
+    },
+    {
+      tone: 'negative',
+      headline: 'Geopolitical supply shock lifts crude and risk premiums',
+      body: 'Oil spikes on new supply concerns. Energy outperforms while broad equities reprice higher inflation and geopolitical uncertainty.',
+      marketImpact: -0.01,
+      sectorImpacts: { Energy: 0.032, Consumer: -0.01, Technology: -0.004 },
+      vixDelta: 2.3,
+      rateDelta: 0.05,
+      oilDelta: 5.1,
+      duration: 22,
+      volBoost: 0.11,
+    },
+    {
+      tone: 'positive',
+      headline: 'Fed speakers signal a softer policy path',
+      body: 'Risk appetite improves as markets interpret central bank messaging as less restrictive than feared.',
+      marketImpact: 0.009,
+      sectorImpacts: { Technology: 0.007, Consumer: 0.005 },
+      vixDelta: -1.1,
+      rateDelta: -0.08,
+      oilDelta: 0,
+      duration: 15,
+      volBoost: -0.03,
+    },
+    {
+      tone: 'negative',
+      headline: 'Unexpected Treasury auction weakness hits sentiment',
+      body: 'Long-end yields jump after a sloppy debt auction, pressuring expensive equities and forcing de-risking across the tape.',
+      marketImpact: -0.013,
+      sectorImpacts: { Technology: -0.011, Financials: -0.002, Energy: 0.001 },
+      vixDelta: 1.2,
+      rateDelta: 0.14,
+      oilDelta: -0.2,
+      duration: 14,
+      volBoost: 0.07,
+    },
+  ];
+
+  const COMPANY_EVENT_TEMPLATES = {
+    Technology: [
+      {
+        tone: 'positive',
+        headline: '{ticker} unveils stronger-than-expected AI product roadmap',
+        body: 'Channel checks and management commentary point to durable demand, expanding forward estimates and improving sentiment.',
+        selfImpact: 0.045,
+        sectorImpact: 0.006,
+        duration: 18,
+        volBoost: 0.09,
+      },
+      {
+        tone: 'negative',
+        headline: '{ticker} faces renewed regulatory pressure',
+        body: 'Investors reassess long-term margins and headline risk after reports of fresh antitrust and compliance scrutiny.',
+        selfImpact: -0.041,
+        sectorImpact: -0.003,
+        duration: 17,
+        volBoost: 0.10,
+      },
+      {
+        tone: 'positive',
+        headline: '{ticker} receives bullish channel checks ahead of quarter',
+        body: 'Sell-side notes point to stronger demand, better pricing, and upside to consensus expectations into earnings.',
+        selfImpact: 0.028,
+        sectorImpact: 0.003,
+        duration: 12,
+        volBoost: 0.05,
+      },
+    ],
+    Consumer: [
+      {
+        tone: 'positive',
+        headline: '{ticker} posts stronger unit demand trends',
+        body: 'Demand, pricing, and operating leverage improve faster than expected, supporting upward revisions to the revenue outlook.',
+        selfImpact: 0.036,
+        sectorImpact: 0.004,
+        duration: 15,
+        volBoost: 0.07,
+      },
+      {
+        tone: 'negative',
+        headline: '{ticker} warns on margin compression',
+        body: 'Higher logistics and input costs weigh on gross margin expectations and raise concerns about near-term execution.',
+        selfImpact: -0.039,
+        sectorImpact: -0.004,
+        duration: 14,
+        volBoost: 0.08,
+      },
+      {
+        tone: 'negative',
+        headline: '{ticker} delivery and demand data miss expectations',
+        body: 'Investors dial back growth assumptions after a softer read-through from recent demand data and pricing behavior.',
+        selfImpact: -0.05,
+        sectorImpact: -0.003,
+        duration: 20,
+        volBoost: 0.1,
+      },
+    ],
+    Financials: [
+      {
+        tone: 'positive',
+        headline: '{ticker} sees net interest income hold up better than feared',
+        body: 'Credit quality remains stable while management indicates resilient client activity and strong capital return capacity.',
+        selfImpact: 0.025,
+        sectorImpact: 0.004,
+        duration: 13,
+        volBoost: 0.05,
+      },
+      {
+        tone: 'negative',
+        headline: '{ticker} increases reserve build on cautionary credit outlook',
+        body: 'Investors price in higher future losses and softer loan growth after a more guarded credit commentary update.',
+        selfImpact: -0.03,
+        sectorImpact: -0.005,
+        duration: 16,
+        volBoost: 0.07,
+      },
+    ],
+    Energy: [
+      {
+        tone: 'positive',
+        headline: '{ticker} benefits from stronger upstream realizations',
+        body: 'Higher commodity prices and resilient refining margins improve forward free cash flow expectations.',
+        selfImpact: 0.03,
+        sectorImpact: 0.006,
+        duration: 15,
+        volBoost: 0.05,
+      },
+      {
+        tone: 'negative',
+        headline: '{ticker} softens after refining margin outlook cools',
+        body: 'Margin normalization and mixed production commentary weigh on the near-term earnings setup.',
+        selfImpact: -0.026,
+        sectorImpact: -0.004,
+        duration: 12,
+        volBoost: 0.04,
+      },
+    ],
+    Index: [
+      {
+        tone: 'positive',
+        headline: 'Broad market breadth improves under the surface',
+        body: 'Cyclical participation broadens and puts a firmer floor under index-level price action.',
+        selfImpact: 0.008,
+        sectorImpact: 0.002,
+        duration: 10,
+        volBoost: -0.02,
+      },
+    ],
+  };
+
+  const dom = {
+    simClock: document.getElementById('sim-clock'),
+    marketStatus: document.getElementById('market-status'),
+    equityValue: document.getElementById('equity-value'),
+    equityChange: document.getElementById('equity-change'),
+    cashValue: document.getElementById('cash-value'),
+    bpValue: document.getElementById('bp-value'),
+    toggleRun: document.getElementById('toggle-run'),
+    speedSelect: document.getElementById('speed-select'),
+    saveBtn: document.getElementById('save-btn'),
+    helpBtn: document.getElementById('help-btn'),
+    resetBtn: document.getElementById('reset-btn'),
+    macroGrid: document.getElementById('macro-grid'),
+    watchlistBody: document.getElementById('watchlist-body'),
+    selectedName: document.getElementById('selected-name'),
+    selectedMeta: document.getElementById('selected-meta'),
+    selectedMetrics: document.getElementById('selected-metrics'),
+    indicatorRow: document.getElementById('indicator-row'),
+    chartCanvas: document.getElementById('chart-canvas'),
+    toggleSma20: document.getElementById('toggle-sma20'),
+    toggleSma50: document.getElementById('toggle-sma50'),
+    toggleBbands: document.getElementById('toggle-bbands'),
+    stockOrderForm: document.getElementById('stock-order-form'),
+    stockSymbol: document.getElementById('stock-symbol'),
+    stockAction: document.getElementById('stock-action'),
+    stockQty: document.getElementById('stock-qty'),
+    stockOrderType: document.getElementById('stock-order-type'),
+    stockTriggerWrap: document.getElementById('stock-trigger-wrap'),
+    stockTrigger: document.getElementById('stock-trigger'),
+    stockTicketEstimate: document.getElementById('stock-ticket-estimate'),
+    ordersBody: document.getElementById('orders-body'),
+    newsFeed: document.getElementById('news-feed'),
+    optionChainMeta: document.getElementById('option-chain-meta'),
+    optionSymbol: document.getElementById('option-symbol'),
+    optionExpiry: document.getElementById('option-expiry'),
+    optionsBody: document.getElementById('options-body'),
+    selectedContract: document.getElementById('selected-contract'),
+    optionOrderForm: document.getElementById('option-order-form'),
+    optionSide: document.getElementById('option-side'),
+    optionContracts: document.getElementById('option-contracts'),
+    portfolioSummary: document.getElementById('portfolio-summary'),
+    positionsBody: document.getElementById('positions-body'),
+    optionPositionsBody: document.getElementById('option-positions-body'),
+    activityLog: document.getElementById('activity-log'),
+    helpModal: document.getElementById('help-modal'),
+    closeHelp: document.getElementById('close-help'),
+  };
+
+  let state = loadState() || createInitialState();
+  let loopHandle = null;
+  let lastAutoSave = Date.now();
+
+  function createInitialState() {
+    const initialDate = new Date('2026-06-08T09:30:00');
+    const created = {
+      version: VERSION,
+      rngState: 123456789,
+      settings: {
+        running: true,
+        speed: DEFAULT_SPEED,
+        overlays: {
+          sma20: true,
+          sma50: true,
+          bbands: true,
+        },
+      },
+      market: {
+        now: initialDate.toISOString(),
+        riskFreeRate: 0.045,
+        vix: 16.05,
+        tenYearYield: 4.52,
+        oil: 92.16,
+        breadth: 0.42,
+        regime: 'Constructive',
+        dayNumber: 0,
+        sessionStep: 0,
+        activeEffects: [],
+      },
+      ui: {
+        selectedTicker: 'AAPL',
+        optionSymbol: 'AAPL',
+        optionExpiryDays: 30,
+        selectedContract: null,
+      },
+      account: {
+        cash: STARTING_CASH,
+        realizedPnL: 0,
+        equityBaseline: STARTING_CASH,
+        holdings: {},
+        options: [],
+        openOrders: [],
+        log: [],
+      },
+      assets: {},
+      news: [],
+      lastSavedAt: null,
+    };
+
+    for (const asset of BASE_ASSETS) {
+      created.assets[asset.ticker] = createAssetState(asset, initialDate, created);
+      created.account.holdings[asset.ticker] = { shares: 0, avgCost: 0 };
+    }
+
+    addNewsItem(created, {
+      headline: 'Simulation loaded with realistic seed market snapshot',
+      body: 'Prices, ranges, and macro levels start from a recent market-like baseline. From here, all future candles are generated offline by the simulator.',
+      tone: 'neutral',
+      scope: 'System',
+      now: created.market.now,
+    });
+    addLog(created, 'Simulation started with $100,000 in cash.');
+    return created;
+  }
+
+  function createAssetState(base, endDate, container) {
+    const asset = {
+      ticker: base.ticker,
+      name: base.name,
+      sector: base.sector,
+      description: base.description,
+      price: base.price,
+      prevClose: base.price,
+      open: base.price,
+      high: base.startRange ? base.startRange[1] : base.price,
+      low: base.startRange ? base.startRange[0] : base.price,
+      dayVolume: Math.round(base.baseVolume * 0.05),
+      avgVolume: base.avgVolume,
+      baseVolume: base.baseVolume,
+      marketCap: base.marketCap,
+      pe: base.pe,
+      beta: base.beta,
+      divYield: base.divYield,
+      annualVol: base.annualVol,
+      iv: base.iv,
+      anchorPrice: base.anchorPrice,
+      drift: base.drift,
+      tickSize: base.tickSize,
+      daysToEarnings: base.daysToEarnings,
+      daysToDividend: base.daysToDividend,
+      dividendPerShare: base.dividendPerShare,
+      startRange: base.startRange,
+      history: [],
+      currentBar: null,
+      momentum: 0,
+      lastShock: 0,
+      recentNewsTone: 0,
+      lastSplitDay: -999,
+    };
+
+    seedHistory(asset, endDate, container);
+    asset.open = asset.price;
+    asset.high = asset.price;
+    asset.low = asset.price;
+    asset.prevClose = asset.history.length ? asset.history[asset.history.length - 1].close : asset.price;
+    asset.dayVolume = Math.round(asset.avgVolume * 0.07);
+    startNewBar(asset, new Date(container.market.now));
+    return asset;
+  }
+
+  function seedHistory(asset, endDate, container) {
+    let t = new Date(endDate);
+    const bars = [];
+    let price = asset.price;
+    const seedBars = 140;
+
+    for (let i = 0; i < seedBars; i += 1) {
+      t = getPreviousMarketTime(t, BAR_MINUTES);
+      const drift = (asset.drift - 0.5 * asset.annualVol ** 2) * (BAR_MINUTES / (252 * 390));
+      const shock = asset.annualVol * Math.sqrt(BAR_MINUTES / (252 * 390)) * randn(container) * 0.55;
+      const marketBias = 0.002 * Math.sin(i / 14);
+      const ret = drift + shock + marketBias;
+      price = clamp(price / Math.exp(ret), 5, 5000);
+      const open = price * (1 + randomBetween(container, -0.004, 0.004));
+      const close = price;
+      const high = Math.max(open, close) * (1 + randomBetween(container, 0.001, 0.012));
+      const low = Math.min(open, close) * (1 - randomBetween(container, 0.001, 0.012));
+      bars.push({
+        time: t.toISOString(),
+        open: round2(open),
+        high: round2(high),
+        low: round2(low),
+        close: round2(close),
+        volume: Math.round(asset.avgVolume * randomBetween(container, 0.03, 0.18)),
+      });
+    }
+
+    asset.history = bars.reverse().slice(-MAX_BARS);
+    if (asset.history.length) {
+      const last = asset.history[asset.history.length - 1];
+      asset.price = last.close;
+      asset.prevClose = last.close;
+    }
+  }
+
+  function startNewBar(asset, time) {
+    asset.currentBar = {
+      time: time.toISOString(),
+      open: asset.price,
+      high: asset.price,
+      low: asset.price,
+      close: asset.price,
+      volume: 0,
+    };
+  }
+
+  function finalizeBar(asset) {
+    if (!asset.currentBar) return;
+    asset.history.push({
+      time: asset.currentBar.time,
+      open: round2(asset.currentBar.open),
+      high: round2(asset.currentBar.high),
+      low: round2(asset.currentBar.low),
+      close: round2(asset.currentBar.close),
+      volume: Math.round(asset.currentBar.volume),
+    });
+    if (asset.history.length > MAX_BARS) asset.history.shift();
+  }
+
+  function loadState() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (!parsed || parsed.version !== VERSION) return null;
+      normalizeLoadedState(parsed);
+      return parsed;
+    } catch (error) {
+      console.warn('Failed to load save:', error);
+      return null;
+    }
+  }
+
+  function normalizeLoadedState(loaded) {
+    loaded.settings ??= {};
+    loaded.settings.running = loaded.settings.running !== false;
+    loaded.settings.speed = loaded.settings.speed || DEFAULT_SPEED;
+    loaded.settings.overlays ??= { sma20: true, sma50: true, bbands: true };
+    loaded.market.activeEffects ??= [];
+    loaded.news ??= [];
+    loaded.account ??= { cash: STARTING_CASH, realizedPnL: 0, holdings: {}, options: [], openOrders: [], log: [] };
+    loaded.account.log ??= [];
+    loaded.account.options ??= [];
+    loaded.account.openOrders ??= [];
+    loaded.account.holdings ??= {};
+    loaded.ui ??= { selectedTicker: 'AAPL', optionSymbol: 'AAPL', optionExpiryDays: 30, selectedContract: null };
+
+    for (const base of BASE_ASSETS) {
+      if (!loaded.assets[base.ticker]) {
+        loaded.assets[base.ticker] = createAssetState(base, new Date(loaded.market.now), loaded);
+      }
+      loaded.account.holdings[base.ticker] ??= { shares: 0, avgCost: 0 };
+      const asset = loaded.assets[base.ticker];
+      asset.history ??= [];
+      asset.currentBar ??= null;
+      asset.recentNewsTone ??= 0;
+      asset.lastSplitDay ??= -999;
+      if (!asset.currentBar) startNewBar(asset, new Date(loaded.market.now));
+    }
+  }
+
+  function saveState(showToast = false) {
+    try {
+      state.lastSavedAt = new Date().toISOString();
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      if (showToast) addLog(state, 'Manual save completed.');
+    } catch (error) {
+      console.warn('Save failed:', error);
+      if (showToast) addLog(state, 'Save failed in this browser session.');
+    }
+  }
+
+  function resetState() {
+    if (!window.confirm('Reset the simulation and clear the autosave?')) return;
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch (error) {
+      console.warn('Could not clear save:', error);
+    }
+    state = createInitialState();
+    syncControlsFromState();
+    renderAll();
+    startLoop();
+  }
+
+  function rng(container = state) {
+    let t = (container.rngState += 0x6D2B79F5);
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  }
+
+  function randomBetween(container, min, max) {
+    return min + (max - min) * rng(container);
+  }
+
+  function randn(container = state) {
+    let u = 0;
+    let v = 0;
+    while (u === 0) u = rng(container);
+    while (v === 0) v = rng(container);
+    return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+  }
+
+  function clamp(value, min, max) {
+    return Math.max(min, Math.min(max, value));
+  }
+
+  function round2(value) {
+    return Math.round(value * 100) / 100;
+  }
+
+  function round4(value) {
+    return Math.round(value * 10000) / 10000;
+  }
+
+  function formatMoney(value, digits = 2) {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: digits,
+      maximumFractionDigits: digits,
+    }).format(value);
+  }
+
+  function formatPercent(value, digits = 2) {
+    return `${value >= 0 ? '+' : ''}${value.toFixed(digits)}%`;
+  }
+
+  function formatLargeNumber(value) {
+    if (Math.abs(value) >= 1e9) return `${(value / 1e9).toFixed(2)}B`;
+    if (Math.abs(value) >= 1e6) return `${(value / 1e6).toFixed(2)}M`;
+    if (Math.abs(value) >= 1e3) return `${(value / 1e3).toFixed(1)}K`;
+    return `${Math.round(value)}`;
+  }
+
+  function getCurrentTime() {
+    return new Date(state.market.now);
+  }
+
+  function getCurrentDateKey(date = getCurrentTime()) {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  }
+
+  function getMinutesOfDay(date) {
+    return date.getHours() * 60 + date.getMinutes();
+  }
+
+  function isWeekend(date) {
+    const day = date.getDay();
+    return day === 0 || day === 6;
+  }
+
+  function isMarketOpen(date) {
+    if (isWeekend(date)) return false;
+    const minutes = getMinutesOfDay(date);
+    return minutes >= MARKET_OPEN_MIN && minutes < MARKET_CLOSE_MIN;
+  }
+
+  function getNextOpen(date) {
+    const next = new Date(date);
+    next.setSeconds(0, 0);
+    if (!isWeekend(next) && getMinutesOfDay(next) < MARKET_OPEN_MIN) {
+      next.setHours(9, 30, 0, 0);
+      return next;
+    }
+    next.setDate(next.getDate() + 1);
+    next.setHours(9, 30, 0, 0);
+    while (isWeekend(next)) {
+      next.setDate(next.getDate() + 1);
+    }
+    return next;
+  }
+
+  function getPreviousMarketTime(date, minutesBack) {
+    let remaining = minutesBack;
+    const d = new Date(date);
+    d.setSeconds(0, 0);
+
+    while (remaining > 0) {
+      if (isWeekend(d) || getMinutesOfDay(d) <= MARKET_OPEN_MIN) {
+        d.setDate(d.getDate() - 1);
+        while (isWeekend(d)) d.setDate(d.getDate() - 1);
+        d.setHours(16, 0, 0, 0);
+      }
+      const available = getMinutesOfDay(d) - MARKET_OPEN_MIN;
+      const move = Math.min(remaining, Math.max(available, 1));
+      d.setMinutes(d.getMinutes() - move);
+      remaining -= move;
+    }
+    return d;
+  }
+
+  function minutesSinceOpen(date) {
+    return getMinutesOfDay(date) - MARKET_OPEN_MIN;
+  }
+
+  function getTotalEquity() {
+    let equity = state.account.cash;
+    for (const ticker of Object.keys(state.assets)) {
+      const position = state.account.holdings[ticker];
+      if (!position || !position.shares) continue;
+      equity += position.shares * state.assets[ticker].price;
+    }
+    for (const position of state.account.options) {
+      const mark = getOptionMid(position.underlying, position.expiry, position.strike, position.type);
+      const signed = position.side === 'long' ? 1 : -1;
+      equity += signed * mark * 100 * position.contracts;
+    }
+    return equity;
+  }
+
+  function getMarginRequirement() {
+    let margin = 0;
+    for (const ticker of Object.keys(state.assets)) {
+      const holding = state.account.holdings[ticker];
+      if (!holding || holding.shares >= 0) continue;
+      margin += Math.abs(holding.shares) * state.assets[ticker].price * 0.5;
+    }
+    for (const optionPosition of state.account.options) {
+      if (optionPosition.side !== 'short') continue;
+      margin += getShortOptionMargin(optionPosition);
+    }
+    return margin;
+  }
+
+  function getBuyingPower() {
+    return Math.max(0, getTotalEquity() - getMarginRequirement());
+  }
+
+  function addLog(container, text) {
+    container.account.log.unshift({
+      time: container.market.now,
+      text,
+    });
+    if (container.account.log.length > MAX_LOG_ITEMS) container.account.log.length = MAX_LOG_ITEMS;
+  }
+
+  function addNewsItem(container, item) {
+    container.news.unshift({
+      id: `news-${Date.now()}-${Math.floor(Math.random() * 100000)}`,
+      headline: item.headline,
+      body: item.body,
+      tone: item.tone || 'neutral',
+      scope: item.scope || 'Market',
+      time: item.now || container.market.now,
+    });
+    if (container.news.length > MAX_NEWS_ITEMS) container.news.length = MAX_NEWS_ITEMS;
+  }
+
+  function startLoop() {
+    if (loopHandle) clearInterval(loopHandle);
+    loopHandle = setInterval(() => {
+      if (state.settings.running) tickSimulation();
+    }, TICK_INTERVAL_MS);
+  }
+
+  function tickSimulation() {
+    const totalMinutes = SPEED_TO_MINUTES[String(state.settings.speed)] || 10;
+    for (let elapsed = 0; elapsed < totalMinutes; elapsed += MICRO_STEP_MINUTES) {
+      microStep();
+    }
+
+    if (Date.now() - lastAutoSave > 4000) {
+      saveState(false);
+      lastAutoSave = Date.now();
+    }
+
+    renderAll();
+  }
+
+  function microStep() {
+    let now = getCurrentTime();
+    if (!isMarketOpen(now)) {
+      const nextOpen = getNextOpen(now);
+      const crossedDay = getCurrentDateKey(nextOpen) !== getCurrentDateKey(now);
+      state.market.now = nextOpen.toISOString();
+      if (crossedDay) onNewSessionOpen(nextOpen);
+      return;
+    }
+
+    maybeGenerateIntradayEvent(now);
+
+    const sectorShocks = {
+      Technology: randn() * 0.35,
+      Consumer: randn() * 0.32,
+      Financials: randn() * 0.25,
+      Energy: randn() * 0.28,
+      Index: randn() * 0.18,
+    };
+
+    const marketVolAdj = clamp(1 + (state.market.vix - 16) / 25, 0.7, 2.4);
+    const macroDrift = (state.market.breadth - 0.5) * 0.0006 - (state.market.tenYearYield - 4.4) * 0.00005;
+    const marketShock = randn() * 0.55;
+    const dt = MICRO_STEP_MINUTES / (252 * 390);
+
+    for (const asset of Object.values(state.assets)) {
+      const effect = getNetEffectForAsset(asset.ticker, asset.sector);
+      const sectorFactor = sectorShocks[asset.sector] || 0;
+      const meanReversion = Math.log(asset.anchorPrice / asset.price) * 0.018 * dt * 390;
+      const momentum = asset.momentum * 0.0014;
+      const drift = (asset.drift - 0.5 * asset.annualVol ** 2) * dt;
+      const shock = asset.annualVol * marketVolAdj * (0.45 * asset.beta * marketShock + 0.4 * sectorFactor + 0.6 * randn()) * Math.sqrt(dt) * 0.88;
+      const eventDrift = effect.driftPerStep;
+      const ret = drift + shock + meanReversion + momentum + macroDrift + eventDrift;
+      const newPrice = clamp(asset.price * Math.exp(ret), 5, 5000);
+      const tradedVolume = asset.avgVolume * randomBetween(state, 0.002, 0.018) * (1 + Math.abs(ret) * 12 + effect.volBoost);
+
+      asset.price = round2(newPrice);
+      asset.high = Math.max(asset.high, asset.price);
+      asset.low = Math.min(asset.low, asset.price);
+      asset.dayVolume += Math.round(tradedVolume);
+      asset.lastShock = ret;
+      asset.momentum = clamp(asset.momentum * 0.75 + ret * 220, -4, 4);
+      asset.iv = clamp(asset.iv * 0.985 + (asset.annualVol * marketVolAdj + Math.abs(ret) * 8) * 0.015 + effect.volBoost * 0.02, 0.12, 1.45);
+      updateCurrentBar(asset, tradedVolume);
+    }
+
+    processOpenOrders();
+    decayEffects();
+    maybeTriggerBarFinalization();
+    processCorporateActionsIfNeeded();
+    enforceMarginRequirements();
+
+    now = new Date(getCurrentTime().getTime() + MICRO_STEP_MINUTES * 60000);
+    if (getMinutesOfDay(now) >= MARKET_CLOSE_MIN) {
+      state.market.now = now.toISOString();
+      onSessionClose();
+      const nextOpen = getNextOpen(now);
+      state.market.now = nextOpen.toISOString();
+      onNewSessionOpen(nextOpen);
+      return;
+    }
+
+    state.market.now = now.toISOString();
+    state.market.sessionStep += 1;
+  }
+
+  function getNetEffectForAsset(ticker, sector) {
+    let driftPerStep = 0;
+    let volBoost = 0;
+    for (const effect of state.market.activeEffects) {
+      const marketImpact = effect.marketImpact || 0;
+      const sectorImpact = effect.sectorImpacts?.[sector] || 0;
+      const tickerImpact = effect.tickerImpacts?.[ticker] || 0;
+      const totalImpact = marketImpact + sectorImpact + tickerImpact;
+      driftPerStep += totalImpact / Math.max(effect.remaining, 1) * 0.55;
+      volBoost += effect.volBoost || 0;
+    }
+    return { driftPerStep, volBoost };
+  }
+
+  function updateCurrentBar(asset, tradedVolume) {
+    if (!asset.currentBar) startNewBar(asset, getCurrentTime());
+    asset.currentBar.high = Math.max(asset.currentBar.high, asset.price);
+    asset.currentBar.low = Math.min(asset.currentBar.low, asset.price);
+    asset.currentBar.close = asset.price;
+    asset.currentBar.volume += tradedVolume;
+  }
+
+  function maybeTriggerBarFinalization() {
+    const now = getCurrentTime();
+    if (minutesSinceOpen(now) <= 0) return;
+    if (minutesSinceOpen(now) % BAR_MINUTES !== 0) return;
+
+    for (const asset of Object.values(state.assets)) {
+      finalizeBar(asset);
+      startNewBar(asset, now);
+    }
+  }
+
+  function decayEffects() {
+    state.market.activeEffects = state.market.activeEffects
+      .map((effect) => ({ ...effect, remaining: effect.remaining - 1 }))
+      .filter((effect) => effect.remaining > 0);
+  }
+
+  function onSessionClose() {
+    for (const asset of Object.values(state.assets)) {
+      if (asset.currentBar) {
+        finalizeBar(asset);
+        asset.currentBar = null;
+      }
+      asset.prevClose = asset.price;
+    }
+    processExpiries();
+  }
+
+  function onNewSessionOpen(nextOpen) {
+    state.market.dayNumber += 1;
+    state.market.sessionStep = 0;
+    state.market.breadth = clamp(state.market.breadth + randomBetween(state, -0.08, 0.08), 0.1, 0.9);
+    updateRegime();
+
+    for (const asset of Object.values(state.assets)) {
+      asset.open = asset.price;
+      asset.high = asset.price;
+      asset.low = asset.price;
+      asset.dayVolume = 0;
+      startNewBar(asset, nextOpen);
+      asset.daysToEarnings -= 1;
+      asset.daysToDividend -= 1;
+    }
+
+    maybeGenerateOpenEvent(nextOpen);
+    maybeGenerateEarningsAndDividendEvents(nextOpen);
+  }
+
+  function updateRegime() {
+    state.market.riskFreeRate = clamp(state.market.tenYearYield / 100, 0.01, 0.08);
+    if (state.market.vix > 24 || state.market.breadth < 0.32) state.market.regime = 'Risk-Off';
+    else if (state.market.vix < 15 && state.market.breadth > 0.58) state.market.regime = 'Momentum';
+    else if (state.market.tenYearYield > 4.85) state.market.regime = 'Rate Pressure';
+    else state.market.regime = 'Constructive';
+  }
+
+  function maybeGenerateOpenEvent(now) {
+    if (rng() < 0.42) {
+      applyEvent(generateMacroEvent(now));
+    }
+    if (rng() < 0.25) {
+      const symbols = Object.keys(state.assets).filter((ticker) => ticker !== 'SPY');
+      const ticker = symbols[Math.floor(rng() * symbols.length)];
+      applyEvent(generateCompanyEvent(ticker, now));
+    }
+  }
+
+  function maybeGenerateIntradayEvent(now) {
+    if (state.market.sessionStep % 6 === 0 && rng() < 0.11) {
+      if (rng() < 0.5) applyEvent(generateMacroEvent(now));
+      else {
+        const symbols = Object.keys(state.assets).filter((ticker) => ticker !== 'SPY');
+        const ticker = symbols[Math.floor(rng() * symbols.length)];
+        applyEvent(generateCompanyEvent(ticker, now));
+      }
+    }
+  }
+
+  function maybeGenerateEarningsAndDividendEvents(now) {
+    for (const asset of Object.values(state.assets)) {
+      if (asset.daysToEarnings <= 0 && asset.ticker !== 'SPY') {
+        applyEvent(generateEarningsEvent(asset.ticker, now));
+        asset.daysToEarnings = Math.floor(randomBetween(state, 17, 27));
+      }
+      if (asset.daysToDividend <= 0 && asset.dividendPerShare > 0) {
+        processDividend(asset);
+        asset.daysToDividend = Math.floor(randomBetween(state, 24, 38));
+      }
+      if (asset.price > 850 && state.market.dayNumber - asset.lastSplitDay > 120 && rng() < 0.02) {
+        processSplit(asset, 2);
+      }
+    }
+  }
+
+  function generateMacroEvent(now) {
+    const template = MACRO_EVENT_TEMPLATES[Math.floor(rng() * MACRO_EVENT_TEMPLATES.length)];
+    return {
+      headline: template.headline,
+      body: template.body,
+      tone: template.tone,
+      scope: 'Macro',
+      now: now.toISOString(),
+      marketImpact: template.marketImpact,
+      sectorImpacts: template.sectorImpacts,
+      tickerImpacts: {},
+      vixDelta: template.vixDelta,
+      rateDelta: template.rateDelta,
+      oilDelta: template.oilDelta,
+      duration: template.duration,
+      volBoost: template.volBoost,
+    };
+  }
+
+  function generateCompanyEvent(ticker, now) {
+    const asset = state.assets[ticker];
+    const list = COMPANY_EVENT_TEMPLATES[asset.sector] || COMPANY_EVENT_TEMPLATES.Index;
+    const template = list[Math.floor(rng() * list.length)];
+    return {
+      headline: template.headline.replace('{ticker}', ticker),
+      body: template.body,
+      tone: template.tone,
+      scope: ticker,
+      now: now.toISOString(),
+      marketImpact: 0,
+      sectorImpacts: { [asset.sector]: template.sectorImpact },
+      tickerImpacts: { [ticker]: template.selfImpact },
+      vixDelta: template.tone === 'negative' ? 0.45 : -0.25,
+      rateDelta: 0,
+      oilDelta: asset.sector === 'Energy' ? template.selfImpact * 15 : 0,
+      duration: template.duration,
+      volBoost: template.volBoost,
+    };
+  }
+
+  function generateEarningsEvent(ticker, now) {
+    const asset = state.assets[ticker];
+    const surprise = randomBetween(state, -1, 1);
+    const direction = surprise >= 0 ? 'positive' : 'negative';
+    const magnitude = clamp(Math.abs(surprise) * 0.07 + asset.annualVol * 0.03, 0.02, 0.11);
+    return {
+      headline: `${ticker} reports ${surprise >= 0 ? 'an earnings beat' : 'a disappointing quarter'}`,
+      body: surprise >= 0
+        ? 'Revenue, margins, and guidance land above expectations, triggering estimate revisions and stronger positioning.'
+        : 'A weaker revenue or guidance outcome triggers estimate cuts and a more cautious outlook from traders.',
+      tone: direction,
+      scope: ticker,
+      now: now.toISOString(),
+      marketImpact: 0,
+      sectorImpacts: { [asset.sector]: surprise * 0.004 },
+      tickerImpacts: { [ticker]: magnitude * Math.sign(surprise || 1) },
+      vixDelta: magnitude * 8,
+      rateDelta: 0,
+      oilDelta: 0,
+      duration: 18,
+      volBoost: magnitude * 0.9,
+    };
+  }
+
+  function applyEvent(event) {
+    addNewsItem(state, event);
+    addLog(state, `${event.scope}: ${event.headline}`);
+
+    state.market.vix = clamp(state.market.vix + (event.vixDelta || 0), 11, 42);
+    state.market.tenYearYield = clamp(state.market.tenYearYield + (event.rateDelta || 0), 2.2, 6.3);
+    state.market.oil = clamp(state.market.oil + (event.oilDelta || 0), 45, 180);
+    state.market.breadth = clamp(state.market.breadth + (event.marketImpact || 0) * 7, 0.08, 0.92);
+    updateRegime();
+
+    for (const asset of Object.values(state.assets)) {
+      const jump = (event.marketImpact || 0)
+        + (event.sectorImpacts?.[asset.sector] || 0)
+        + (event.tickerImpacts?.[asset.ticker] || 0);
+      if (!jump) continue;
+      asset.price = round2(clamp(asset.price * (1 + jump), 5, 5000));
+      asset.high = Math.max(asset.high, asset.price);
+      asset.low = Math.min(asset.low, asset.price);
+      asset.anchorPrice = round2(asset.anchorPrice * (1 + jump * 0.35));
+      asset.iv = clamp(asset.iv + Math.abs(jump) * 0.55 + (event.volBoost || 0) * 0.08, 0.12, 1.45);
+      asset.recentNewsTone = clamp(asset.recentNewsTone * 0.5 + jump * 10, -5, 5);
+      if (asset.currentBar) updateCurrentBar(asset, asset.avgVolume * Math.abs(jump) * 0.3);
+    }
+
+    state.market.activeEffects.push({
+      id: `fx-${Date.now()}-${Math.floor(rng() * 100000)}`,
+      marketImpact: event.marketImpact || 0,
+      sectorImpacts: event.sectorImpacts || {},
+      tickerImpacts: event.tickerImpacts || {},
+      remaining: event.duration || 10,
+      volBoost: event.volBoost || 0,
+    });
+  }
+
+  function processDividend(asset) {
+    const holding = state.account.holdings[asset.ticker];
+    if (!holding || !holding.shares) {
+      addNewsItem(state, {
+        headline: `${asset.ticker} goes ex-dividend`,
+        body: `The stock goes ex-dividend for ${formatMoney(asset.dividendPerShare)} per share.`,
+        tone: 'neutral',
+        scope: asset.ticker,
+        now: state.market.now,
+      });
+      return;
+    }
+    const cashImpact = holding.shares * asset.dividendPerShare;
+    state.account.cash += cashImpact;
+    addNewsItem(state, {
+      headline: `${asset.ticker} pays a dividend`,
+      body: `Dividend event processed at ${formatMoney(asset.dividendPerShare)} per share. Your account ${cashImpact >= 0 ? 'receives' : 'is debited'} ${formatMoney(Math.abs(cashImpact))}.`,
+      tone: cashImpact >= 0 ? 'positive' : 'negative',
+      scope: asset.ticker,
+      now: state.market.now,
+    });
+    addLog(state, `${asset.ticker} dividend processed: ${formatMoney(cashImpact)}.`);
+  }
+
+  function processSplit(asset, factor) {
+    if (factor <= 1) return;
+    asset.price = round2(asset.price / factor);
+    asset.open = round2(asset.open / factor);
+    asset.high = round2(asset.high / factor);
+    asset.low = round2(asset.low / factor);
+    asset.prevClose = round2(asset.prevClose / factor);
+    asset.anchorPrice = round2(asset.anchorPrice / factor);
+    asset.lastSplitDay = state.market.dayNumber;
+
+    const holding = state.account.holdings[asset.ticker];
+    if (holding.shares) {
+      holding.shares *= factor;
+      holding.avgCost = round4(holding.avgCost / factor);
+    }
+
+    for (const position of state.account.options) {
+      if (position.underlying !== asset.ticker) continue;
+      position.strike = round2(position.strike / factor);
+      position.contracts *= factor;
+      position.entryPremium = round4(position.entryPremium / factor);
+    }
+
+    addNewsItem(state, {
+      headline: `${asset.ticker} announces a ${factor}-for-1 stock split`,
+      body: 'The simulator adjusts shares, average cost, strikes, and premium marks to reflect the split.',
+      tone: 'positive',
+      scope: asset.ticker,
+      now: state.market.now,
+    });
+    addLog(state, `${asset.ticker} completed a ${factor}-for-1 stock split.`);
+  }
+
+  function processCorporateActionsIfNeeded() {
+    // Reserved for future corporate actions during live sessions.
+  }
+
+  function placeStockOrder({ ticker, action, quantity, orderType, trigger }) {
+    quantity = Math.max(1, Math.floor(quantity));
+    const order = {
+      id: `ord-${Date.now()}-${Math.floor(rng() * 100000)}`,
+      ticker,
+      action,
+      quantity,
+      orderType,
+      trigger: trigger ? round2(trigger) : null,
+      status: isMarketOpen(getCurrentTime()) && orderType === 'market' ? 'ready' : 'queued',
+      placedAt: state.market.now,
+    };
+    state.account.openOrders.push(order);
+    addLog(state, `${action.toUpperCase()} ${quantity} ${ticker} (${orderType}${trigger ? ` @ ${trigger}` : ''}) submitted.`);
+    processOpenOrders();
+    saveState(false);
+    renderAll();
+  }
+
+  function processOpenOrders() {
+    const now = getCurrentTime();
+    if (!isMarketOpen(now)) return;
+
+    for (const order of state.account.openOrders) {
+      if (order.status === 'filled' || order.status === 'rejected') continue;
+      const asset = state.assets[order.ticker];
+      const price = asset.price;
+      let shouldFill = false;
+
+      if (order.orderType === 'market') shouldFill = true;
+      if (order.orderType === 'limit') {
+        if (order.action === 'buy' || order.action === 'cover') shouldFill = price <= order.trigger;
+        if (order.action === 'sell' || order.action === 'short') shouldFill = price >= order.trigger;
+      }
+      if (order.orderType === 'stop') {
+        if (order.action === 'buy' || order.action === 'cover') shouldFill = price >= order.trigger;
+        if (order.action === 'sell' || order.action === 'short') shouldFill = price <= order.trigger;
+      }
+
+      if (!shouldFill) continue;
+
+      const fillPrice = getStockFillPrice(asset, order.action);
+      const ok = executeStockTrade(order.ticker, order.action, order.quantity, fillPrice, true);
+      order.status = ok ? 'filled' : 'rejected';
+      order.filledAt = state.market.now;
+      order.fillPrice = fillPrice;
+      if (!ok) order.reason = 'Insufficient cash, shares, or margin.';
+    }
+
+    state.account.openOrders = state.account.openOrders.filter((order) => order.status !== 'filled');
+  }
+
+  function getStockFillPrice(asset, action) {
+    const spreadBps = clamp(2 + state.market.vix / 3 + Math.abs(asset.lastShock) * 800, 2, 32);
+    const side = action === 'buy' || action === 'cover' ? 1 : -1;
+    return round2(asset.price * (1 + side * spreadBps / 10000));
+  }
+
+  function executeStockTrade(ticker, action, quantity, price, fromOrder = false, feeOverride = null) {
+    const holding = state.account.holdings[ticker];
+    const fees = feeOverride ?? STOCK_COMMISSION;
+    const gross = quantity * price;
+
+    if (action === 'buy') {
+      if (holding.shares < 0) {
+        const coverQty = Math.min(quantity, Math.abs(holding.shares));
+        const coverRealized = (holding.avgCost - price) * coverQty;
+        const coverGross = coverQty * price;
+        if (state.account.cash < coverGross + fees) {
+          if (!fromOrder) addLog(state, `Buy rejected: not enough cash to cover existing ${ticker} short.`);
+          return false;
+        }
+        holding.shares += coverQty;
+        state.account.cash -= coverGross + fees;
+        state.account.realizedPnL += coverRealized - fees;
+        if (holding.shares === 0) holding.avgCost = 0;
+        const remaining = quantity - coverQty;
+        addLog(state, `Covered ${coverQty} ${ticker} through a buy order @ ${formatMoney(price)}.`);
+        if (!remaining) return true;
+        return executeStockTrade(ticker, 'buy', remaining, price, fromOrder, 0);
+      }
+
+      if (state.account.cash < gross + fees) {
+        if (!fromOrder) addLog(state, `Buy rejected: not enough cash for ${quantity} ${ticker}.`);
+        return false;
+      }
+      const newShares = holding.shares + quantity;
+      holding.avgCost = newShares === 0 ? 0 : ((holding.avgCost * holding.shares) + gross) / newShares;
+      holding.shares = newShares;
+      state.account.cash -= gross + fees;
+      addLog(state, `Bought ${quantity} ${ticker} @ ${formatMoney(price)}.`);
+      return true;
+    }
+
+    if (action === 'sell') {
+      if (holding.shares < quantity || holding.shares < 0) {
+        if (!fromOrder) addLog(state, `Sell rejected: insufficient long shares in ${ticker}.`);
+        return false;
+      }
+      const pnl = (price - holding.avgCost) * quantity;
+      state.account.realizedPnL += pnl - fees;
+      holding.shares -= quantity;
+      if (holding.shares === 0) holding.avgCost = 0;
+      state.account.cash += gross - fees;
+      addLog(state, `Sold ${quantity} ${ticker} @ ${formatMoney(price)}. Realized ${formatMoney(pnl - fees)}.`);
+      return true;
+    }
+
+    if (action === 'short') {
+      if (holding.shares > 0) {
+        if (!fromOrder) addLog(state, `Short sale rejected: close the existing long position in ${ticker} first.`);
+        return false;
+      }
+      const originalShares = holding.shares;
+      const originalCash = state.account.cash;
+      const originalAvgCost = holding.avgCost;
+      holding.shares -= quantity;
+      if (holding.shares < 0 && originalShares >= 0) holding.avgCost = price;
+      else if (holding.shares < 0) {
+        const shortQtyBefore = Math.abs(originalShares);
+        const shortQtyAfter = Math.abs(holding.shares);
+        holding.avgCost = ((holding.avgCost * shortQtyBefore) + gross) / shortQtyAfter;
+      }
+      state.account.cash += gross - fees;
+      if (getMarginRequirement() > getTotalEquity()) {
+        holding.shares = originalShares;
+        holding.avgCost = originalAvgCost;
+        state.account.cash = originalCash;
+        if (!fromOrder) addLog(state, `Short sale rejected: margin would be exceeded on ${ticker}.`);
+        return false;
+      }
+      addLog(state, `Shorted ${quantity} ${ticker} @ ${formatMoney(price)}.`);
+      return true;
+    }
+
+    if (action === 'cover') {
+      const shortShares = Math.abs(Math.min(0, holding.shares));
+      if (shortShares < quantity) {
+        if (!fromOrder) addLog(state, `Cover rejected: insufficient short shares in ${ticker}.`);
+        return false;
+      }
+      const realized = (holding.avgCost - price) * quantity;
+      if (state.account.cash < gross + fees) {
+        if (!fromOrder) addLog(state, `Cover rejected: not enough cash to buy back ${ticker}.`);
+        return false;
+      }
+      holding.shares += quantity;
+      if (holding.shares === 0) holding.avgCost = 0;
+      state.account.cash -= gross + fees;
+      state.account.realizedPnL += realized - fees;
+      addLog(state, `Covered ${quantity} ${ticker} @ ${formatMoney(price)}. Realized ${formatMoney(realized - fees)}.`);
+      return true;
+    }
+
+    return false;
+  }
+
+  function getOptionExpiries() {
+    return [7, 14, 30, 60, 90].map((days) => ({
+      days,
+      iso: addDays(new Date(state.market.now), days).toISOString(),
+      label: `${days}d`,
+    }));
+  }
+
+  function addDays(date, days) {
+    const next = new Date(date);
+    next.setDate(next.getDate() + days);
+    next.setHours(16, 0, 0, 0);
+    while (isWeekend(next)) next.setDate(next.getDate() + 1);
+    return next;
+  }
+
+  function getStrikeStep(price) {
+    if (price < 100) return 2.5;
+    if (price < 250) return 5;
+    if (price < 500) return 10;
+    return 25;
+  }
+
+  function getOptionsChain(ticker, expiryIso) {
+    const asset = state.assets[ticker];
+    const expiry = new Date(expiryIso);
+    const now = new Date(state.market.now);
+    const ms = Math.max(1, expiry.getTime() - now.getTime());
+    const T = ms / (365 * 24 * 60 * 60 * 1000);
+    const step = getStrikeStep(asset.price);
+    const center = Math.round(asset.price / step) * step;
+    const strikes = [];
+    for (let i = -5; i <= 5; i += 1) strikes.push(round2(center + step * i));
+
+    const chain = strikes.map((strike) => {
+      const call = priceOption(asset.price, strike, T, state.market.riskFreeRate, asset.iv, 'call');
+      const put = priceOption(asset.price, strike, T, state.market.riskFreeRate, asset.iv, 'put');
+      return { strike, call, put };
+    });
+
+    return { chain, T, iv: asset.iv, step };
+  }
+
+  function normalCdf(x) {
+    return 0.5 * (1 + erf(x / Math.sqrt(2)));
+  }
+
+  function erf(x) {
+    const sign = x >= 0 ? 1 : -1;
+    x = Math.abs(x);
+    const a1 = 0.254829592;
+    const a2 = -0.284496736;
+    const a3 = 1.421413741;
+    const a4 = -1.453152027;
+    const a5 = 1.061405429;
+    const p = 0.3275911;
+    const t = 1 / (1 + p * x);
+    const y = 1 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
+    return sign * y;
+  }
+
+  function priceOption(S, K, T, r, sigma, type) {
+    const intrinsic = Math.max(0, type === 'call' ? S - K : K - S);
+    if (T <= 1 / 3650 || sigma <= 0.001) {
+      return {
+        mid: round2(intrinsic),
+        bid: round2(Math.max(0.01, intrinsic - 0.05)),
+        ask: round2(Math.max(0.02, intrinsic + 0.05)),
+        delta: type === 'call' ? (S > K ? 1 : 0) : (S < K ? -1 : 0),
+        gamma: 0,
+        theta: 0,
+        vega: 0,
+      };
+    }
+
+    const d1 = (Math.log(S / K) + (r + 0.5 * sigma * sigma) * T) / (sigma * Math.sqrt(T));
+    const d2 = d1 - sigma * Math.sqrt(T);
+    const call = S * normalCdf(d1) - K * Math.exp(-r * T) * normalCdf(d2);
+    const put = K * Math.exp(-r * T) * normalCdf(-d2) - S * normalCdf(-d1);
+    const mid = type === 'call' ? call : put;
+    const delta = type === 'call' ? normalCdf(d1) : normalCdf(d1) - 1;
+    const gamma = Math.exp(-(d1 * d1) / 2) / (S * sigma * Math.sqrt(2 * Math.PI * T));
+    const thetaCall = (-(S * sigma * Math.exp(-(d1 * d1) / 2)) / (2 * Math.sqrt(2 * Math.PI * T)) - r * K * Math.exp(-r * T) * normalCdf(d2)) / 365;
+    const thetaPut = (-(S * sigma * Math.exp(-(d1 * d1) / 2)) / (2 * Math.sqrt(2 * Math.PI * T)) + r * K * Math.exp(-r * T) * normalCdf(-d2)) / 365;
+    const vega = S * Math.sqrt(T) * Math.exp(-(d1 * d1) / 2) / Math.sqrt(2 * Math.PI) / 100;
+    const spread = Math.max(0.05, mid * (0.035 + state.market.vix / 450));
+    return {
+      mid: round2(mid),
+      bid: round2(Math.max(0.01, mid - spread / 2)),
+      ask: round2(Math.max(0.02, mid + spread / 2)),
+      delta: round4(delta),
+      gamma: round4(gamma),
+      theta: round4(type === 'call' ? thetaCall : thetaPut),
+      vega: round4(vega),
+    };
+  }
+
+  function getOptionMid(underlying, expiryIso, strike, type) {
+    const asset = state.assets[underlying];
+    const expiry = new Date(expiryIso);
+    const now = new Date(state.market.now);
+    const T = Math.max(1, expiry.getTime() - now.getTime()) / (365 * 24 * 60 * 60 * 1000);
+    return priceOption(asset.price, strike, T, state.market.riskFreeRate, asset.iv, type).mid;
+  }
+
+  function getOptionQuote(underlying, expiryIso, strike, type) {
+    const asset = state.assets[underlying];
+    const expiry = new Date(expiryIso);
+    const now = new Date(state.market.now);
+    const T = Math.max(1, expiry.getTime() - now.getTime()) / (365 * 24 * 60 * 60 * 1000);
+    return priceOption(asset.price, strike, T, state.market.riskFreeRate, asset.iv, type);
+  }
+
+  function getShortOptionMargin(position) {
+    const asset = state.assets[position.underlying];
+    const quote = getOptionQuote(position.underlying, position.expiry, position.strike, position.type);
+    const premium = quote.mid * 100 * position.contracts;
+    const coveredContracts = position.type === 'call'
+      ? Math.min(position.contracts, Math.floor(Math.max(0, state.account.holdings[position.underlying].shares) / 100))
+      : 0;
+    const nakedContracts = position.contracts - coveredContracts;
+    if (nakedContracts <= 0 && position.type === 'call') return 0;
+
+    if (position.type === 'call') {
+      const otm = Math.max(0, position.strike - asset.price) * 100 * nakedContracts;
+      return Math.max(asset.price * 100 * nakedContracts * 0.2 - otm + premium, asset.price * 100 * nakedContracts * 0.1 + premium);
+    }
+
+    const otm = Math.max(0, asset.price - position.strike) * 100 * position.contracts;
+    return Math.max(asset.price * 100 * position.contracts * 0.2 - otm + premium, position.strike * 100 * position.contracts * 0.1 + premium);
+  }
+
+  function placeOptionOrder(selection, side, contracts) {
+    contracts = Math.max(1, Math.floor(contracts));
+    if (!selection) {
+      addLog(state, 'Select a contract before submitting an options order.');
+      renderAll();
+      return;
+    }
+
+    const quote = getOptionQuote(selection.underlying, selection.expiry, selection.strike, selection.type);
+    const fill = side === 'long' ? quote.ask : quote.bid;
+    const fee = OPTION_FEE * contracts;
+    let remaining = contracts;
+
+    for (const position of [...state.account.options]) {
+      const sameContract = position.underlying === selection.underlying
+        && position.expiry === selection.expiry
+        && position.strike === selection.strike
+        && position.type === selection.type;
+      if (!sameContract || position.side === side || remaining <= 0) continue;
+
+      const closing = Math.min(remaining, position.contracts);
+      closeOptionPosition(position, closing, fill, fee * (closing / contracts));
+      remaining -= closing;
+    }
+
+    if (remaining <= 0) {
+      saveState(false);
+      renderAll();
+      return;
+    }
+
+    const newPosition = {
+      id: `opt-${Date.now()}-${Math.floor(rng() * 100000)}`,
+      underlying: selection.underlying,
+      expiry: selection.expiry,
+      strike: selection.strike,
+      type: selection.type,
+      side,
+      contracts: remaining,
+      entryPremium: fill,
+      openedAt: state.market.now,
+    };
+
+    const cashImpact = fill * 100 * remaining;
+    const cashBefore = state.account.cash;
+    const optionsBefore = JSON.stringify(state.account.options);
+
+    if (side === 'long') {
+      const totalCost = cashImpact + fee;
+      if (state.account.cash < totalCost) {
+        addLog(state, 'Option order rejected: not enough cash for premium.');
+        return;
+      }
+      state.account.cash -= totalCost;
+    } else {
+      state.account.cash += cashImpact - fee;
+      state.account.options.push(newPosition);
+      if (getMarginRequirement() > getTotalEquity()) {
+        state.account.cash = cashBefore;
+        state.account.options = JSON.parse(optionsBefore);
+        addLog(state, 'Option sale rejected: short-premium margin would be exceeded.');
+        return;
+      }
+    }
+
+    if (side === 'long') state.account.options.push(newPosition);
+
+    addLog(state, `${side === 'long' ? 'Bought' : 'Sold'} ${remaining} ${selection.underlying} ${selection.type.toUpperCase()} ${formatMoney(selection.strike)} exp ${formatExpiry(selection.expiry)} @ ${formatMoney(fill)}.`);
+    saveState(false);
+    renderAll();
+  }
+
+  function closeOptionPosition(position, contractsToClose, fill, fee) {
+    const sign = position.side === 'long' ? 1 : -1;
+    const pnl = sign * (fill - position.entryPremium) * 100 * contractsToClose - fee;
+    state.account.realizedPnL += pnl;
+
+    if (position.side === 'long') {
+      state.account.cash += fill * 100 * contractsToClose - fee;
+    } else {
+      state.account.cash -= fill * 100 * contractsToClose + fee;
+    }
+
+    position.contracts -= contractsToClose;
+    if (position.contracts <= 0) {
+      state.account.options = state.account.options.filter((item) => item.id !== position.id);
+    }
+
+    addLog(state, `Closed ${contractsToClose} ${position.underlying} ${position.type.toUpperCase()} ${formatMoney(position.strike)} @ ${formatMoney(fill)}. Realized ${formatMoney(pnl)}.`);
+  }
+
+  function processExpiries() {
+    const todayKey = getCurrentDateKey();
+    for (const position of [...state.account.options]) {
+      const expiryKey = getCurrentDateKey(new Date(position.expiry));
+      if (expiryKey > todayKey) continue;
+      settleExpiredOption(position);
+    }
+  }
+
+  function settleExpiredOption(position) {
+    const asset = state.assets[position.underlying];
+    const itm = position.type === 'call'
+      ? asset.price > position.strike
+      : asset.price < position.strike;
+    const shares = position.contracts * 100;
+    const intrinsic = Math.max(0, position.type === 'call' ? asset.price - position.strike : position.strike - asset.price);
+
+    if (!itm) {
+      const premiumValue = position.entryPremium * shares;
+      state.account.realizedPnL += position.side === 'long' ? -premiumValue : premiumValue;
+      if (position.side === 'long') {
+        addLog(state, `${position.underlying} ${position.type.toUpperCase()} expired worthless.`);
+      } else {
+        addLog(state, `Short ${position.underlying} ${position.type.toUpperCase()} expired worthless.`);
+      }
+      state.account.options = state.account.options.filter((item) => item.id !== position.id);
+      return;
+    }
+
+    if (position.side === 'long') {
+      if (position.type === 'call' && state.account.cash >= position.strike * shares) {
+        executeStockTrade(position.underlying, 'buy', shares, position.strike, true, 0);
+        addLog(state, `Auto-exercised long call into ${shares} ${position.underlying} shares at ${formatMoney(position.strike)}.`);
+      } else if (position.type === 'put' && state.account.holdings[position.underlying].shares >= shares) {
+        executeStockTrade(position.underlying, 'sell', shares, position.strike, true, 0);
+        addLog(state, `Auto-exercised long put and sold ${shares} ${position.underlying} shares at ${formatMoney(position.strike)}.`);
+      } else {
+        const cashSettle = intrinsic * shares;
+        state.account.cash += cashSettle;
+        state.account.realizedPnL += cashSettle - position.entryPremium * shares;
+        addLog(state, `Long option cash-settled for intrinsic value of ${formatMoney(cashSettle)}.`);
+      }
+    } else {
+      if (position.type === 'call') {
+        const longShares = Math.max(0, state.account.holdings[position.underlying].shares);
+        if (longShares >= shares) {
+          executeStockTrade(position.underlying, 'sell', shares, position.strike, true, 0);
+          addLog(state, `Covered call assignment delivered ${shares} ${position.underlying} shares at ${formatMoney(position.strike)}.`);
+        } else {
+          executeStockTrade(position.underlying, 'short', shares, position.strike, true, 0);
+          addLog(state, `Short call assignment created a ${shares}-share short in ${position.underlying} at ${formatMoney(position.strike)}.`);
+        }
+      } else {
+        executeStockTrade(position.underlying, 'buy', shares, position.strike, true, 0);
+        addLog(state, `Short put assignment purchased ${shares} ${position.underlying} shares at ${formatMoney(position.strike)}.`);
+      }
+    }
+
+    state.account.options = state.account.options.filter((item) => item.id !== position.id);
+  }
+
+  function enforceMarginRequirements() {
+    const equity = getTotalEquity();
+    const margin = getMarginRequirement();
+    if (equity >= margin) return;
+
+    addNewsItem(state, {
+      headline: 'Margin call triggered',
+      body: 'Equity fell below the portfolio margin requirement. The simulator automatically de-risks leveraged positions.',
+      tone: 'negative',
+      scope: 'Risk',
+      now: state.market.now,
+    });
+    addLog(state, 'Margin call: auto-liquidation started.');
+
+    const shorts = state.account.options.filter((position) => position.side === 'short');
+    for (const position of shorts) {
+      const fill = getOptionQuote(position.underlying, position.expiry, position.strike, position.type).ask;
+      closeOptionPosition(position, position.contracts, fill, OPTION_FEE * position.contracts);
+      if (getTotalEquity() >= getMarginRequirement()) return;
+    }
+
+    for (const [ticker, holding] of Object.entries(state.account.holdings)) {
+      if (holding.shares < 0) {
+        executeStockTrade(ticker, 'cover', Math.abs(holding.shares), getStockFillPrice(state.assets[ticker], 'cover'), true, STOCK_COMMISSION);
+        if (getTotalEquity() >= getMarginRequirement()) return;
+      }
+    }
+
+    for (const [ticker, holding] of Object.entries(state.account.holdings)) {
+      if (holding.shares > 0) {
+        executeStockTrade(ticker, 'sell', holding.shares, getStockFillPrice(state.assets[ticker], 'sell'), true, STOCK_COMMISSION);
+        if (getTotalEquity() >= getMarginRequirement()) return;
+      }
+    }
+  }
+
+  function sma(values, period) {
+    const result = Array(values.length).fill(null);
+    let sum = 0;
+    for (let i = 0; i < values.length; i += 1) {
+      sum += values[i];
+      if (i >= period) sum -= values[i - period];
+      if (i >= period - 1) result[i] = sum / period;
+    }
+    return result;
+  }
+
+  function ema(values, period) {
+    const result = Array(values.length).fill(null);
+    const k = 2 / (period + 1);
+    let prev = values[0];
+    result[0] = prev;
+    for (let i = 1; i < values.length; i += 1) {
+      prev = values[i] * k + prev * (1 - k);
+      result[i] = prev;
+    }
+    return result;
+  }
+
+  function rsi(values, period = 14) {
+    if (values.length < period + 1) return 50;
+    let gains = 0;
+    let losses = 0;
+    for (let i = values.length - period; i < values.length; i += 1) {
+      const delta = values[i] - values[i - 1];
+      if (delta >= 0) gains += delta;
+      else losses -= delta;
+    }
+    const avgGain = gains / period;
+    const avgLoss = losses / period || 1e-9;
+    const rs = avgGain / avgLoss;
+    return 100 - 100 / (1 + rs);
+  }
+
+  function macd(values) {
+    const ema12 = ema(values, 12);
+    const ema26 = ema(values, 26);
+    const line = values.map((_, i) => (ema12[i] ?? 0) - (ema26[i] ?? 0));
+    const signal = ema(line.map((v) => v ?? 0), 9);
+    const hist = line.map((v, i) => v - (signal[i] ?? 0));
+    return {
+      line,
+      signal,
+      hist,
+      currentLine: line[line.length - 1] || 0,
+      currentSignal: signal[signal.length - 1] || 0,
+      currentHist: hist[hist.length - 1] || 0,
+    };
+  }
+
+  function bollinger(values, period = 20, mult = 2) {
+    const basis = sma(values, period);
+    const upper = Array(values.length).fill(null);
+    const lower = Array(values.length).fill(null);
+    for (let i = period - 1; i < values.length; i += 1) {
+      const slice = values.slice(i - period + 1, i + 1);
+      const mean = basis[i];
+      const variance = slice.reduce((acc, value) => acc + (value - mean) ** 2, 0) / period;
+      const stdDev = Math.sqrt(variance);
+      upper[i] = mean + stdDev * mult;
+      lower[i] = mean - stdDev * mult;
+    }
+    return { basis, upper, lower };
+  }
+
+  function renderAll() {
+    populateSymbolSelects();
+    syncControlsFromState();
+    renderHeader();
+    renderMacroGrid();
+    renderWatchlist();
+    renderSelectedAsset();
+    renderChart();
+    renderStockEstimate();
+    renderOrders();
+    renderNews();
+    renderOptionsChain();
+    renderPortfolio();
+  }
+
+  function syncControlsFromState() {
+    dom.speedSelect.value = String(state.settings.speed);
+    dom.toggleRun.textContent = state.settings.running ? 'Pause' : 'Resume';
+    dom.toggleSma20.checked = !!state.settings.overlays.sma20;
+    dom.toggleSma50.checked = !!state.settings.overlays.sma50;
+    dom.toggleBbands.checked = !!state.settings.overlays.bbands;
+  }
+
+  function renderHeader() {
+    const now = getCurrentTime();
+    const open = isMarketOpen(now);
+    dom.simClock.textContent = new Intl.DateTimeFormat('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    }).format(now);
+    dom.marketStatus.textContent = open ? `Open • ${state.market.regime}` : `Closed • Next session queued`;
+    dom.marketStatus.className = `pill ${open ? 'positive' : 'warning'}`;
+
+    const equity = getTotalEquity();
+    const change = equity - state.account.equityBaseline;
+    dom.equityValue.textContent = formatMoney(equity);
+    dom.equityChange.textContent = `${formatMoney(change)} (${formatPercent((change / state.account.equityBaseline) * 100)})`;
+    dom.equityChange.className = change >= 0 ? 'positive-text' : 'negative-text';
+    dom.cashValue.textContent = formatMoney(state.account.cash);
+    dom.bpValue.textContent = `BP: ${formatMoney(getBuyingPower())}`;
+  }
+
+  function renderMacroGrid() {
+    const items = [
+      { label: 'SPY', value: formatMoney(state.assets.SPY.price), sub: formatPercent(getDayPct(state.assets.SPY)) },
+      { label: 'VIX', value: state.market.vix.toFixed(2), sub: state.market.regime },
+      { label: '10Y Yield', value: `${state.market.tenYearYield.toFixed(2)}%`, sub: 'Risk-free proxy' },
+      { label: 'WTI Oil', value: formatMoney(state.market.oil), sub: 'Energy input' },
+      { label: 'Breadth', value: `${Math.round(state.market.breadth * 100)}%`, sub: 'Advancing tone' },
+      { label: 'Margin Used', value: formatMoney(getMarginRequirement()), sub: 'Portfolio leverage' },
+    ];
+
+    dom.macroGrid.innerHTML = items.map((item) => `
+      <div class="metric-card">
+        <span class="kicker">${item.label}</span>
+        <strong>${item.value}</strong>
+        <span class="muted">${item.sub}</span>
+      </div>
+    `).join('');
+  }
+
+  function getDayPct(asset) {
+    return ((asset.price - asset.prevClose) / asset.prevClose) * 100;
+  }
+
+  function renderWatchlist() {
+    const selected = state.ui.selectedTicker;
+    dom.watchlistBody.innerHTML = Object.values(state.assets).map((asset) => {
+      const closes = asset.history.slice(-40).map((bar) => bar.close).concat(asset.price);
+      const currentRsi = rsi(closes);
+      const pct = getDayPct(asset);
+      return `
+        <tr data-ticker="${asset.ticker}" class="${selected === asset.ticker ? 'selected' : ''}">
+          <td><strong>${asset.ticker}</strong><br /><small class="muted">${asset.sector}</small></td>
+          <td>${formatMoney(asset.price)}</td>
+          <td class="${pct >= 0 ? 'positive-text' : 'negative-text'}">${formatPercent(pct)}</td>
+          <td>${formatLargeNumber(asset.dayVolume || asset.baseVolume)}</td>
+          <td>${currentRsi.toFixed(1)}</td>
+          <td>${asset.beta.toFixed(2)}</td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  function renderSelectedAsset() {
+    const asset = state.assets[state.ui.selectedTicker];
+    if (!asset) return;
+    const pct = getDayPct(asset);
+    dom.selectedName.textContent = `${asset.name} (${asset.ticker})`;
+    dom.selectedMeta.textContent = `${asset.sector} • ${asset.description}`;
+
+    const metrics = [
+      { label: 'Price', value: formatMoney(asset.price), tone: pct >= 0 ? 'positive' : 'negative' },
+      { label: 'Day Change', value: formatPercent(pct), tone: pct >= 0 ? 'positive' : 'negative' },
+      { label: 'Day Range', value: `${formatMoney(asset.low)} — ${formatMoney(asset.high)}` },
+      { label: 'Volume', value: formatLargeNumber(asset.dayVolume) },
+      { label: 'P/E', value: asset.pe ? asset.pe.toFixed(1) : '—' },
+      { label: 'Dividend', value: `${asset.divYield.toFixed(2)}%` },
+      { label: 'Implied Vol', value: `${(asset.iv * 100).toFixed(1)}%` },
+      { label: 'Market Cap', value: asset.marketCap },
+    ];
+
+    dom.selectedMetrics.innerHTML = metrics.map((metric) => `
+      <div class="metric-card">
+        <span class="kicker">${metric.label}</span>
+        <strong class="${metric.tone ? `${metric.tone}-text` : ''}">${metric.value}</strong>
+      </div>
+    `).join('');
+
+    const closes = asset.history.map((bar) => bar.close).concat(asset.price);
+    const currentRsi = rsi(closes);
+    const currentMacd = macd(closes);
+    dom.indicatorRow.innerHTML = `
+      <div class="metric-card"><span class="kicker">RSI 14</span><strong class="${currentRsi > 70 ? 'warning-text' : currentRsi < 30 ? 'positive-text' : ''}">${currentRsi.toFixed(1)}</strong><span class="muted">Momentum oscillator</span></div>
+      <div class="metric-card"><span class="kicker">MACD</span><strong class="${currentMacd.currentLine >= currentMacd.currentSignal ? 'positive-text' : 'negative-text'}">${currentMacd.currentLine.toFixed(2)}</strong><span class="muted">Signal ${currentMacd.currentSignal.toFixed(2)}</span></div>
+      <div class="metric-card"><span class="kicker">Anchor vs Price</span><strong>${formatPercent(((asset.anchorPrice - asset.price) / asset.price) * 100)}</strong><span class="muted">Mean-reversion gap</span></div>
+      <div class="metric-card"><span class="kicker">Next Earnings</span><strong>${asset.daysToEarnings < 900 ? `${asset.daysToEarnings} trading days` : 'N/A'}</strong><span class="muted">Catalyst clock</span></div>
+    `;
+  }
+
+  function renderChart() {
+    const canvas = dom.chartCanvas;
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = Math.max(800, Math.floor(rect.width * dpr));
+    canvas.height = Math.floor(500 * dpr);
+    const ctx = canvas.getContext('2d');
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.scale(dpr, dpr);
+
+    const width = rect.width;
+    const height = 500;
+    ctx.clearRect(0, 0, width, height);
+
+    const asset = state.assets[state.ui.selectedTicker];
+    const bars = asset.history.slice(-78);
+    if (!bars.length) return;
+
+    const closes = bars.map((bar) => bar.close);
+    const sma20 = sma(closes, 20);
+    const sma50 = sma(closes, 50);
+    const bb = bollinger(closes, 20, 2);
+    const rsiSeries = bars.map((_, idx) => rsi(closes.slice(0, idx + 1).length > 15 ? closes.slice(0, idx + 1) : closes.slice(0, idx + 2)));
+    const macdSeries = macd(closes);
+
+    const priceTop = 20;
+    const priceHeight = 275;
+    const volumeTop = 315;
+    const volumeHeight = 70;
+    const rsiTop = 395;
+    const rsiHeight = 45;
+    const macdTop = 450;
+    const macdHeight = 35;
+    const leftPad = 58;
+    const rightPad = 18;
+    const plotWidth = width - leftPad - rightPad;
+    const candleWidth = Math.max(4, plotWidth / bars.length * 0.65);
+
+    const highs = bars.map((bar) => bar.high);
+    const lows = bars.map((bar) => bar.low);
+    const overlayVals = [];
+    if (state.settings.overlays.sma20) overlayVals.push(...sma20.filter(Boolean));
+    if (state.settings.overlays.sma50) overlayVals.push(...sma50.filter(Boolean));
+    if (state.settings.overlays.bbands) overlayVals.push(...bb.upper.filter(Boolean), ...bb.lower.filter(Boolean));
+
+    const priceMax = Math.max(...highs, ...(overlayVals.length ? overlayVals : highs)) * 1.015;
+    const priceMin = Math.min(...lows, ...(overlayVals.length ? overlayVals : lows)) * 0.985;
+    const volumeMax = Math.max(...bars.map((bar) => bar.volume), 1);
+    const macdMax = Math.max(...macdSeries.hist.map((value) => Math.abs(value)), 0.0001);
+
+    drawGrid(ctx, leftPad, priceTop, plotWidth, priceHeight, 5);
+    drawGrid(ctx, leftPad, volumeTop, plotWidth, volumeHeight, 2);
+    drawGrid(ctx, leftPad, rsiTop, plotWidth, rsiHeight, 2);
+    drawGrid(ctx, leftPad, macdTop, plotWidth, macdHeight, 2);
+
+    bars.forEach((bar, index) => {
+      const x = leftPad + (plotWidth / bars.length) * index + plotWidth / bars.length / 2;
+      const openY = scaleValue(bar.open, priceMin, priceMax, priceTop + priceHeight, priceTop);
+      const closeY = scaleValue(bar.close, priceMin, priceMax, priceTop + priceHeight, priceTop);
+      const highY = scaleValue(bar.high, priceMin, priceMax, priceTop + priceHeight, priceTop);
+      const lowY = scaleValue(bar.low, priceMin, priceMax, priceTop + priceHeight, priceTop);
+      const up = bar.close >= bar.open;
+      ctx.strokeStyle = up ? '#31d18c' : '#ff6a6a';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(x, highY);
+      ctx.lineTo(x, lowY);
+      ctx.stroke();
+
+      ctx.fillStyle = up ? 'rgba(49, 209, 140, 0.85)' : 'rgba(255, 106, 106, 0.85)';
+      const bodyTop = Math.min(openY, closeY);
+      const bodyHeight = Math.max(2, Math.abs(closeY - openY));
+      ctx.fillRect(x - candleWidth / 2, bodyTop, candleWidth, bodyHeight);
+
+      const volumeHeightPx = scaleValue(bar.volume, 0, volumeMax, 0, volumeHeight);
+      ctx.fillStyle = up ? 'rgba(49, 209, 140, 0.28)' : 'rgba(255, 106, 106, 0.28)';
+      ctx.fillRect(x - candleWidth / 2, volumeTop + volumeHeight - volumeHeightPx, candleWidth, volumeHeightPx);
+    });
+
+    if (state.settings.overlays.bbands) {
+      drawLineSeries(ctx, bb.upper, bars.length, leftPad, plotWidth, priceTop, priceHeight, priceMin, priceMax, 'rgba(143, 124, 255, 0.55)', 1.2);
+      drawLineSeries(ctx, bb.lower, bars.length, leftPad, plotWidth, priceTop, priceHeight, priceMin, priceMax, 'rgba(143, 124, 255, 0.55)', 1.2);
+    }
+    if (state.settings.overlays.sma20) drawLineSeries(ctx, sma20, bars.length, leftPad, plotWidth, priceTop, priceHeight, priceMin, priceMax, '#62a8ff', 1.6);
+    if (state.settings.overlays.sma50) drawLineSeries(ctx, sma50, bars.length, leftPad, plotWidth, priceTop, priceHeight, priceMin, priceMax, '#ffd15a', 1.4);
+
+    drawRsiSection(ctx, rsiSeries, leftPad, plotWidth, rsiTop, rsiHeight);
+    drawMacdSection(ctx, macdSeries, leftPad, plotWidth, macdTop, macdHeight, macdMax);
+    drawAxesLabels(ctx, asset, bars, leftPad, rightPad, width, priceTop, priceHeight, priceMin, priceMax, volumeTop, rsiTop, macdTop, height);
+  }
+
+  function drawGrid(ctx, left, top, width, height, rows) {
+    ctx.strokeStyle = 'rgba(130, 164, 199, 0.12)';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= rows; i += 1) {
+      const y = top + (height / rows) * i;
+      ctx.beginPath();
+      ctx.moveTo(left, y);
+      ctx.lineTo(left + width, y);
+      ctx.stroke();
+    }
+  }
+
+  function drawLineSeries(ctx, values, count, leftPad, plotWidth, top, height, min, max, color, width = 1.4) {
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
+    ctx.beginPath();
+    let started = false;
+    values.forEach((value, index) => {
+      if (value == null) return;
+      const x = leftPad + (plotWidth / count) * index + plotWidth / count / 2;
+      const y = scaleValue(value, min, max, top + height, top);
+      if (!started) {
+        ctx.moveTo(x, y);
+        started = true;
+      } else {
+        ctx.lineTo(x, y);
+      }
+    });
+    if (started) ctx.stroke();
+  }
+
+  function drawRsiSection(ctx, values, leftPad, plotWidth, top, height) {
+    ctx.strokeStyle = 'rgba(255, 207, 90, 0.35)';
+    [30, 70].forEach((level) => {
+      const y = scaleValue(level, 0, 100, top + height, top);
+      ctx.beginPath();
+      ctx.moveTo(leftPad, y);
+      ctx.lineTo(leftPad + plotWidth, y);
+      ctx.stroke();
+    });
+    drawLineSeries(ctx, values, values.length, leftPad, plotWidth, top, height, 0, 100, '#7fd6ff', 1.35);
+  }
+
+  function drawMacdSection(ctx, macdSeries, leftPad, plotWidth, top, height, macdMax) {
+    const bars = macdSeries.hist;
+    bars.forEach((value, index) => {
+      const x = leftPad + (plotWidth / bars.length) * index + plotWidth / bars.length / 2;
+      const zeroY = scaleValue(0, -macdMax, macdMax, top + height, top);
+      const y = scaleValue(value, -macdMax, macdMax, top + height, top);
+      ctx.strokeStyle = value >= 0 ? 'rgba(49, 209, 140, 0.8)' : 'rgba(255, 106, 106, 0.8)';
+      ctx.lineWidth = Math.max(2, plotWidth / bars.length * 0.42);
+      ctx.beginPath();
+      ctx.moveTo(x, zeroY);
+      ctx.lineTo(x, y);
+      ctx.stroke();
+    });
+    drawLineSeries(ctx, macdSeries.line, bars.length, leftPad, plotWidth, top, height, -macdMax, macdMax, '#62a8ff', 1.4);
+    drawLineSeries(ctx, macdSeries.signal, bars.length, leftPad, plotWidth, top, height, -macdMax, macdMax, '#ffd15a', 1.3);
+  }
+
+  function drawAxesLabels(ctx, asset, bars, leftPad, rightPad, width, priceTop, priceHeight, priceMin, priceMax, volumeTop, rsiTop, macdTop, height) {
+    ctx.fillStyle = 'rgba(227, 238, 247, 0.92)';
+    ctx.font = '12px Inter, system-ui, sans-serif';
+    ctx.textAlign = 'right';
+    for (let i = 0; i <= 5; i += 1) {
+      const value = priceMax - ((priceMax - priceMin) / 5) * i;
+      const y = priceTop + (priceHeight / 5) * i;
+      ctx.fillText(formatMoney(value), leftPad - 8, y + 4);
+    }
+    ctx.fillText('Volume', leftPad - 8, volumeTop + 12);
+    ctx.fillText('RSI', leftPad - 8, rsiTop + 12);
+    ctx.fillText('MACD', leftPad - 8, macdTop + 12);
+    ctx.textAlign = 'left';
+    ctx.fillText(`${asset.ticker} • ${bars.length} bars`, leftPad, 14);
+
+    ctx.textAlign = 'center';
+    const step = Math.ceil(bars.length / 6);
+    for (let i = 0; i < bars.length; i += step) {
+      const bar = bars[i];
+      const x = leftPad + ((width - leftPad - rightPad) / bars.length) * i + (width - leftPad - rightPad) / bars.length / 2;
+      const date = new Date(bar.time);
+      const label = `${date.getMonth() + 1}/${date.getDate()} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+      ctx.fillStyle = 'rgba(145, 164, 186, 0.8)';
+      ctx.fillText(label, x, height - 8);
+    }
+  }
+
+  function scaleValue(value, min, max, outMin, outMax) {
+    if (max === min) return (outMin + outMax) / 2;
+    const ratio = (value - min) / (max - min);
+    return outMin + (outMax - outMin) * ratio;
+  }
+
+  function renderStockEstimate() {
+    const ticker = dom.stockSymbol.value || state.ui.selectedTicker;
+    const quantity = Math.max(1, Number(dom.stockQty.value || 1));
+    const orderType = dom.stockOrderType.value;
+    const action = dom.stockAction.value;
+    const asset = state.assets[ticker] || state.assets[state.ui.selectedTicker];
+    const marketPx = getStockFillPrice(asset, action);
+    const trigger = Number(dom.stockTrigger.value || asset.price);
+    const reference = orderType === 'market' ? marketPx : trigger;
+    const gross = reference * quantity;
+    dom.stockTicketEstimate.textContent = `${orderType.toUpperCase()} ${action.toUpperCase()} • Est. notional ${formatMoney(gross)} • Fees ${formatMoney(STOCK_COMMISSION)}`;
+    dom.stockTriggerWrap.style.display = orderType === 'market' ? 'none' : 'grid';
+  }
+
+  function renderOrders() {
+    if (!state.account.openOrders.length) {
+      dom.ordersBody.innerHTML = '<tr><td colspan="6" class="muted">No open orders.</td></tr>';
+      return;
+    }
+    dom.ordersBody.innerHTML = state.account.openOrders.map((order) => `
+      <tr>
+        <td>${order.orderType.toUpperCase()}</td>
+        <td>${order.action.toUpperCase()}</td>
+        <td>${order.ticker}</td>
+        <td>${order.quantity}</td>
+        <td>${order.trigger ? formatMoney(order.trigger) : 'MKT'}</td>
+        <td>${order.status}</td>
+      </tr>
+    `).join('');
+  }
+
+  function renderNews() {
+    if (!state.news.length) {
+      dom.newsFeed.innerHTML = '<div class="news-item muted">No news yet.</div>';
+      return;
+    }
+    dom.newsFeed.innerHTML = state.news.map((item) => `
+      <article class="news-item">
+        <div class="news-meta">
+          <span class="badge">${item.scope}</span>
+          <span>${formatNewsTime(item.time)}</span>
+        </div>
+        <h4 class="${item.tone === 'positive' ? 'positive-text' : item.tone === 'negative' ? 'negative-text' : ''}">${item.headline}</h4>
+        <p>${item.body}</p>
+      </article>
+    `).join('');
+  }
+
+  function formatNewsTime(timeIso) {
+    const d = new Date(timeIso);
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    }).format(d);
+  }
+
+  function renderOptionsChain() {
+    populateSymbolSelects();
+    const ticker = state.ui.optionSymbol || 'AAPL';
+    const expiries = getOptionExpiries();
+    const expiryDays = state.ui.optionExpiryDays || 30;
+    const expiryObj = expiries.find((entry) => entry.days === Number(expiryDays)) || expiries[2];
+    state.ui.optionExpiryDays = expiryObj.days;
+
+    if (
+      state.ui.selectedContract
+      && (state.ui.selectedContract.underlying !== ticker || state.ui.selectedContract.expiry !== expiryObj.iso)
+    ) {
+      state.ui.selectedContract = null;
+    }
+
+    dom.optionChainMeta.textContent = `${ticker} • IV ${(state.assets[ticker].iv * 100).toFixed(1)}% • RF ${(state.market.riskFreeRate * 100).toFixed(2)}% • Expiry ${expiryObj.label}`;
+    dom.optionExpiry.innerHTML = expiries.map((entry) => `<option value="${entry.days}" ${entry.days === expiryObj.days ? 'selected' : ''}>${entry.label}</option>`).join('');
+
+    const chainData = getOptionsChain(ticker, expiryObj.iso);
+    dom.optionsBody.innerHTML = chainData.chain.map((row) => `
+      <tr>
+        <td>${formatMoney(row.call.bid)}</td>
+        <td>${formatMoney(row.call.ask)}</td>
+        <td class="${row.call.delta >= 0 ? 'positive-text' : ''}">${row.call.delta.toFixed(2)}</td>
+        <td><strong>${formatMoney(row.strike)}</strong></td>
+        <td class="${row.put.delta <= 0 ? 'negative-text' : ''}">${row.put.delta.toFixed(2)}</td>
+        <td>${formatMoney(row.put.bid)}</td>
+        <td>${formatMoney(row.put.ask)}</td>
+        <td>
+          <div class="contract-button-row">
+            <button type="button" data-option-select='${JSON.stringify({ underlying: ticker, expiry: expiryObj.iso, strike: row.strike, type: 'call' })}'>Call</button>
+            <button type="button" data-option-select='${JSON.stringify({ underlying: ticker, expiry: expiryObj.iso, strike: row.strike, type: 'put' })}'>Put</button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+
+    updateSelectedContractCard();
+  }
+
+  function updateSelectedContractCard() {
+    const selection = state.ui.selectedContract;
+    if (!selection) {
+      dom.selectedContract.textContent = 'Select a contract from the chain.';
+      return;
+    }
+    const quote = getOptionQuote(selection.underlying, selection.expiry, selection.strike, selection.type);
+    dom.selectedContract.innerHTML = `
+      <strong>${selection.underlying} ${selection.type.toUpperCase()} ${formatMoney(selection.strike)}</strong><br />
+      Expiry ${formatExpiry(selection.expiry)} • Bid ${formatMoney(quote.bid)} / Ask ${formatMoney(quote.ask)} • Δ ${quote.delta.toFixed(2)} • Θ ${quote.theta.toFixed(3)} /day
+    `;
+  }
+
+  function formatExpiry(iso) {
+    return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: '2-digit' }).format(new Date(iso));
+  }
+
+  function populateSymbolSelects() {
+    const symbols = Object.keys(state.assets);
+    const optionSymbols = [...symbols];
+    if (!dom.stockSymbol.options.length) {
+      dom.stockSymbol.innerHTML = symbols.map((ticker) => `<option value="${ticker}">${ticker}</option>`).join('');
+      dom.optionSymbol.innerHTML = optionSymbols.map((ticker) => `<option value="${ticker}">${ticker}</option>`).join('');
+    }
+    dom.stockSymbol.value = state.ui.selectedTicker;
+    dom.optionSymbol.value = state.ui.optionSymbol;
+  }
+
+  function renderPortfolio() {
+    const equity = getTotalEquity();
+    const margin = getMarginRequirement();
+    const unrealized = getUnrealizedPnL();
+    const greeks = getPortfolioGreeks();
+    const summary = [
+      { label: 'Realized P/L', value: formatMoney(state.account.realizedPnL), tone: state.account.realizedPnL >= 0 ? 'positive' : 'negative' },
+      { label: 'Unrealized P/L', value: formatMoney(unrealized), tone: unrealized >= 0 ? 'positive' : 'negative' },
+      { label: 'Net Liq', value: formatMoney(equity) },
+      { label: 'Margin Used', value: formatMoney(margin) },
+      { label: 'Delta', value: greeks.delta.toFixed(1) },
+      { label: 'Theta / Day', value: greeks.theta.toFixed(2), tone: greeks.theta >= 0 ? 'positive' : 'negative' },
+      { label: 'Vega', value: greeks.vega.toFixed(2) },
+      { label: 'Buying Power', value: formatMoney(getBuyingPower()) },
+    ];
+    dom.portfolioSummary.innerHTML = summary.map((item) => `
+      <div class="metric-card">
+        <span class="kicker">${item.label}</span>
+        <strong class="${item.tone ? `${item.tone}-text` : ''}">${item.value}</strong>
+      </div>
+    `).join('');
+
+    const equityRows = Object.entries(state.account.holdings)
+      .filter(([, holding]) => holding.shares !== 0)
+      .map(([ticker, holding]) => {
+        const mark = state.assets[ticker].price;
+        const unrealizedPnl = holding.shares >= 0
+          ? (mark - holding.avgCost) * holding.shares
+          : (holding.avgCost - mark) * Math.abs(holding.shares);
+        return `
+          <tr>
+            <td>${ticker}</td>
+            <td>${holding.shares}</td>
+            <td>${formatMoney(holding.avgCost)}</td>
+            <td>${formatMoney(mark)}</td>
+            <td class="${unrealizedPnl >= 0 ? 'positive-text' : 'negative-text'}">${formatMoney(unrealizedPnl)}</td>
+          </tr>
+        `;
+      });
+    dom.positionsBody.innerHTML = equityRows.length ? equityRows.join('') : '<tr><td colspan="5" class="muted">No equity positions.</td></tr>';
+
+    const optionRows = state.account.options.map((position) => {
+      const quote = getOptionQuote(position.underlying, position.expiry, position.strike, position.type);
+      const pnl = (position.side === 'long' ? 1 : -1) * (quote.mid - position.entryPremium) * 100 * position.contracts;
+      return `
+        <tr>
+          <td>${position.underlying} ${position.type.toUpperCase()} ${formatMoney(position.strike)}<br /><small>${formatExpiry(position.expiry)}</small></td>
+          <td>${position.side}</td>
+          <td>${position.contracts}</td>
+          <td>${formatMoney(position.entryPremium)}</td>
+          <td>${formatMoney(quote.mid)}</td>
+          <td class="${pnl >= 0 ? 'positive-text' : 'negative-text'}">${formatMoney(pnl)}</td>
+        </tr>
+      `;
+    });
+    dom.optionPositionsBody.innerHTML = optionRows.length ? optionRows.join('') : '<tr><td colspan="6" class="muted">No options positions.</td></tr>';
+
+    dom.activityLog.innerHTML = state.account.log.map((item) => `
+      <div class="log-item">
+        <div class="log-meta"><span>${formatNewsTime(item.time)}</span></div>
+        <div>${item.text}</div>
+      </div>
+    `).join('');
+  }
+
+  function getUnrealizedPnL() {
+    let total = 0;
+    for (const [ticker, holding] of Object.entries(state.account.holdings)) {
+      if (!holding.shares) continue;
+      const mark = state.assets[ticker].price;
+      total += holding.shares >= 0
+        ? (mark - holding.avgCost) * holding.shares
+        : (holding.avgCost - mark) * Math.abs(holding.shares);
+    }
+    for (const position of state.account.options) {
+      const mark = getOptionMid(position.underlying, position.expiry, position.strike, position.type);
+      total += (position.side === 'long' ? 1 : -1) * (mark - position.entryPremium) * 100 * position.contracts;
+    }
+    return total;
+  }
+
+  function getPortfolioGreeks() {
+    let delta = 0;
+    let theta = 0;
+    let vega = 0;
+    for (const [ticker, holding] of Object.entries(state.account.holdings)) {
+      delta += holding.shares;
+    }
+    for (const position of state.account.options) {
+      const quote = getOptionQuote(position.underlying, position.expiry, position.strike, position.type);
+      const sign = position.side === 'long' ? 1 : -1;
+      delta += sign * quote.delta * 100 * position.contracts;
+      theta += sign * quote.theta * 100 * position.contracts;
+      vega += sign * quote.vega * 100 * position.contracts;
+    }
+    return { delta, theta, vega };
+  }
+
+  function bindEvents() {
+    dom.toggleRun.addEventListener('click', () => {
+      state.settings.running = !state.settings.running;
+      syncControlsFromState();
+    });
+
+    dom.speedSelect.addEventListener('change', (event) => {
+      state.settings.speed = Number(event.target.value);
+      saveState(false);
+    });
+
+    dom.saveBtn.addEventListener('click', () => {
+      saveState(true);
+      renderAll();
+    });
+
+    dom.helpBtn.addEventListener('click', () => {
+      dom.helpModal.classList.remove('hidden');
+    });
+
+    dom.closeHelp.addEventListener('click', () => {
+      dom.helpModal.classList.add('hidden');
+    });
+
+    dom.helpModal.addEventListener('click', (event) => {
+      if (event.target === dom.helpModal) dom.helpModal.classList.add('hidden');
+    });
+
+    dom.resetBtn.addEventListener('click', resetState);
+
+    dom.toggleSma20.addEventListener('change', (event) => {
+      state.settings.overlays.sma20 = event.target.checked;
+      renderChart();
+    });
+    dom.toggleSma50.addEventListener('change', (event) => {
+      state.settings.overlays.sma50 = event.target.checked;
+      renderChart();
+    });
+    dom.toggleBbands.addEventListener('change', (event) => {
+      state.settings.overlays.bbands = event.target.checked;
+      renderChart();
+    });
+
+    dom.watchlistBody.addEventListener('click', (event) => {
+      const row = event.target.closest('tr[data-ticker]');
+      if (!row) return;
+      const ticker = row.dataset.ticker;
+      state.ui.selectedTicker = ticker;
+      state.ui.optionSymbol = ticker;
+      dom.stockSymbol.value = ticker;
+      dom.optionSymbol.value = ticker;
+      renderAll();
+    });
+
+    dom.stockSymbol.addEventListener('change', (event) => {
+      state.ui.selectedTicker = event.target.value;
+      renderAll();
+    });
+    dom.stockAction.addEventListener('change', renderStockEstimate);
+    dom.stockQty.addEventListener('input', renderStockEstimate);
+    dom.stockOrderType.addEventListener('change', renderStockEstimate);
+    dom.stockTrigger.addEventListener('input', renderStockEstimate);
+
+    dom.stockOrderForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+      placeStockOrder({
+        ticker: dom.stockSymbol.value,
+        action: dom.stockAction.value,
+        quantity: Number(dom.stockQty.value),
+        orderType: dom.stockOrderType.value,
+        trigger: Number(dom.stockTrigger.value),
+      });
+    });
+
+    dom.optionSymbol.addEventListener('change', (event) => {
+      state.ui.optionSymbol = event.target.value;
+      state.ui.selectedContract = null;
+      renderOptionsChain();
+    });
+    dom.optionExpiry.addEventListener('change', (event) => {
+      state.ui.optionExpiryDays = Number(event.target.value);
+      state.ui.selectedContract = null;
+      renderOptionsChain();
+    });
+
+    dom.optionsBody.addEventListener('click', (event) => {
+      const button = event.target.closest('button[data-option-select]');
+      if (!button) return;
+      state.ui.selectedContract = JSON.parse(button.dataset.optionSelect);
+      updateSelectedContractCard();
+    });
+
+    dom.optionOrderForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+      placeOptionOrder(state.ui.selectedContract, dom.optionSide.value, Number(dom.optionContracts.value));
+    });
+
+    window.addEventListener('beforeunload', () => saveState(false));
+    window.addEventListener('resize', renderChart);
+  }
+
+  renderAll();
+  bindEvents();
+  startLoop();
+})();
+
+  </script>
+</body>
+</html>
