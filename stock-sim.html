@@ -216,6 +216,7 @@ h3 {
 .news-panel { grid-area: news; }
 .options-panel { grid-area: options; }
 .portfolio-panel { grid-area: portfolio; }
+.training-panel { grid-column: 1 / -1; }
 
 .panel {
   background: linear-gradient(180deg, var(--panel), var(--panel-2));
@@ -313,6 +314,30 @@ h3 {
 
 .ticket-estimate {
   color: var(--muted);
+}
+
+.order-status-card {
+  min-height: 54px;
+  align-content: center;
+  color: var(--text);
+}
+
+.order-status-card.positive {
+  color: #d9fff0;
+  border-color: rgba(49, 209, 140, 0.35);
+  background: rgba(49, 209, 140, 0.08);
+}
+
+.order-status-card.negative {
+  color: #ffe7e7;
+  border-color: rgba(255, 106, 106, 0.35);
+  background: rgba(255, 106, 106, 0.08);
+}
+
+.order-status-card.warning {
+  color: #fff1cb;
+  border-color: rgba(255, 207, 90, 0.35);
+  background: rgba(255, 207, 90, 0.08);
 }
 
 .watchlist-wrapper,
@@ -430,6 +455,86 @@ h3 {
   color: var(--muted);
 }
 
+.training-mode-buttons,
+.training-controls,
+.training-answer-group {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.training-mode-buttons button.active,
+.training-answer-group button.active {
+  border-color: rgba(126, 173, 255, 0.55);
+  background: rgba(98, 168, 255, 0.16);
+}
+
+.training-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.training-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(280px, 0.9fr);
+  gap: 16px;
+}
+
+.training-left,
+.training-right {
+  display: grid;
+  gap: 12px;
+}
+
+.training-prompt-card,
+.training-result-card,
+.training-history-card {
+  min-height: 88px;
+}
+
+.training-kicker {
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.76rem;
+  margin-bottom: 8px;
+}
+
+#training-canvas {
+  width: 100%;
+  height: auto;
+  display: block;
+  background: linear-gradient(180deg, rgba(5, 9, 16, 0.95), rgba(7, 13, 22, 0.96));
+  border: 1px solid rgba(136, 174, 214, 0.14);
+  border-radius: 18px;
+}
+
+.training-result-card.positive {
+  color: #d9fff0;
+  border-color: rgba(49, 209, 140, 0.35);
+  background: rgba(49, 209, 140, 0.08);
+}
+
+.training-result-card.negative {
+  color: #ffe8e8;
+  border-color: rgba(255, 106, 106, 0.35);
+  background: rgba(255, 106, 106, 0.08);
+}
+
+.training-result-card.warning {
+  color: #fff2cb;
+  border-color: rgba(255, 207, 90, 0.35);
+  background: rgba(255, 207, 90, 0.08);
+}
+
+.training-bullets {
+  margin: 0;
+  padding-left: 18px;
+  color: #d7e3f2;
+}
+
 .modal {
   position: fixed;
   inset: 0;
@@ -508,6 +613,10 @@ code {
       "news"
       "options"
       "portfolio";
+  }
+
+  .training-layout {
+    grid-template-columns: 1fr;
   }
 
   .form-grid {
@@ -636,7 +745,8 @@ code {
             <input id="stock-trigger" type="number" min="0.01" step="0.01" value="0.00" />
           </label>
           <div class="ticket-estimate card" id="stock-ticket-estimate">Estimated cost: —</div>
-          <button type="submit" class="primary full-width">Place Stock Order</button>
+          <div class="card order-status-card" id="stock-order-status">Ready to place a stock order.</div>
+          <button id="stock-order-btn" type="button" class="primary full-width">Place Stock Order</button>
         </form>
 
         <div class="subsection">
@@ -717,7 +827,8 @@ code {
             Contracts
             <input id="option-contracts" type="number" min="1" step="1" value="1" />
           </label>
-          <button type="submit" class="primary">Submit Options Order</button>
+          <div class="card order-status-card" id="option-order-status">Ready to place an options order.</div>
+          <button id="option-order-btn" type="button" class="primary">Submit Options Order</button>
         </form>
       </section>
 
@@ -765,6 +876,47 @@ code {
         <div class="subsection">
           <h3>Activity Log</h3>
           <div id="activity-log" class="activity-log"></div>
+        </div>
+      </section>
+
+      <section class="panel training-panel">
+        <div class="panel-header wide-gap">
+          <div>
+            <h2>Trading Technique Minigames</h2>
+            <p class="muted">Short pattern-recognition drills built from randomized historical slices in the simulator.</p>
+          </div>
+          <div class="training-mode-buttons" id="training-mode-buttons">
+            <button type="button" data-training-mode="direction">14-Day Direction</button>
+            <button type="button" data-training-mode="trend">Trend Classifier</button>
+            <button type="button" data-training-mode="breakout">Breakout or Range</button>
+          </div>
+        </div>
+        <div class="training-stats" id="training-stats"></div>
+        <div class="training-layout">
+          <div class="training-left">
+            <div class="card training-prompt-card">
+              <div class="training-kicker" id="training-kicker">Training Mode</div>
+              <h3 id="training-prompt">Loading challenge…</h3>
+              <p class="muted" id="training-meta">Preparing a randomized historical setup.</p>
+            </div>
+            <canvas id="training-canvas" width="1000" height="360" aria-label="Training challenge chart"></canvas>
+          </div>
+          <div class="training-right">
+            <div class="training-answer-group" id="training-answers"></div>
+            <div class="card training-result-card" id="training-result">Study the chart, pick your answer, then compare it with the revealed future path.</div>
+            <div class="training-controls">
+              <button type="button" id="training-reveal-btn">Reveal Future</button>
+              <button type="button" id="training-new-btn" class="primary">New Challenge</button>
+            </div>
+            <div class="card training-history-card">
+              <h3>Why these drills help</h3>
+              <ul class="training-bullets">
+                <li><strong>Direction:</strong> trains bias selection from incomplete information.</li>
+                <li><strong>Trend:</strong> encourages reading momentum versus chop.</li>
+                <li><strong>Breakout:</strong> improves support/resistance and regime awareness.</li>
+              </ul>
+            </div>
+          </div>
         </div>
       </section>
     </main>
@@ -827,8 +979,8 @@ code {
 (() => {
   'use strict';
 
-  const STORAGE_KEY = 'arena_market_sim_v1';
-  const VERSION = 1;
+  const STORAGE_KEY = 'arena_market_sim_v2';
+  const VERSION = 2;
   const STARTING_CASH = 100000;
   const MARKET_OPEN_MIN = 9 * 60 + 30;
   const MARKET_CLOSE_MIN = 16 * 60;
@@ -847,6 +999,11 @@ code {
     '2': 20,
     '4': 40,
     '8': 80,
+  };
+  const TRAINING_MODE_LABELS = {
+    direction: '14-Day Direction Drill',
+    trend: 'Trend Classifier',
+    breakout: 'Breakout or Range',
   };
 
   const BASE_ASSETS = [
@@ -1277,6 +1434,8 @@ code {
     stockTriggerWrap: document.getElementById('stock-trigger-wrap'),
     stockTrigger: document.getElementById('stock-trigger'),
     stockTicketEstimate: document.getElementById('stock-ticket-estimate'),
+    stockOrderStatus: document.getElementById('stock-order-status'),
+    stockOrderBtn: document.getElementById('stock-order-btn'),
     ordersBody: document.getElementById('orders-body'),
     newsFeed: document.getElementById('news-feed'),
     optionChainMeta: document.getElementById('option-chain-meta'),
@@ -1284,6 +1443,8 @@ code {
     optionExpiry: document.getElementById('option-expiry'),
     optionsBody: document.getElementById('options-body'),
     selectedContract: document.getElementById('selected-contract'),
+    optionOrderStatus: document.getElementById('option-order-status'),
+    optionOrderBtn: document.getElementById('option-order-btn'),
     optionOrderForm: document.getElementById('option-order-form'),
     optionSide: document.getElementById('option-side'),
     optionContracts: document.getElementById('option-contracts'),
@@ -1291,6 +1452,16 @@ code {
     positionsBody: document.getElementById('positions-body'),
     optionPositionsBody: document.getElementById('option-positions-body'),
     activityLog: document.getElementById('activity-log'),
+    trainingModeButtons: document.getElementById('training-mode-buttons'),
+    trainingStats: document.getElementById('training-stats'),
+    trainingKicker: document.getElementById('training-kicker'),
+    trainingPrompt: document.getElementById('training-prompt'),
+    trainingMeta: document.getElementById('training-meta'),
+    trainingCanvas: document.getElementById('training-canvas'),
+    trainingAnswers: document.getElementById('training-answers'),
+    trainingResult: document.getElementById('training-result'),
+    trainingRevealBtn: document.getElementById('training-reveal-btn'),
+    trainingNewBtn: document.getElementById('training-new-btn'),
     helpModal: document.getElementById('help-modal'),
     closeHelp: document.getElementById('close-help'),
   };
@@ -1330,6 +1501,8 @@ code {
         optionSymbol: 'AAPL',
         optionExpiryDays: 30,
         selectedContract: null,
+        stockOrderStatus: { text: 'Ready to place a stock order.', tone: 'neutral' },
+        optionOrderStatus: { text: 'Ready to place an options order.', tone: 'neutral' },
       },
       account: {
         cash: STARTING_CASH,
@@ -1342,6 +1515,21 @@ code {
       },
       assets: {},
       news: [],
+      training: {
+        mode: 'direction',
+        score: 0,
+        correct: 0,
+        played: 0,
+        streak: 0,
+        bestStreak: 0,
+        byMode: {
+          direction: { played: 0, correct: 0 },
+          trend: { played: 0, correct: 0 },
+          breakout: { played: 0, correct: 0 },
+        },
+        currentChallenge: null,
+        lastResult: { text: 'Study the chart, pick your answer, then compare it with the revealed future path.', tone: 'neutral' },
+      },
       lastSavedAt: null,
     };
 
@@ -1397,6 +1585,7 @@ code {
     };
 
     seedHistory(asset, endDate, container);
+    seedDailyArchive(asset, endDate, container);
     asset.open = asset.price;
     asset.high = asset.price;
     asset.low = asset.price;
@@ -1439,6 +1628,50 @@ code {
       asset.price = last.close;
       asset.prevClose = last.close;
     }
+  }
+
+  function getPreviousBusinessDay(date) {
+    const d = new Date(date);
+    d.setDate(d.getDate() - 1);
+    d.setHours(16, 0, 0, 0);
+    while (isWeekend(d)) d.setDate(d.getDate() - 1);
+    return d;
+  }
+
+  function createDailyBar(price, date, asset, container) {
+    const open = price * (1 + randomBetween(container, -0.015, 0.015));
+    const close = price;
+    const high = Math.max(open, close) * (1 + randomBetween(container, 0.002, 0.03));
+    const low = Math.min(open, close) * (1 - randomBetween(container, 0.002, 0.03));
+    return {
+      time: date.toISOString(),
+      open: round2(open),
+      high: round2(high),
+      low: round2(low),
+      close: round2(close),
+      volume: Math.round(asset.avgVolume * randomBetween(container, 0.45, 1.55)),
+    };
+  }
+
+  function seedDailyArchive(asset, endDate, container) {
+    const bars = [];
+    let t = new Date(endDate);
+    t.setHours(16, 0, 0, 0);
+    let price = asset.price;
+    bars.push(createDailyBar(price, t, asset, container));
+
+    for (let i = 0; i < 320; i += 1) {
+      t = getPreviousBusinessDay(t);
+      const dt = 1 / 252;
+      const drift = (asset.drift - 0.5 * asset.annualVol ** 2) * dt;
+      const shock = asset.annualVol * Math.sqrt(dt) * randn(container) * 0.85;
+      const marketBias = 0.0025 * Math.sin(i / 20) + asset.beta * 0.0007;
+      const ret = drift + shock + marketBias;
+      price = clamp(price / Math.exp(ret), 5, 5000);
+      bars.push(createDailyBar(price, t, asset, container));
+    }
+
+    asset.dailyArchive = bars.reverse();
   }
 
   function startNewBar(asset, time) {
@@ -1492,6 +1725,29 @@ code {
     loaded.account.openOrders ??= [];
     loaded.account.holdings ??= {};
     loaded.ui ??= { selectedTicker: 'AAPL', optionSymbol: 'AAPL', optionExpiryDays: 30, selectedContract: null };
+    loaded.ui.stockOrderStatus ??= { text: 'Ready to place a stock order.', tone: 'neutral' };
+    loaded.ui.optionOrderStatus ??= { text: 'Ready to place an options order.', tone: 'neutral' };
+    loaded.training ??= {
+      mode: 'direction',
+      score: 0,
+      correct: 0,
+      played: 0,
+      streak: 0,
+      bestStreak: 0,
+      byMode: {
+        direction: { played: 0, correct: 0 },
+        trend: { played: 0, correct: 0 },
+        breakout: { played: 0, correct: 0 },
+      },
+      currentChallenge: null,
+      lastResult: { text: 'Study the chart, pick your answer, then compare it with the revealed future path.', tone: 'neutral' },
+    };
+    loaded.training.byMode ??= {
+      direction: { played: 0, correct: 0 },
+      trend: { played: 0, correct: 0 },
+      breakout: { played: 0, correct: 0 },
+    };
+    loaded.training.lastResult ??= { text: 'Study the chart, pick your answer, then compare it with the revealed future path.', tone: 'neutral' };
 
     for (const base of BASE_ASSETS) {
       if (!loaded.assets[base.ticker]) {
@@ -1503,7 +1759,13 @@ code {
       asset.currentBar ??= null;
       asset.recentNewsTone ??= 0;
       asset.lastSplitDay ??= -999;
+      if (!asset.dailyArchive || asset.dailyArchive.length < 120) seedDailyArchive(asset, new Date(loaded.market.now), loaded);
       if (!asset.currentBar) startNewBar(asset, new Date(loaded.market.now));
+    }
+
+    sanitizeUiSelection(loaded);
+    if (!loaded.training.currentChallenge) {
+      loaded.training.currentChallenge = null;
     }
   }
 
@@ -1694,6 +1956,181 @@ code {
       time: item.now || container.market.now,
     });
     if (container.news.length > MAX_NEWS_ITEMS) container.news.length = MAX_NEWS_ITEMS;
+  }
+
+  function sanitizeUiSelection(container = state) {
+    const symbols = Object.keys(container.assets || {});
+    const fallback = symbols.includes('AAPL') ? 'AAPL' : symbols[0];
+    if (!fallback) return;
+    if (!symbols.includes(container.ui.selectedTicker)) container.ui.selectedTicker = fallback;
+    if (!symbols.includes(container.ui.optionSymbol)) container.ui.optionSymbol = container.ui.selectedTicker;
+  }
+
+  function setStockOrderStatus(text, tone = 'neutral') {
+    state.ui.stockOrderStatus = { text, tone };
+  }
+
+  function setOptionOrderStatus(text, tone = 'neutral') {
+    state.ui.optionOrderStatus = { text, tone };
+  }
+
+  function summarizeTrainingSetup(mode, visible, future) {
+    const closes = visible.map((bar) => bar.close);
+    const current = visible[visible.length - 1];
+    const prior = visible[0];
+    const change = ((current.close - prior.close) / prior.close) * 100;
+    const currentRsi = rsi(closes, 14);
+    const futureEnd = future[future.length - 1];
+    const futureReturn = ((futureEnd.close - current.close) / current.close) * 100;
+    if (mode === 'direction') {
+      return `Current close ${formatMoney(current.close)} • Lookback ${formatPercent(change)} • RSI ${currentRsi.toFixed(1)} • Outcome ${formatPercent(futureReturn)}`;
+    }
+    if (mode === 'trend') {
+      return `Current close ${formatMoney(current.close)} • 20d change ${formatPercent(change)} • RSI ${currentRsi.toFixed(1)} • 10d realized move ${formatPercent(futureReturn)}`;
+    }
+    const resistance = Math.max(...visible.map((bar) => bar.high));
+    const support = Math.min(...visible.map((bar) => bar.low));
+    return `Current close ${formatMoney(current.close)} • Resistance ${formatMoney(resistance)} • Support ${formatMoney(support)} • 7d move ${formatPercent(futureReturn)}`;
+  }
+
+  function buildTrainingChallenge(mode = state.training.mode) {
+    const candidates = Object.values(state.assets).filter((asset) => asset.dailyArchive && asset.dailyArchive.length > 80);
+    if (!candidates.length) return null;
+    const asset = candidates[Math.floor(rng() * candidates.length)];
+    const series = asset.dailyArchive;
+
+    let lookback = 24;
+    let horizon = 14;
+    if (mode === 'trend') {
+      lookback = 28;
+      horizon = 10;
+    } else if (mode === 'breakout') {
+      lookback = 26;
+      horizon = 7;
+    }
+
+    const pointIndex = Math.floor(randomBetween(state, lookback + 5, series.length - horizon - 1));
+    const visible = series.slice(pointIndex - lookback + 1, pointIndex + 1);
+    const future = series.slice(pointIndex + 1, pointIndex + horizon + 1);
+    const current = visible[visible.length - 1];
+    const futureEnd = future[future.length - 1];
+    const futureReturn = ((futureEnd.close - current.close) / current.close) * 100;
+    const challenge = {
+      id: `training-${Date.now()}-${Math.floor(rng() * 100000)}`,
+      mode,
+      ticker: asset.ticker,
+      assetName: asset.name,
+      pointIndex,
+      lookback,
+      horizon,
+      visible,
+      future,
+      answered: null,
+      revealed: false,
+      correctAnswer: null,
+      choices: [],
+      prompt: '',
+      kicker: TRAINING_MODE_LABELS[mode],
+      meta: `${asset.ticker} • Snapshot date ${formatExpiry(current.time)} • Only past candles are visible.`,
+      explanation: summarizeTrainingSetup(mode, visible, future),
+    };
+
+    if (mode === 'direction') {
+      challenge.prompt = `At this point in ${asset.ticker}, do you think the stock is higher or lower about 14 trading days later?`;
+      challenge.choices = [
+        { id: 'up', label: 'Higher' },
+        { id: 'down', label: 'Lower' },
+      ];
+      challenge.correctAnswer = futureEnd.close >= current.close ? 'up' : 'down';
+    } else if (mode === 'trend') {
+      challenge.prompt = `How would you classify the next ~10 trading days after this ${asset.ticker} snapshot?`;
+      challenge.choices = [
+        { id: 'bullish', label: 'Bullish Trend' },
+        { id: 'range', label: 'Choppy / Range' },
+        { id: 'bearish', label: 'Bearish Trend' },
+      ];
+      if (Math.abs(futureReturn) < 2.4) challenge.correctAnswer = 'range';
+      else challenge.correctAnswer = futureReturn > 0 ? 'bullish' : 'bearish';
+    } else {
+      const resistance = Math.max(...visible.map((bar) => bar.high));
+      const support = Math.min(...visible.map((bar) => bar.low));
+      const futureHigh = Math.max(...future.map((bar) => bar.high));
+      const futureLow = Math.min(...future.map((bar) => bar.low));
+      challenge.prompt = `From this setup in ${asset.ticker}, what happens over the next ~7 trading days?`;
+      challenge.choices = [
+        { id: 'breakout-up', label: 'Breaks Above Range' },
+        { id: 'range', label: 'Stays In Range' },
+        { id: 'breakdown', label: 'Breaks Below Range' },
+      ];
+      if (futureHigh > resistance * 1.002) challenge.correctAnswer = 'breakout-up';
+      else if (futureLow < support * 0.998) challenge.correctAnswer = 'breakdown';
+      else challenge.correctAnswer = 'range';
+    }
+
+    return challenge;
+  }
+
+  function ensureTrainingChallenge() {
+    if (!state.training.currentChallenge) {
+      state.training.currentChallenge = buildTrainingChallenge(state.training.mode);
+    }
+  }
+
+  function startTrainingChallenge(mode = state.training.mode) {
+    state.training.mode = mode;
+    state.training.currentChallenge = buildTrainingChallenge(mode);
+    state.training.lastResult = {
+      text: 'Fresh setup loaded. Study the incomplete chart and make your call before revealing the future path.',
+      tone: 'neutral',
+    };
+    saveState(false);
+    renderAll();
+  }
+
+  function revealTrainingChallenge(markUnanswered = true) {
+    ensureTrainingChallenge();
+    const challenge = state.training.currentChallenge;
+    if (!challenge) return;
+    challenge.revealed = true;
+    if (markUnanswered && !challenge.answered) {
+      state.training.lastResult = {
+        text: `Revealed: ${challenge.ticker} ${challenge.correctAnswer.replace('-', ' ')}. ${challenge.explanation}`,
+        tone: 'warning',
+      };
+    }
+    saveState(false);
+    renderAll();
+  }
+
+  function answerTrainingChallenge(choiceId) {
+    ensureTrainingChallenge();
+    const challenge = state.training.currentChallenge;
+    if (!challenge || challenge.revealed) return;
+    challenge.answered = choiceId;
+    challenge.revealed = true;
+    state.training.played += 1;
+    state.training.byMode[challenge.mode].played += 1;
+    const correct = choiceId === challenge.correctAnswer;
+    if (correct) {
+      state.training.score += 1;
+      state.training.correct += 1;
+      state.training.streak += 1;
+      state.training.bestStreak = Math.max(state.training.bestStreak, state.training.streak);
+      state.training.byMode[challenge.mode].correct += 1;
+      state.training.lastResult = {
+        text: `Correct. ${challenge.ticker} resolved as ${challenge.correctAnswer.replace('-', ' ')}. ${challenge.explanation}`,
+        tone: 'positive',
+      };
+    } else {
+      state.training.score = Math.max(0, state.training.score - 1);
+      state.training.streak = 0;
+      state.training.lastResult = {
+        text: `Not this time. Correct answer: ${challenge.correctAnswer.replace('-', ' ')}. ${challenge.explanation}`,
+        tone: 'negative',
+      };
+    }
+    saveState(false);
+    renderAll();
   }
 
   function startLoop() {
@@ -2060,19 +2497,62 @@ code {
   }
 
   function placeStockOrder({ ticker, action, quantity, orderType, trigger }) {
-    quantity = Math.max(1, Math.floor(quantity));
+    sanitizeUiSelection();
+    quantity = Math.max(1, Math.floor(quantity || 0));
+    const asset = state.assets[ticker];
+
+    if (!asset) {
+      setStockOrderStatus('Order rejected: invalid symbol selected.', 'negative');
+      addLog(state, 'Stock order rejected: invalid symbol selected.');
+      renderAll();
+      return;
+    }
+
+    if (!Number.isFinite(quantity) || quantity < 1) {
+      setStockOrderStatus('Order rejected: quantity must be at least 1 share.', 'negative');
+      addLog(state, `Stock order rejected for ${ticker}: invalid quantity.`);
+      renderAll();
+      return;
+    }
+
+    if (orderType !== 'market' && (!Number.isFinite(trigger) || trigger <= 0)) {
+      setStockOrderStatus('Order rejected: enter a valid limit or stop price.', 'negative');
+      addLog(state, `Stock order rejected for ${ticker}: invalid trigger price.`);
+      renderAll();
+      return;
+    }
+
+    if (orderType === 'market' && isMarketOpen(getCurrentTime())) {
+      const fillPrice = getStockFillPrice(asset, action);
+      const ok = executeStockTrade(ticker, action, quantity, fillPrice, false);
+      if (ok) {
+        setStockOrderStatus(`${action.toUpperCase()} ${quantity} ${ticker} filled at ${formatMoney(fillPrice)}.`, 'positive');
+        saveState(false);
+      } else {
+        setStockOrderStatus(`Order rejected for ${ticker}. Check cash, shares, or margin.`, 'negative');
+      }
+      renderAll();
+      return;
+    }
+
     const order = {
       id: `ord-${Date.now()}-${Math.floor(rng() * 100000)}`,
       ticker,
       action,
       quantity,
       orderType,
-      trigger: trigger ? round2(trigger) : null,
-      status: isMarketOpen(getCurrentTime()) && orderType === 'market' ? 'ready' : 'queued',
+      trigger: orderType === 'market' ? null : round2(trigger),
+      status: 'queued',
       placedAt: state.market.now,
     };
     state.account.openOrders.push(order);
-    addLog(state, `${action.toUpperCase()} ${quantity} ${ticker} (${orderType}${trigger ? ` @ ${trigger}` : ''}) submitted.`);
+    setStockOrderStatus(
+      orderType === 'market'
+        ? `${action.toUpperCase()} ${quantity} ${ticker} queued for the next market open.`
+        : `${orderType.toUpperCase()} ${action.toUpperCase()} ${quantity} ${ticker} queued at ${formatMoney(order.trigger)}.`,
+      orderType === 'market' ? 'warning' : 'neutral',
+    );
+    addLog(state, `${action.toUpperCase()} ${quantity} ${ticker} (${orderType}${order.trigger ? ` @ ${order.trigger}` : ''}) submitted.`);
     processOpenOrders();
     saveState(false);
     renderAll();
@@ -2083,8 +2563,14 @@ code {
     if (!isMarketOpen(now)) return;
 
     for (const order of state.account.openOrders) {
-      if (order.status === 'filled' || order.status === 'rejected') continue;
+      if (order.status === 'filled' || order.status === 'rejected' || order.status === 'cancelled') continue;
       const asset = state.assets[order.ticker];
+      if (!asset) {
+        order.status = 'rejected';
+        order.reason = 'Underlying symbol is no longer available.';
+        setStockOrderStatus(`${order.ticker} order rejected: ${order.reason}`, 'negative');
+        continue;
+      }
       const price = asset.price;
       let shouldFill = false;
 
@@ -2100,15 +2586,22 @@ code {
 
       if (!shouldFill) continue;
 
-      const fillPrice = getStockFillPrice(asset, order.action);
+      const fillPrice = order.orderType === 'market'
+        ? getStockFillPrice(asset, order.action)
+        : round2(order.trigger);
       const ok = executeStockTrade(order.ticker, order.action, order.quantity, fillPrice, true);
       order.status = ok ? 'filled' : 'rejected';
       order.filledAt = state.market.now;
       order.fillPrice = fillPrice;
-      if (!ok) order.reason = 'Insufficient cash, shares, or margin.';
+      if (ok) {
+        setStockOrderStatus(`${order.action.toUpperCase()} ${order.quantity} ${order.ticker} filled at ${formatMoney(fillPrice)}.`, 'positive');
+      } else {
+        order.reason = 'Insufficient cash, shares, or margin.';
+        setStockOrderStatus(`${order.ticker} order rejected: ${order.reason}`, 'negative');
+      }
     }
 
-    state.account.openOrders = state.account.openOrders.filter((order) => order.status !== 'filled');
+    state.account.openOrders = state.account.openOrders.filter((order) => order.status !== 'filled' && order.status !== 'cancelled');
   }
 
   function getStockFillPrice(asset, action) {
@@ -2351,6 +2844,7 @@ code {
   function placeOptionOrder(selection, side, contracts) {
     contracts = Math.max(1, Math.floor(contracts));
     if (!selection) {
+      setOptionOrderStatus('Select a contract from the chain before submitting.', 'negative');
       addLog(state, 'Select a contract before submitting an options order.');
       renderAll();
       return;
@@ -2374,6 +2868,7 @@ code {
     }
 
     if (remaining <= 0) {
+      setOptionOrderStatus(`Order offset an existing ${selection.underlying} ${selection.type.toUpperCase()} position.`, 'positive');
       saveState(false);
       renderAll();
       return;
@@ -2398,7 +2893,9 @@ code {
     if (side === 'long') {
       const totalCost = cashImpact + fee;
       if (state.account.cash < totalCost) {
+        setOptionOrderStatus('Option order rejected: not enough cash for premium.', 'negative');
         addLog(state, 'Option order rejected: not enough cash for premium.');
+        renderAll();
         return;
       }
       state.account.cash -= totalCost;
@@ -2408,13 +2905,16 @@ code {
       if (getMarginRequirement() > getTotalEquity()) {
         state.account.cash = cashBefore;
         state.account.options = JSON.parse(optionsBefore);
+        setOptionOrderStatus('Option order rejected: short-premium margin would be exceeded.', 'negative');
         addLog(state, 'Option sale rejected: short-premium margin would be exceeded.');
+        renderAll();
         return;
       }
     }
 
     if (side === 'long') state.account.options.push(newPosition);
 
+    setOptionOrderStatus(`${side === 'long' ? 'Bought' : 'Sold'} ${remaining} ${selection.underlying} ${selection.type.toUpperCase()} ${formatMoney(selection.strike)} @ ${formatMoney(fill)}.`, 'positive');
     addLog(state, `${side === 'long' ? 'Bought' : 'Sold'} ${remaining} ${selection.underlying} ${selection.type.toUpperCase()} ${formatMoney(selection.strike)} exp ${formatExpiry(selection.expiry)} @ ${formatMoney(fill)}.`);
     saveState(false);
     renderAll();
@@ -2606,6 +3106,8 @@ code {
   }
 
   function renderAll() {
+    sanitizeUiSelection();
+    ensureTrainingChallenge();
     populateSymbolSelects();
     syncControlsFromState();
     renderHeader();
@@ -2614,10 +3116,12 @@ code {
     renderSelectedAsset();
     renderChart();
     renderStockEstimate();
+    renderOrderStatuses();
     renderOrders();
     renderNews();
     renderOptionsChain();
     renderPortfolio();
+    renderTrainingPanel();
   }
 
   function syncControlsFromState() {
@@ -2927,6 +3431,15 @@ code {
     dom.stockTriggerWrap.style.display = orderType === 'market' ? 'none' : 'grid';
   }
 
+  function renderOrderStatuses() {
+    const stockStatus = state.ui.stockOrderStatus || { text: 'Ready to place a stock order.', tone: 'neutral' };
+    const optionStatus = state.ui.optionOrderStatus || { text: 'Ready to place an options order.', tone: 'neutral' };
+    dom.stockOrderStatus.textContent = stockStatus.text;
+    dom.stockOrderStatus.className = `card order-status-card ${stockStatus.tone || 'neutral'}`;
+    dom.optionOrderStatus.textContent = optionStatus.text;
+    dom.optionOrderStatus.className = `card order-status-card ${optionStatus.tone || 'neutral'}`;
+  }
+
   function renderOrders() {
     if (!state.account.openOrders.length) {
       dom.ordersBody.innerHTML = '<tr><td colspan="6" class="muted">No open orders.</td></tr>';
@@ -2939,7 +3452,7 @@ code {
         <td>${order.ticker}</td>
         <td>${order.quantity}</td>
         <td>${order.trigger ? formatMoney(order.trigger) : 'MKT'}</td>
-        <td>${order.status}</td>
+        <td>${order.reason ? `${order.status} • ${order.reason}` : order.status}</td>
       </tr>
     `).join('');
   }
@@ -3031,12 +3544,14 @@ code {
   function populateSymbolSelects() {
     const symbols = Object.keys(state.assets);
     const optionSymbols = [...symbols];
-    if (!dom.stockSymbol.options.length) {
-      dom.stockSymbol.innerHTML = symbols.map((ticker) => `<option value="${ticker}">${ticker}</option>`).join('');
-      dom.optionSymbol.innerHTML = optionSymbols.map((ticker) => `<option value="${ticker}">${ticker}</option>`).join('');
-    }
-    dom.stockSymbol.value = state.ui.selectedTicker;
-    dom.optionSymbol.value = state.ui.optionSymbol;
+    const currentStockValue = dom.stockSymbol.value;
+    const currentOptionValue = dom.optionSymbol.value;
+    dom.stockSymbol.innerHTML = symbols.map((ticker) => `<option value="${ticker}">${ticker}</option>`).join('');
+    dom.optionSymbol.innerHTML = optionSymbols.map((ticker) => `<option value="${ticker}">${ticker}</option>`).join('');
+    dom.stockSymbol.value = symbols.includes(currentStockValue) ? currentStockValue : state.ui.selectedTicker;
+    dom.optionSymbol.value = optionSymbols.includes(currentOptionValue) ? currentOptionValue : state.ui.optionSymbol;
+    state.ui.selectedTicker = dom.stockSymbol.value || state.ui.selectedTicker;
+    state.ui.optionSymbol = dom.optionSymbol.value || state.ui.optionSymbol;
   }
 
   function renderPortfolio() {
@@ -3104,6 +3619,146 @@ code {
     `).join('');
   }
 
+  function renderTrainingPanel() {
+    const training = state.training;
+    const challenge = training.currentChallenge;
+    if (!challenge) return;
+
+    const accuracy = training.played ? (training.correct / training.played) * 100 : 0;
+    const modeStats = training.byMode[training.mode] || { played: 0, correct: 0 };
+    const modeAccuracy = modeStats.played ? (modeStats.correct / modeStats.played) * 100 : 0;
+    const stats = [
+      { label: 'Score', value: `${training.score}` },
+      { label: 'Solved', value: `${training.correct}/${training.played || 0}` },
+      { label: 'Accuracy', value: `${accuracy.toFixed(0)}%` },
+      { label: 'Streak', value: `${training.streak}` },
+      { label: 'Best Streak', value: `${training.bestStreak}` },
+      { label: `${TRAINING_MODE_LABELS[training.mode]} Accuracy`, value: `${modeAccuracy.toFixed(0)}%` },
+    ];
+    dom.trainingStats.innerHTML = stats.map((item) => `
+      <div class="metric-card">
+        <span class="kicker">${item.label}</span>
+        <strong>${item.value}</strong>
+      </div>
+    `).join('');
+
+    dom.trainingKicker.textContent = `${challenge.kicker} • ${challenge.ticker}`;
+    dom.trainingPrompt.textContent = challenge.prompt;
+    dom.trainingMeta.textContent = challenge.revealed
+      ? `${challenge.meta} • Revealed future horizon: ${challenge.horizon} trading days.`
+      : `${challenge.meta} • Hidden horizon: ${challenge.horizon} trading days.`;
+
+    dom.trainingAnswers.innerHTML = challenge.choices.map((choice) => `
+      <button type="button" data-training-answer="${choice.id}" class="${challenge.answered === choice.id ? 'active' : ''}" ${challenge.revealed ? 'disabled' : ''}>${choice.label}</button>
+    `).join('');
+
+    dom.trainingResult.textContent = training.lastResult?.text || 'Study the chart, pick your answer, then compare it with the revealed future path.';
+    dom.trainingResult.className = `card training-result-card ${training.lastResult?.tone || 'neutral'}`;
+
+    const modeButtons = dom.trainingModeButtons.querySelectorAll ? dom.trainingModeButtons.querySelectorAll('button[data-training-mode]') : [];
+    if (modeButtons.length) {
+      modeButtons.forEach((button) => {
+        button.classList.toggle('active', button.dataset.trainingMode === training.mode);
+      });
+    } else {
+      dom.trainingModeButtons.innerHTML = ['direction', 'trend', 'breakout'].map((mode) => `
+        <button type="button" data-training-mode="${mode}" class="${mode === training.mode ? 'active' : ''}">${mode === 'direction' ? '14-Day Direction' : mode === 'trend' ? 'Trend Classifier' : 'Breakout or Range'}</button>
+      `).join('');
+    }
+
+    drawTrainingChart();
+  }
+
+  function drawTrainingChart() {
+    const challenge = state.training.currentChallenge;
+    if (!challenge) return;
+    const canvas = dom.trainingCanvas;
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = Math.max(700, Math.floor(rect.width * dpr));
+    canvas.height = Math.floor(360 * dpr);
+    const ctx = canvas.getContext('2d');
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.scale(dpr, dpr);
+
+    const width = rect.width;
+    const height = 360;
+    ctx.clearRect(0, 0, width, height);
+
+    const visible = challenge.visible;
+    const future = challenge.future;
+    const fullSeries = visible.concat(future);
+    const displayed = challenge.revealed ? fullSeries : visible;
+    const closes = fullSeries.map((bar) => bar.close);
+    const highs = fullSeries.map((bar) => bar.high);
+    const lows = fullSeries.map((bar) => bar.low);
+    const sma10 = sma(closes, Math.min(10, closes.length));
+    const min = Math.min(...lows, ...sma10.filter(Boolean)) * 0.985;
+    const max = Math.max(...highs, ...sma10.filter(Boolean)) * 1.015;
+    const leftPad = 48;
+    const rightPad = 18;
+    const topPad = 20;
+    const bottomPad = 42;
+    const plotWidth = width - leftPad - rightPad;
+    const plotHeight = height - topPad - bottomPad;
+
+    drawGrid(ctx, leftPad, topPad, plotWidth, plotHeight, 5);
+
+    const fullCount = fullSeries.length;
+    const candleWidth = Math.max(4, plotWidth / fullCount * 0.6);
+    displayed.forEach((bar, index) => {
+      const x = leftPad + (plotWidth / fullCount) * index + plotWidth / fullCount / 2;
+      const openY = scaleValue(bar.open, min, max, topPad + plotHeight, topPad);
+      const closeY = scaleValue(bar.close, min, max, topPad + plotHeight, topPad);
+      const highY = scaleValue(bar.high, min, max, topPad + plotHeight, topPad);
+      const lowY = scaleValue(bar.low, min, max, topPad + plotHeight, topPad);
+      const futureBar = index >= visible.length;
+      const up = bar.close >= bar.open;
+      ctx.strokeStyle = futureBar ? 'rgba(143, 124, 255, 0.95)' : (up ? '#31d18c' : '#ff6a6a');
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(x, highY);
+      ctx.lineTo(x, lowY);
+      ctx.stroke();
+      ctx.fillStyle = futureBar
+        ? 'rgba(143, 124, 255, 0.72)'
+        : (up ? 'rgba(49, 209, 140, 0.88)' : 'rgba(255, 106, 106, 0.88)');
+      ctx.fillRect(x - candleWidth / 2, Math.min(openY, closeY), candleWidth, Math.max(2, Math.abs(closeY - openY)));
+    });
+
+    const smaVisible = challenge.revealed ? sma10 : sma10.map((value, index) => (index < visible.length ? value : null));
+    drawLineSeries(ctx, smaVisible, fullCount, leftPad, plotWidth, topPad, plotHeight, min, max, '#62a8ff', 1.4);
+
+    if (!challenge.revealed) {
+      const dividerX = leftPad + (plotWidth / fullCount) * visible.length;
+      ctx.strokeStyle = 'rgba(255, 207, 90, 0.8)';
+      ctx.setLineDash([6, 6]);
+      ctx.beginPath();
+      ctx.moveTo(dividerX, topPad);
+      ctx.lineTo(dividerX, topPad + plotHeight);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = 'rgba(255, 207, 90, 0.95)';
+      ctx.font = '12px Inter, system-ui, sans-serif';
+      ctx.fillText('Future hidden', Math.min(width - 120, dividerX + 8), topPad + 16);
+    }
+
+    ctx.fillStyle = 'rgba(227, 238, 247, 0.92)';
+    ctx.font = '12px Inter, system-ui, sans-serif';
+    ctx.textAlign = 'right';
+    for (let i = 0; i <= 4; i += 1) {
+      const value = max - ((max - min) / 4) * i;
+      const y = topPad + (plotHeight / 4) * i;
+      ctx.fillText(formatMoney(value), leftPad - 8, y + 4);
+    }
+    ctx.textAlign = 'left';
+    ctx.fillText(`${challenge.ticker} • ${challenge.kicker}`, leftPad, 14);
+    ctx.fillStyle = 'rgba(145, 164, 186, 0.85)';
+    const first = new Date(displayed[0].time);
+    const last = new Date(displayed[displayed.length - 1].time);
+    ctx.fillText(`${first.getMonth() + 1}/${first.getDate()} → ${last.getMonth() + 1}/${last.getDate()}`, leftPad, height - 10);
+  }
+
   function getUnrealizedPnL() {
     let total = 0;
     for (const [ticker, holding] of Object.entries(state.account.holdings)) {
@@ -3135,6 +3790,20 @@ code {
       vega += sign * quote.vega * 100 * position.contracts;
     }
     return { delta, theta, vega };
+  }
+
+  function submitStockOrderFromUi() {
+    placeStockOrder({
+      ticker: dom.stockSymbol.value || state.ui.selectedTicker,
+      action: dom.stockAction.value,
+      quantity: Number(dom.stockQty.value),
+      orderType: dom.stockOrderType.value,
+      trigger: Number(dom.stockTrigger.value),
+    });
+  }
+
+  function submitOptionOrderFromUi() {
+    placeOptionOrder(state.ui.selectedContract, dom.optionSide.value, Number(dom.optionContracts.value));
   }
 
   function bindEvents() {
@@ -3200,15 +3869,14 @@ code {
     dom.stockOrderType.addEventListener('change', renderStockEstimate);
     dom.stockTrigger.addEventListener('input', renderStockEstimate);
 
+    dom.stockOrderBtn.addEventListener('click', (event) => {
+      event.preventDefault();
+      submitStockOrderFromUi();
+    });
+
     dom.stockOrderForm.addEventListener('submit', (event) => {
       event.preventDefault();
-      placeStockOrder({
-        ticker: dom.stockSymbol.value,
-        action: dom.stockAction.value,
-        quantity: Number(dom.stockQty.value),
-        orderType: dom.stockOrderType.value,
-        trigger: Number(dom.stockTrigger.value),
-      });
+      submitStockOrderFromUi();
     });
 
     dom.optionSymbol.addEventListener('change', (event) => {
@@ -3229,14 +3897,51 @@ code {
       updateSelectedContractCard();
     });
 
-    dom.optionOrderForm.addEventListener('submit', (event) => {
+    dom.optionOrderBtn.addEventListener('click', (event) => {
       event.preventDefault();
-      placeOptionOrder(state.ui.selectedContract, dom.optionSide.value, Number(dom.optionContracts.value));
+      submitOptionOrderFromUi();
     });
 
+    dom.optionOrderForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+      submitOptionOrderFromUi();
+    });
+
+    dom.trainingModeButtons.addEventListener('click', (event) => {
+      const button = event.target.closest('button[data-training-mode]');
+      if (!button) return;
+      startTrainingChallenge(button.dataset.trainingMode);
+    });
+
+    dom.trainingAnswers.addEventListener('click', (event) => {
+      const button = event.target.closest('button[data-training-answer]');
+      if (!button) return;
+      answerTrainingChallenge(button.dataset.trainingAnswer);
+    });
+
+    dom.trainingRevealBtn.addEventListener('click', () => revealTrainingChallenge(true));
+    dom.trainingNewBtn.addEventListener('click', () => startTrainingChallenge(state.training.mode));
+
     window.addEventListener('beforeunload', () => saveState(false));
-    window.addEventListener('resize', renderChart);
+    window.addEventListener('resize', () => {
+      renderChart();
+      drawTrainingChart();
+    });
   }
+
+  window.marketSimDebug = {
+    getState: () => JSON.parse(JSON.stringify(state)),
+    placeStockOrder,
+    placeOptionOrder,
+    submitStockOrderFromUi,
+    submitOptionOrderFromUi,
+    startTrainingChallenge,
+    answerTrainingChallenge,
+    revealTrainingChallenge,
+    tickSimulation,
+    saveState,
+    resetState,
+  };
 
   renderAll();
   bindEvents();
