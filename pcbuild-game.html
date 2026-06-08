@@ -1,0 +1,1282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0a0a12">
+<title>PC Builder Tycoon</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-dark: #0a0a12;
+  --bg-panel: #12121f;
+  --bg-card: #1a1a2e;
+  --neon-cyan: #00fff5;
+  --neon-magenta: #ff006e;
+  --neon-orange: #ff9500;
+  --neon-green: #00ff88;
+  --neon-yellow: #ffee00;
+  --text-primary: #e0e0ff;
+  --text-secondary: #8888aa;
+  --border-glow: 0 0 10px var(--neon-cyan), 0 0 20px var(--neon-cyan);
+  --scanline-opacity: 0.03;
+  --transition-speed: 0.3s;
+  --font-scale: 1;
+  --tap-target: 44px;
+}
+:root.deuteranopia {
+  --neon-cyan: #0088ff; --neon-magenta: #ff8800; --neon-orange: #ff8800;
+  --neon-green: #00aaff; --neon-yellow: #ffaa00; --text-primary: #ffffff; --text-secondary: #bbbbbb;
+}
+:root.protanopia {
+  --neon-cyan: #9933ff; --neon-magenta: #ffcc00; --neon-orange: #ffcc00;
+  --neon-green: #cc66ff; --neon-yellow: #ffee00; --text-primary: #ffffff; --text-secondary: #cccccc;
+}
+:root.tritanopia {
+  --neon-cyan: #00cccc; --neon-magenta: #ff6666; --neon-orange: #ff9966;
+  --neon-green: #66ffcc; --neon-yellow: #ffff66; --text-primary: #ffffff; --text-secondary: #cccccc;
+}
+:root.high-contrast {
+  --bg-dark: #000000; --bg-panel: #111111; --bg-card: #222222;
+  --neon-cyan: #ffffff; --neon-magenta: #ffff00; --neon-orange: #ffff00;
+  --neon-green: #00ff00; --neon-yellow: #ffff00; --text-primary: #ffffff; --text-secondary: #cccccc;
+  --border-glow: 0 0 0 3px #ffffff; --font-scale: 1.2;
+}
+:root.high-contrast .component-card, :root.high-contrast .contract-card,
+:root.high-contrast .pc-card, :root.high-contrast .customer-card { border-width: 3px; }
+:root.reduced-motion, :root.reduced-motion * { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Rajdhani', sans-serif;
+  background: var(--bg-dark);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+  font-size: calc(16px * var(--font-scale));
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,245,var(--scanline-opacity)) 2px, rgba(0,255,245,var(--scanline-opacity)) 4px),
+              linear-gradient(135deg, var(--bg-dark) 0%, var(--bg-card) 50%, var(--bg-dark) 100%);
+  pointer-events: none;
+  z-index: -1;
+}
+#game-container { max-width: 1400px; margin: 0 auto; padding: 10px; padding-bottom: 80px; display: none; gap: 10px; }
+.game-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 15px; background: linear-gradient(135deg, var(--bg-panel), var(--bg-card));
+  border: 1px solid var(--neon-cyan); border-radius: 10px;
+  box-shadow: var(--border-glow); flex-wrap: wrap; gap: 10px;
+}
+.game-title {
+  font-family: 'Orbitron', sans-serif; font-size: calc(1.2em * var(--font-scale));
+  font-weight: 900; background: linear-gradient(90deg, var(--neon-cyan), var(--neon-magenta));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.settings-btn {
+  width: var(--tap-target); height: var(--tap-target); background: var(--bg-card);
+  border: 2px solid var(--neon-cyan); border-radius: 8px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; font-size: 1.2em; color: var(--neon-cyan);
+}
+.settings-btn:hover, .settings-btn:focus { background: var(--neon-cyan); color: var(--bg-dark); outline: none; }
+.stats-bar { display: flex; gap: 15px; flex-wrap: wrap; }
+.stat-item { display: flex; align-items: center; gap: 6px; font-family: 'Share Tech Mono', monospace; }
+.stat-icon { font-size: 1.2em; }
+.stat-label { color: var(--text-secondary); font-size: 0.75em; }
+.stat-value { font-size: 1em; color: var(--neon-cyan); }
+.stat-value.money { color: var(--neon-green); }
+.stat-value.rep { color: var(--neon-orange); }
+.desktop-nav { display: flex; gap: 5px; padding: 8px; background: var(--bg-panel); border-radius: 10px; overflow-x: auto; }
+.nav-tab {
+  padding: 10px 15px; background: var(--bg-card); border: 1px solid rgba(0,255,245,0.2);
+  border-radius: 8px; cursor: pointer; font-family: 'Orbitron', sans-serif; font-size: 0.75em;
+  color: var(--text-secondary); transition: all var(--transition-speed); white-space: nowrap;
+  min-height: var(--tap-target); display: flex; align-items: center; justify-content: center;
+}
+.nav-tab:hover { border-color: var(--neon-cyan); color: var(--neon-cyan); }
+.nav-tab.active { background: linear-gradient(135deg, rgba(0,255,245,0.2), rgba(255,0,110,0.2)); border-color: var(--neon-cyan); color: var(--neon-cyan); }
+.mobile-nav { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--bg-panel); border-top: 2px solid var(--neon-cyan); z-index: 100; padding: 5px; }
+.mobile-nav-inner { display: flex; justify-content: space-around; max-width: 500px; margin: 0 auto; }
+.mobile-nav-item {
+  display: flex; flex-direction: column; align-items: center; padding: 8px 12px;
+  background: none; border: none; color: var(--text-secondary); font-size: 1.5em;
+  cursor: pointer; min-width: var(--tap-target); min-height: var(--tap-target); border-radius: 8px;
+}
+.mobile-nav-item span { font-size: 0.6em; font-family: 'Orbitron', sans-serif; margin-top: 2px; }
+.mobile-nav-item.active { color: var(--neon-cyan); background: rgba(0,255,245,0.1); }
+.main-grid { display: grid; grid-template-columns: 1fr 300px; gap: 10px; }
+.panel { background: linear-gradient(180deg, var(--bg-panel), var(--bg-card)); border: 1px solid rgba(0,255,245,0.2); border-radius: 12px; padding: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+.section-title {
+  font-family: 'Orbitron', sans-serif; font-size: calc(0.95em * var(--font-scale));
+  color: var(--neon-cyan); margin-bottom: 12px; padding-bottom: 8px;
+  border-bottom: 1px solid rgba(0,255,245,0.3); display: flex; align-items: center; gap: 8px;
+}
+.section-title::before { content: '//'; color: var(--neon-magenta); }
+.component-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; margin-top: 10px; }
+.component-card {
+  background: var(--bg-dark); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px;
+  padding: 12px; cursor: pointer; transition: all var(--transition-speed); position: relative;
+  overflow: hidden; min-height: var(--tap-target);
+}
+.component-card:hover { border-color: var(--neon-cyan); transform: translateY(-2px); }
+.component-card:active { transform: scale(0.98); }
+.component-card.selected { border-color: var(--neon-green); box-shadow: 0 0 20px rgba(0,255,136,0.3); }
+.component-card.disabled { opacity: 0.4; cursor: not-allowed; }
+.component-icon { font-size: 1.8em; margin-bottom: 6px; }
+.component-name { font-family: 'Orbitron', sans-serif; font-size: 0.8em; margin-bottom: 4px; }
+.component-specs { font-size: 0.75em; color: var(--text-secondary); margin-bottom: 6px; }
+.component-price { font-family: 'Share Tech Mono', monospace; color: var(--neon-green); font-size: 1em; }
+.component-tier { position: absolute; top: 8px; right: 8px; font-size: 0.6em; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
+.tier-budget { background: #444; color: #aaa; }
+.tier-mid { background: #1a5; color: #fff; }
+.tier-high { background: #05a; color: #fff; }
+.tier-extreme { background: linear-gradient(135deg, #a05, #50a); color: #fff; }
+.category-tabs { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+.cat-tab {
+  padding: 8px 12px; background: var(--bg-dark); border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 6px; cursor: pointer; font-size: 0.8em; transition: all var(--transition-speed);
+  min-height: var(--tap-target); display: flex; align-items: center;
+}
+.cat-tab:hover { border-color: var(--neon-cyan); }
+.cat-tab.active { background: rgba(0,255,245,0.15); border-color: var(--neon-cyan); color: var(--neon-cyan); }
+.btn {
+  padding: 10px 18px; border: none; border-radius: 8px; cursor: pointer;
+  font-family: 'Orbitron', sans-serif; font-size: 0.8em; transition: all var(--transition-speed);
+  text-transform: uppercase; letter-spacing: 1px; min-height: var(--tap-target);
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+}
+.btn-primary { background: linear-gradient(135deg, var(--neon-cyan), #0099aa); color: var(--bg-dark); font-weight: bold; }
+.btn-primary:hover, .btn-primary:focus { box-shadow: 0 0 20px var(--neon-cyan); outline: none; }
+.btn-primary:active { transform: scale(0.96); }
+.btn-secondary { background: var(--bg-card); color: var(--text-primary); border: 1px solid rgba(255,255,255,0.2); }
+.btn-secondary:hover { border-color: var(--neon-cyan); }
+.btn-danger { background: linear-gradient(135deg, var(--neon-magenta), #aa0044); color: #fff; }
+.btn-success { background: linear-gradient(135deg, var(--neon-green), #00aa55); color: var(--bg-dark); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-block { width: 100%; }
+.side-panel { position: sticky; top: 10px; height: fit-content; }
+.build-item { display: flex; justify-content: space-between; align-items: center; padding: 8px; background: var(--bg-dark); border-radius: 6px; margin-bottom: 6px; border-left: 3px solid transparent; min-height: var(--tap-target); }
+.build-item.complete { border-left-color: var(--neon-green); }
+.build-item.active { border-left-color: var(--neon-cyan); background: rgba(0,255,245,0.05); }
+.build-item.incomplete { border-left-color: #444; }
+.build-item-name { font-size: 0.85em; }
+.build-item-status { font-size: 0.75em; }
+.status-ok { color: var(--neon-green); }
+.status-pending { color: var(--neon-orange); }
+.price-summary { margin: 12px 0; padding: 12px; background: var(--bg-dark); border-radius: 8px; }
+.price-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-family: 'Share Tech Mono', monospace; font-size: 0.9em; }
+.price-row.total { border-bottom: none; font-size: 1.1em; color: var(--neon-green); padding-top: 10px; margin-top: 5px; border-top: 2px solid var(--neon-cyan); }
+.contract-card { background: var(--bg-dark); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 12px; margin-bottom: 10px; position: relative; overflow: hidden; }
+.contract-card::after { content: ''; position: absolute; top: 0; right: 0; width: 4px; height: 100%; }
+.contract-easy::after { background: var(--neon-green); }
+.contract-medium::after { background: var(--neon-orange); }
+.contract-hard::after { background: var(--neon-magenta); }
+.contract-header { font-family: 'Orbitron', sans-serif; font-size: 0.9em; color: var(--neon-cyan); margin-bottom: 6px; }
+.contract-desc { font-size: 0.8em; color: var(--text-secondary); margin-bottom: 8px; }
+.contract-req { font-size: 0.75em; padding: 4px 8px; background: rgba(255,255,255,0.05); border-radius: 4px; margin-bottom: 4px; display: flex; justify-content: space-between; }
+.contract-reward { font-family: 'Share Tech Mono', monospace; color: var(--neon-green); margin: 8px 0; }
+.pc-card { background: var(--bg-dark); border: 1px solid rgba(0,255,245,0.3); border-radius: 10px; padding: 12px; margin-bottom: 10px; }
+.pc-name { font-family: 'Orbitron', sans-serif; color: var(--neon-cyan); margin-bottom: 6px; }
+.pc-stats { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+.pc-stat { font-size: 0.75em; padding: 3px 6px; background: rgba(255,255,255,0.05); border-radius: 4px; }
+.pc-stat-value { font-family: 'Share Tech Mono', monospace; color: var(--neon-green); }
+.customer-card { background: linear-gradient(135deg, var(--bg-dark), rgba(255,0,110,0.1)); border: 1px solid rgba(255,0,110,0.3); border-radius: 10px; padding: 15px; text-align: center; }
+.customer-avatar { font-size: 2.5em; margin-bottom: 8px; }
+.customer-budget { font-family: 'Share Tech Mono', monospace; color: var(--neon-green); }
+.patience-bar { height: 8px; background: var(--bg-dark); border-radius: 4px; overflow: hidden; }
+.patience-fill { height: 100%; background: linear-gradient(90deg, var(--neon-green), var(--neon-yellow), var(--neon-magenta)); transition: width 0.5s; }
+.modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); display: none; justify-content: center; align-items: center; z-index: 1000; padding: 15px; backdrop-filter: blur(5px); }
+.modal-overlay.show { display: flex; }
+.modal { background: var(--bg-panel); border: 2px solid var(--neon-cyan); border-radius: 15px; padding: 20px; max-width: 600px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: 0 0 50px rgba(0,255,245,0.3); }
+.modal-title { font-family: 'Orbitron', sans-serif; color: var(--neon-cyan); margin-bottom: 15px; text-align: center; }
+.settings-modal { max-width: 450px; }
+.settings-group { margin-bottom: 20px; }
+.settings-label { font-family: 'Orbitron', sans-serif; font-size: 0.9em; color: var(--neon-cyan); margin-bottom: 10px; display: block; }
+.settings-options { display: flex; flex-wrap: wrap; gap: 8px; }
+.settings-option { padding: 10px 15px; background: var(--bg-dark); border: 2px solid rgba(255,255,255,0.1); border-radius: 8px; cursor: pointer; font-size: 0.85em; color: var(--text-primary); transition: all var(--transition-speed); min-height: var(--tap-target); display: flex; align-items: center; }
+.settings-option:hover { border-color: var(--neon-cyan); }
+.settings-option.active { border-color: var(--neon-cyan); background: rgba(0,255,245,0.15); color: var(--neon-cyan); }
+.minigame-area { background: var(--bg-dark); border: 2px solid var(--neon-cyan); border-radius: 12px; padding: 20px; min-height: 280px; position: relative; overflow: hidden; }
+.thermal-paste-area { width: 160px; height: 160px; background: #222; border: 2px solid #444; border-radius: 50%; margin: 15px auto; position: relative; cursor: crosshair; }
+.thermal-swatch { position: absolute; width: 30px; height: 30px; background: rgba(0,150,200,0.6); border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; }
+.paste-meter { width: 100%; height: 16px; background: var(--bg-dark); border-radius: 8px; overflow: hidden; margin: 12px 0; }
+.paste-fill { height: 100%; background: linear-gradient(90deg, #444, var(--neon-cyan)); transition: width 0.1s; }
+.cpu-slot { width: 100px; height: 100px; background: linear-gradient(135deg, #333, #222); border: 3px solid #555; margin: 15px auto; }
+.cpu-piece { width: 70px; height: 70px; background: linear-gradient(135deg, #4a4a6a, #2a2a4a); border: 2px solid #888; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-family: 'Share Tech Mono', monospace; font-size: 0.7em; cursor: grab; touch-action: none; }
+.cpu-piece.placed { cursor: default; transform: translate(-50%, -50%); top: 50%; left: 50%; }
+.ram-slots { display: flex; gap: 10px; justify-content: center; margin: 15px 0; flex-wrap: wrap; }
+.ram-slot-box { width: 50px; height: 100px; background: linear-gradient(180deg, #222, #333); border: 2px solid #444; border-radius: 5px; display: flex; flex-direction: column; align-items: center; padding-top: 8px; gap: 4px; }
+.ram-slot-false { color: #444; font-size: 0.8em; }
+.ram-stick { width: 42px; height: 65px; background: linear-gradient(180deg, #4a4, #2a2); border-radius: 5px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 0.65em; min-height: var(--tap-target); }
+.ram-sequence { display: flex; gap: 8px; justify-content: center; margin: 12px 0; flex-wrap: wrap; }
+.seq-box { width: 42px; height: 42px; background: var(--bg-dark); border: 2px solid var(--neon-cyan); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-family: 'Orbitron', sans-serif; font-size: 1.2em; color: var(--neon-cyan); }
+.seq-box.match { border-color: var(--neon-green); color: var(--neon-green); }
+.seq-box.error { border-color: var(--neon-magenta); color: var(--neon-magenta); }
+.stability-meter { width: 100%; height: 24px; background: var(--bg-dark); border-radius: 12px; overflow: hidden; margin: 15px 0; }
+.stability-fill { height: 100%; background: linear-gradient(90deg, var(--neon-green), var(--neon-yellow), var(--neon-magenta)); transition: width 0.15s; }
+.gpu-card { width: 160px; height: 60px; background: linear-gradient(135deg, #333, #444); border: 2px solid #666; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-family: 'Share Tech Mono', monospace; font-size: 0.75em; margin: 10px auto; }
+.tube-puzzle { display: flex; gap: 12px; justify-content: center; margin: 15px 0; flex-wrap: wrap; }
+.tube-node { width: 65px; height: 65px; background: var(--bg-dark); border: 2px solid #444; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 1.5em; cursor: pointer; transition: all var(--transition-speed); min-height: var(--tap-target); }
+.tube-node:active { transform: scale(0.95); }
+.tube-node.connected { border-color: var(--neon-green); box-shadow: 0 0 10px var(--neon-green); }
+.tube-node span { font-size: 0.55em; }
+.cooling-order { display: flex; gap: 8px; justify-content: center; margin: 12px 0; flex-wrap: wrap; }
+.cooling-order span { padding: 6px 12px; background: var(--bg-dark); border-radius: 6px; font-size: 1.2em; }
+.cooling-order span.connected { background: var(--neon-green); }
+.cable-ports { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; max-width: 320px; margin: 15px auto; }
+.cable-port { padding: 12px; background: var(--bg-dark); border: 2px solid #444; border-radius: 8px; text-align: center; cursor: pointer; transition: all var(--transition-speed); min-height: 60px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.cable-port:active { transform: scale(0.95); }
+.cable-port.matched { border-color: var(--neon-green); background: rgba(0,255,136,0.1); }
+.cable-port .port-icon { font-size: 1.3em; }
+.cable-port .port-label { font-size: 0.7em; color: var(--text-secondary); margin-top: 4px; }
+.cable-active { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin: 12px 0; }
+.cable-btn { padding: 10px 15px; background: var(--bg-card); border: 1px solid var(--neon-orange); border-radius: 6px; cursor: pointer; font-family: 'Share Tech Mono', monospace; font-size: 0.8em; min-height: var(--tap-target); }
+.cable-btn.active { background: var(--neon-orange); color: var(--bg-dark); }
+.quality-bar { width: 100%; height: 16px; background: var(--bg-dark); border-radius: 8px; overflow: hidden; margin: 10px 0; }
+.quality-fill { height: 100%; background: linear-gradient(90deg, var(--neon-magenta), var(--neon-yellow), var(--neon-green)); transition: width 0.5s; }
+.use-pc-screen { background: var(--bg-dark); border: 2px solid var(--neon-cyan); border-radius: 12px; padding: 15px; min-height: 250px; }
+.bench-progress { width: 100%; height: 20px; background: var(--bg-panel); border-radius: 5px; overflow: hidden; margin: 12px 0; }
+.bench-fill { height: 100%; background: linear-gradient(90deg, var(--neon-cyan), var(--neon-green)); transition: width 0.1s; }
+.bench-cycles { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin: 15px 0; }
+.cycle-circle { width: 50px; height: 50px; border: 3px solid var(--bg-dark); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'Share Tech Mono', monospace; font-size: 0.85em; }
+.cycle-circle.active { border-color: var(--neon-cyan); box-shadow: 0 0 15px var(--neon-cyan); color: var(--neon-cyan); }
+.cycle-circle.complete { border-color: var(--neon-green); background: rgba(0,255,136,0.2); color: var(--neon-green); }
+.task-buttons { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 12px; }
+.task-btn { padding: 12px 18px; background: var(--bg-card); border: 2px solid var(--neon-cyan); border-radius: 8px; cursor: pointer; font-family: 'Orbitron', sans-serif; font-size: 0.8em; min-height: var(--tap-target); }
+.task-btn:active { transform: scale(0.95); }
+.task-btn span { font-size: 0.7em; font-weight: normal; display: block; }
+.success-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,255,136,0.1); display: none; justify-content: center; align-items: center; z-index: 2000; }
+.success-overlay.show { display: flex; }
+.success-text { font-family: 'Orbitron', sans-serif; font-size: 2em; color: var(--neon-green); text-shadow: 0 0 30px var(--neon-green); }
+.notification { position: fixed; bottom: 100px; left: 15px; right: 15px; padding: 12px 18px; background: var(--bg-panel); border: 1px solid var(--neon-cyan); border-radius: 10px; font-family: 'Share Tech Mono', monospace; z-index: 3000; text-align: center; max-width: 400px; margin: 0 auto; }
+.notification.success { border-color: var(--neon-green); }
+.notification.error { border-color: var(--neon-magenta); }
+.notification.warning { border-color: var(--neon-orange); }
+.tutorial-box { background: linear-gradient(135deg, rgba(0,255,245,0.15), rgba(255,0,110,0.15)); border: 2px solid var(--neon-cyan); border-radius: 12px; padding: 20px; margin-bottom: 15px; position: relative; overflow: hidden; }
+.tutorial-box::before { content: 'TUTORIAL'; position: absolute; top: 10px; right: 10px; font-size: 0.65em; padding: 2px 8px; background: var(--neon-cyan); color: var(--bg-dark); border-radius: 4px; font-family: 'Orbitron', sans-serif; }
+.tutorial-title { font-family: 'Orbitron', sans-serif; color: var(--neon-cyan); margin-bottom: 10px; font-size: 1.1em; }
+.tutorial-text { font-size: 0.9em; color: var(--text-secondary); line-height: 1.6; }
+.tutorial-step { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: rgba(0,0,0,0.3); border-radius: 6px; margin: 6px 0; }
+.tutorial-step-num { width: 28px; height: 28px; background: var(--neon-cyan); color: var(--bg-dark); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'Orbitron', sans-serif; font-weight: bold; font-size: 0.85em; }
+.tutorial-step-text { flex: 1; font-size: 0.85em; }
+.tutorial-tip { background: rgba(0,255,245,0.1); border-left: 3px solid var(--neon-cyan); padding: 10px; margin: 10px 0; font-size: 0.85em; color: var(--neon-cyan); }
+.tutorial-progress { display: flex; gap: 6px; margin-top: 15px; justify-content: center; }
+.tutorial-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--bg-dark); border: 2px solid var(--text-secondary); }
+.tutorial-dot.active { background: var(--neon-cyan); border-color: var(--neon-cyan); }
+.tutorial-dot.complete { background: var(--neon-green); border-color: var(--neon-green); }
+.start-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; text-align: center; padding: 20px; }
+.start-title { font-family: 'Orbitron', sans-serif; font-size: calc(2.5em * var(--font-scale)); font-weight: 900; background: linear-gradient(90deg, var(--neon-cyan), var(--neon-magenta), var(--neon-orange)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 20px; }
+.start-subtitle { font-size: 1.1em; color: var(--text-secondary); margin-bottom: 40px; max-width: 600px; line-height: 1.6; }
+.start-buttons { display: flex; gap: 15px; flex-wrap: wrap; justify-content: center; }
+.start-btn { padding: 18px 40px; background: var(--bg-panel); border: 2px solid var(--neon-cyan); border-radius: 10px; cursor: pointer; font-family: 'Orbitron', sans-serif; font-size: 1em; color: var(--text-primary); transition: all var(--transition-speed); min-height: var(--tap-target); }
+.start-btn:hover, .start-btn:focus { background: var(--neon-cyan); color: var(--bg-dark); outline: none; box-shadow: 0 0 30px var(--neon-cyan); }
+.start-btn.secondary { border-color: var(--neon-magenta); }
+.starter-kit-banner { background: linear-gradient(135deg, rgba(0,255,136,0.2), rgba(0,255,245,0.2)); border: 2px solid var(--neon-green); border-radius: 12px; padding: 20px; margin-bottom: 15px; text-align: center; }
+.starter-kit-banner h3 { font-family: 'Orbitron', sans-serif; color: var(--neon-green); margin-bottom: 10px; }
+.starter-kit-items { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin: 10px 0; }
+.starter-kit-item { background: var(--bg-dark); padding: 8px 12px; border-radius: 6px; font-size: 0.9em; }
+.workshop-queue { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+.workshop-item { padding: 8px 12px; background: var(--bg-dark); border: 1px solid rgba(0,255,245,0.3); border-radius: 6px; font-size: 0.8em; cursor: pointer; min-height: var(--tap-target); display: flex; align-items: center; }
+.workshop-item.active { background: var(--neon-cyan); color: var(--bg-dark); }
+@media (max-width: 768px) {
+  .main-grid { grid-template-columns: 1fr; }
+  .desktop-nav { display: none; }
+  .mobile-nav { display: block; }
+  #game-container { padding-bottom: 90px; }
+  .component-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+  .side-panel { display: none; }
+  .game-header { flex-direction: column; align-items: stretch; }
+  .game-title { text-align: center; }
+  .stats-bar { justify-content: space-around; }
+  .minigame-area { padding: 15px; min-height: 250px; }
+  .thermal-paste-area { width: 130px; height: 130px; }
+  .cable-ports { grid-template-columns: repeat(2, 1fr); }
+  .start-title { font-size: 1.8em; }
+}
+@media (max-width: 400px) {
+  :root { --font-scale: 0.9; }
+  .component-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .category-tabs { justify-content: center; }
+}
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<div id="start-screen" class="start-screen">
+  <div class="start-title">PC BUILDER TYCOON</div>
+  <div class="start-subtitle">
+    Build, assemble, and sell custom PCs in your own cyberpunk workshop.<br>
+    Master the art of component installation through mini-games.<br>
+    Earn money, reputation, and become the ultimate PC builder!
+  </div>
+  <div class="start-buttons">
+    <button class="start-btn" id="btn-new-game">NEW GAME</button>
+    <button class="start-btn secondary" id="btn-continue">CONTINUE</button>
+  </div>
+</div>
+
+<div id="game-container">
+  <header class="game-header">
+    <div class="game-title">PC BUILDER TYCOON</div>
+    <div class="stats-bar">
+      <div class="stat-item"><span class="stat-icon">💰</span><div><div class="stat-label">CASH</div><div class="stat-value money" id="money-display">$1500</div></div></div>
+      <div class="stat-item"><span class="stat-icon">⭐</span><div><div class="stat-label">REP</div><div class="stat-value rep" id="rep-display">5</div></div></div>
+      <div class="stat-item"><span class="stat-icon">🏆</span><div><div class="stat-label">BUILT</div><div class="stat-value" id="built-display">0</div></div></div>
+      <div class="stat-item"><span class="stat-icon">📅</span><div><div class="stat-label">DAY</div><div class="stat-value" id="day-display">1</div></div></div>
+    </div>
+    <button class="settings-btn" id="settings-btn" aria-label="Settings">⚙️</button>
+  </header>
+
+  <nav class="desktop-nav">
+    <div class="nav-tab active" data-tab="shop" role="button" tabindex="0">🛒 SHOP</div>
+    <div class="nav-tab" data-tab="workshop" role="button" tabindex="0">🔧 WORKSHOP</div>
+    <div class="nav-tab" data-tab="contracts" role="button" tabindex="0">📋 CONTRACTS</div>
+    <div class="nav-tab" data-tab="inventory" role="button" tabindex="0">📦 INVENTORY</div>
+    <div class="nav-tab" data-tab="sales" role="button" tabindex="0">💵 SALES</div>
+    <div class="nav-tab" data-tab="use" role="button" tabindex="0">🖥️ USE PC</div>
+  </nav>
+
+  <nav class="mobile-nav" aria-label="Main navigation">
+    <div class="mobile-nav-inner">
+      <button class="mobile-nav-item active" data-tab="shop"><span>🛒</span><span>SHOP</span></button>
+      <button class="mobile-nav-item" data-tab="workshop"><span>🔧</span><span>WORK</span></button>
+      <button class="mobile-nav-item" data-tab="contracts"><span>📋</span><span>JOBS</span></button>
+      <button class="mobile-nav-item" data-tab="inventory"><span>📦</span><span>STOCK</span></button>
+      <button class="mobile-nav-item" data-tab="sales"><span>💵</span><span>SELL</span></button>
+      <button class="mobile-nav-item" data-tab="use"><span>🖥️</span><span>USE</span></button>
+    </div>
+  </nav>
+
+  <div class="main-grid">
+    <main id="main-content"></main>
+    <aside class="side-panel" id="side-panel"></aside>
+  </div>
+</div>
+
+<div id="modal-container" class="modal-overlay" role="dialog" aria-modal="true">
+  <div class="modal" id="modal-content"></div>
+</div>
+
+<div id="success-overlay" class="success-overlay">
+  <div class="success-text" id="success-text">SUCCESS!</div>
+</div>
+
+<script>
+const GameState = {
+  money: 1500,
+  reputation: 5,
+  day: 1,
+  buildsCompleted: 0,
+  currentBuild: null,
+  inventory: { components: [], pcs: [] },
+  contracts: [],
+  activeContract: null,
+  customer: null,
+  tutorial: true,
+  tutorialStep: 0,
+  starterKitUsed: false,
+  settings: { colorblind: 'none', highContrast: false, reducedMotion: false }
+};
+
+const TUTORIAL_STEPS = [
+  {
+    title: "Welcome to Your PC Shop!",
+    content: "You're starting with $1,500 and some reputation. Let's learn how to build your first PC.",
+    steps: [
+      { num: 1, text: "Go to SHOP and select components" },
+      { num: 2, text: "Pick a CPU, GPU, RAM, Storage, PSU, and Case" },
+      { num: 3, text: "Click START BUILD when ready" },
+      { num: 4, text: "Complete mini-games to install parts" },
+      { num: 5, text: "Sell your PC for profit!" }
+    ],
+    tip: "💡 Tip: Balance performance and budget. Better parts = higher sale prices!"
+  },
+  {
+    title: "Component Selection Guide",
+    content: "Each component affects your PC's performance and sale value.",
+    steps: [
+      { num: 1, text: "CPU - Brain of the PC, affects all tasks" },
+      { num: 2, text: "GPU - Graphics power for gaming/design" },
+      { num: 3, text: "RAM - Memory for multitasking" },
+      { num: 4, text: "Storage - SSD is faster than HDD" },
+      { num: 5, text: "PSU - Power supply, match to your parts" }
+    ],
+    tip: "💡 Tip: Check the tier badges (B/M/H/E) - higher tier = more performance but costs more."
+  },
+  {
+    title: "Building Your PC",
+    content: "Mini-games test your skill in assembling PCs.",
+    steps: [
+      { num: 1, text: "CPU - Apply thermal paste (40-60%), drag into socket" },
+      { num: 2, text: "RAM - Tap slots in the numbered sequence" },
+      { num: 3, text: "GPU - Hold button steadily to insert" },
+      { num: 4, text: "Cooling - Connect pump → radiator → fans" },
+      { num: 5, text: "Cables - Match each cable to its port" }
+    ],
+    tip: "💡 Tip: Higher quality builds sell for more! Aim for 80%+ quality."
+  },
+  {
+    title: "Making Money",
+    content: "Multiple ways to earn in PC Builder Tycoon:",
+    steps: [
+      { num: 1, text: "SELL to walk-in customers (find them in SALES)" },
+      { num: 2, text: "CONTRACTS - Meet specs for guaranteed payment" },
+      { num: 3, text: "USE PC - Run freelance jobs on your builds" }
+    ],
+    tip: "💡 Tip: Contracts pay bonuses for high-quality PCs. Build smart!"
+  },
+  {
+    title: "You're Ready!",
+    content: "Start building and growing your PC empire.",
+    steps: [
+      { num: 1, text: "Check the starter kit for free components" },
+      { num: 2, text: "Build your first PC with quality above 80%" },
+      { num: 3, text: "Sell it or complete a contract" },
+      { num: 4, text: "Reinvest profits into better parts" },
+      { num: 5, text: "Unlock harder contracts as you gain reputation" }
+    ],
+    tip: "💡 Tip: Your reputation grows with successful builds. Higher rep = better contracts!"
+  }
+];
+
+const COMPONENTS = {
+  cpu: [
+    { id: 'celeron', name: 'Intel Celeron G5925', icon: '🔲', specs: '2-Core 3.5GHz', tier: 'budget', price: 45, perf: 5 },
+    { id: 'pentium', name: 'Intel Pentium G7400', icon: '🔲', specs: '2-Core 3.7GHz', tier: 'budget', price: 75, perf: 8 },
+    { id: 'i3-12100', name: 'Intel Core i3-12100', icon: '📦', specs: '4-Core 3.3GHz', tier: 'mid', price: 120, perf: 15 },
+    { id: 'ryzen-3-4100', name: 'AMD Ryzen 3 4100', icon: '📦', specs: '4-Core 3.8GHz', tier: 'mid', price: 110, perf: 14 },
+    { id: 'i5-12400', name: 'Intel Core i5-12400', icon: '🧊', specs: '6-Core 2.5GHz', tier: 'high', price: 185, perf: 25 },
+    { id: 'ryzen-5-5600', name: 'AMD Ryzen 5 5600', icon: '🧊', specs: '6-Core 3.5GHz', tier: 'high', price: 170, perf: 28 },
+    { id: 'i7-12700', name: 'Intel Core i7-12700', icon: '🔥', specs: '12-Core 2.1GHz', tier: 'extreme', price: 320, perf: 42 },
+    { id: 'ryzen-7-5800x', name: 'AMD Ryzen 7 5800X', icon: '🔥', specs: '8-Core 3.8GHz', tier: 'extreme', price: 299, perf: 45 }
+  ],
+  gpu: [
+    { id: 'integrated', name: 'Intel UHD 730', icon: '🔲', specs: 'Integrated', tier: 'budget', price: 0, perf: 2 },
+    { id: 'gt1030', name: 'NVIDIA GT 1030', icon: '🎮', specs: '2GB DDR5', tier: 'mid', price: 90, perf: 12 },
+    { id: 'rx550', name: 'AMD RX 550', icon: '🎮', specs: '4GB GDDR5', tier: 'mid', price: 100, perf: 14 },
+    { id: 'gtx1650', name: 'NVIDIA GTX 1650', icon: '🖼️', specs: '4GB GDDR6', tier: 'high', price: 220, perf: 28 },
+    { id: 'rx580', name: 'AMD RX 580', icon: '🖼️', specs: '8GB GDDR5', tier: 'high', price: 240, perf: 30 },
+    { id: 'rtx3060', name: 'NVIDIA RTX 3060', icon: '⚡', specs: '12GB GDDR6', tier: 'extreme', price: 400, perf: 48 },
+    { id: 'rx6700xt', name: 'AMD RX 6700 XT', icon: '⚡', specs: '12GB GDDR6', tier: 'extreme', price: 380, perf: 50 },
+    { id: 'rtx3080', name: 'NVIDIA RTX 3080', icon: '💥', specs: '10GB GDDR6X', tier: 'extreme', price: 750, perf: 70 }
+  ],
+  ram: [
+    { id: '4gb-ddr4', name: '4GB DDR4-2666', icon: '📊', specs: 'Single', tier: 'budget', price: 25, perf: 3 },
+    { id: '8gb-ddr4', name: '8GB DDR4-3200', icon: '📊', specs: 'Dual', tier: 'mid', price: 45, perf: 8 },
+    { id: '16gb-ddr4', name: '16GB DDR4-3600', icon: '📊', specs: 'Dual', tier: 'high', price: 85, perf: 18 },
+    { id: '32gb-ddr4', name: '32GB DDR4-3600', icon: '📊', specs: 'Quad', tier: 'extreme', price: 160, perf: 35 }
+  ],
+  storage: [
+    { id: '500gb-hdd', name: '500GB HDD', icon: '💾', specs: '7200 RPM', tier: 'budget', price: 35, perf: 2 },
+    { id: '1tb-hdd', name: '1TB HDD', icon: '💾', specs: '7200 RPM', tier: 'mid', price: 50, perf: 3 },
+    { id: '256gb-ssd', name: '256GB SATA SSD', icon: '💿', specs: '550 MB/s', tier: 'mid', price: 40, perf: 10 },
+    { id: '512gb-ssd', name: '512GB NVMe SSD', icon: '💿', specs: '3500 MB/s', tier: 'high', price: 65, perf: 18 },
+    { id: '1tb-nvme', name: '1TB NVMe SSD', icon: '💿', specs: '5000 MB/s', tier: 'extreme', price: 120, perf: 25 },
+    { id: '2tb-nvme', name: '2TB NVMe SSD', icon: '💿', specs: '7000 MB/s', tier: 'extreme', price: 200, perf: 35 }
+  ],
+  psu: [
+    { id: '450w', name: '450W Bronze', icon: '⚡', specs: '80+ Bronze', tier: 'budget', price: 45, perf: 2 },
+    { id: '550w', name: '550W Gold', icon: '⚡', specs: '80+ Gold', tier: 'mid', price: 75, perf: 5 },
+    { id: '650w', name: '650W Gold', icon: '⚡', specs: '80+ Gold', tier: 'high', price: 95, perf: 8 },
+    { id: '850w', name: '850W Platinum', icon: '⚡', specs: '80+ Platinum', tier: 'extreme', price: 150, perf: 12 },
+    { id: '1000w', name: '1000W Gold', icon: '⚡', specs: '80+ Gold', tier: 'extreme', price: 180, perf: 15 }
+  ],
+  case: [
+    { id: 'budget-case', name: 'Budget ATX', icon: '📦', specs: 'Basic', tier: 'budget', price: 40, perf: 1, style: 5 },
+    { id: 'mid-case', name: 'Mid RGB', icon: '📦', specs: 'ARGB', tier: 'mid', price: 80, perf: 3, style: 15 },
+    { id: 'premium-case', name: 'Premium Tower', icon: '🏠', specs: 'Dual Ch.', tier: 'high', price: 150, perf: 5, style: 30 },
+    { id: 'custom-case', name: 'Custom Mod', icon: '🏆', specs: 'Showpiece', tier: 'extreme', price: 300, perf: 8, style: 50 }
+  ],
+  cooling: [
+    { id: 'stock-cooler', name: 'Stock Cooler', icon: '🌀', specs: 'Basic', tier: 'budget', price: 0, perf: 0 },
+    { id: 'air-cooler', name: 'Tower Cooler', icon: '🌀', specs: '120mm', tier: 'mid', price: 40, perf: 8 },
+    { id: 'aio-240', name: '240mm AIO', icon: '💧', specs: 'Liquid', tier: 'high', price: 90, perf: 18 },
+    { id: 'aio-360', name: '360mm AIO', icon: '💧', specs: 'Triple Rad', tier: 'extreme', price: 150, perf: 28 }
+  ]
+};
+
+const CONTRACT_TEMPLATES = [
+  { name: 'Home Office PC', desc: 'Local accountant needs reliable office machine', easy: true, rewards: { cpu: 10, gpu: 5, ram: 8, storage: 6 }, baseReward: 350, deadline: 5 },
+  { name: 'Gaming Rig', desc: 'Parents want gaming PC for birthday', easy: true, rewards: { cpu: 18, gpu: 30, ram: 14, storage: 12 }, baseReward: 600, deadline: 7 },
+  { name: 'Streaming Workstation', desc: 'Twitch streamer needs multitasking beast', medium: true, rewards: { cpu: 28, gpu: 45, ram: 25, storage: 22 }, baseReward: 850, deadline: 10 },
+  { name: 'Small Business Server', desc: 'Startup needs compact server', medium: true, rewards: { cpu: 25, gpu: 10, ram: 35, storage: 40 }, baseReward: 700, deadline: 8 },
+  { name: '3D Rendering Machine', desc: 'Architect needs rendering powerhouse', hard: true, rewards: { cpu: 40, gpu: 65, ram: 40, storage: 30 }, baseReward: 1200, deadline: 14 },
+  { name: 'Video Editing Suite', desc: 'YouTube creator needs fast renders', hard: true, rewards: { cpu: 35, gpu: 55, ram: 35, storage: 45 }, baseReward: 1100, deadline: 12 },
+  { name: 'Ultimate Gaming Build', desc: 'Wealthy gamer wants the best', extreme: true, rewards: { cpu: 50, gpu: 75, ram: 50, storage: 50 }, baseReward: 2000, deadline: 14 }
+];
+
+const CUSTOMER_NAMES = ['Alex Chen', 'Jordan Smith', 'Sam Williams', 'Taylor Brown', 'Casey Jones', 'Riley Davis', 'Morgan Lee', 'Quinn Taylor'];
+const CUSTOMER_AVATARS = ['👨‍💼', '👩‍💻', '🧑‍🎨', '👨‍🔧', '👩‍🏫', '🧑‍💻', '👨‍💻', '👩‍🔬'];
+
+let currentTab = 'shop';
+let currentCategory = 'cpu';
+let selectedComponents = {};
+let miniGameState = null;
+let gpuInterval = null;
+let customerTimer = null;
+let benchTimer = null;
+
+function applySettings() {
+  const root = document.documentElement;
+  root.classList.remove('deuteranopia', 'protanopia', 'tritanopia', 'high-contrast', 'reduced-motion');
+  if (GameState.settings.colorblind !== 'none') root.classList.add(GameState.settings.colorblind);
+  if (GameState.settings.highContrast) root.classList.add('high-contrast');
+  if (GameState.settings.reducedMotion) root.classList.add('reduced-motion');
+}
+
+function showSettingsModal() {
+  const content = `<div class="settings-modal">
+    <div class="modal-title">⚙️ SETTINGS</div>
+    <div class="settings-group">
+      <label class="settings-label">COLORBLIND MODE</label>
+      <div class="settings-options">
+        <button class="settings-option ${GameState.settings.colorblind === 'none' ? 'active' : ''}" onclick="setColorblind('none')">None</button>
+        <button class="settings-option ${GameState.settings.colorblind === 'deuteranopia' ? 'active' : ''}" onclick="setColorblind('deuteranopia')">Deuteranopia</button>
+        <button class="settings-option ${GameState.settings.colorblind === 'protanopia' ? 'active' : ''}" onclick="setColorblind('protanopia')">Protanopia</button>
+        <button class="settings-option ${GameState.settings.colorblind === 'tritanopia' ? 'active' : ''}" onclick="setColorblind('tritanopia')">Tritanopia</button>
+      </div>
+    </div>
+    <div class="settings-group">
+      <label class="settings-label">ACCESSIBILITY</label>
+      <div class="settings-options">
+        <button class="settings-option ${GameState.settings.highContrast ? 'active' : ''}" onclick="toggleHighContrast()">${GameState.settings.highContrast ? '✓ ' : ''}High Contrast</button>
+        <button class="settings-option ${GameState.settings.reducedMotion ? 'active' : ''}" onclick="toggleReducedMotion()">${GameState.settings.reducedMotion ? '✓ ' : ''}Reduced Motion</button>
+      </div>
+    </div>
+    <button class="btn btn-primary btn-block" onclick="closeModal()" style="margin-top:20px">CLOSE</button>
+  </div>`;
+  openModal(content);
+}
+
+function setColorblind(mode) { GameState.settings.colorblind = mode; applySettings(); showSettingsModal(); saveGame(); }
+function toggleHighContrast() { GameState.settings.highContrast = !GameState.settings.highContrast; applySettings(); showSettingsModal(); saveGame(); }
+function toggleReducedMotion() { GameState.settings.reducedMotion = !GameState.settings.reducedMotion; applySettings(); showSettingsModal(); saveGame(); }
+document.getElementById('settings-btn').addEventListener('click', showSettingsModal);
+
+function showNotification(message, type = 'info') {
+  const existing = document.querySelector('.notification');
+  if (existing) existing.remove();
+  const notif = document.createElement('div');
+  notif.className = `notification ${type}`;
+  notif.textContent = message;
+  notif.setAttribute('role', 'alert');
+  document.body.appendChild(notif);
+  setTimeout(() => notif.remove(), 3000);
+}
+
+function showSuccess(text) {
+  document.getElementById('success-text').textContent = text;
+  document.getElementById('success-overlay').classList.add('show');
+  setTimeout(() => document.getElementById('success-overlay').classList.remove('show'), 1500);
+}
+
+function updateDisplays() {
+  document.getElementById('money-display').textContent = `$${GameState.money}`;
+  document.getElementById('rep-display').textContent = GameState.reputation;
+  document.getElementById('built-display').textContent = GameState.buildsCompleted;
+  document.getElementById('day-display').textContent = GameState.day;
+  saveGame();
+}
+
+function openModal(content) {
+  document.getElementById('modal-content').innerHTML = content;
+  document.getElementById('modal-container').classList.add('show');
+}
+
+function closeModal() {
+  document.getElementById('modal-container').classList.remove('show');
+  miniGameState = null;
+  if (gpuInterval) clearInterval(gpuInterval);
+}
+document.getElementById('modal-container').addEventListener('click', (e) => { if (e.target.id === 'modal-container') closeModal(); });
+
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.mobile-nav-item').forEach(t => t.classList.remove('active'));
+  document.querySelector(`.nav-tab[data-tab="${tab}"]`)?.classList.add('active');
+  document.querySelector(`.mobile-nav-item[data-tab="${tab}"]`)?.classList.add('active');
+  renderMainContent();
+  renderSidePanel();
+}
+document.querySelectorAll('.nav-tab').forEach(tab => { tab.addEventListener('click', () => switchTab(tab.dataset.tab)); tab.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') switchTab(tab.dataset.tab); }); });
+document.querySelectorAll('.mobile-nav-item').forEach(btn => { btn.addEventListener('click', () => switchTab(btn.dataset.tab)); });
+
+function renderMainContent() {
+  const main = document.getElementById('main-content');
+  switch(currentTab) {
+    case 'shop': renderShop(main); break;
+    case 'workshop': renderWorkshop(main); break;
+    case 'contracts': renderContracts(main); break;
+    case 'inventory': renderInventory(main); break;
+    case 'sales': renderSales(main); break;
+    case 'use': renderUsePC(main); break;
+  }
+}
+
+function renderSidePanel() {
+  const side = document.getElementById('side-panel');
+  side.innerHTML = '';
+  if (currentTab === 'shop' && Object.keys(selectedComponents).length > 0) {
+    side.innerHTML = `<div class="panel"><div class="section-title">BUILD SUMMARY</div>
+      ${Object.entries(selectedComponents).map(([cat, comp]) => `<div class="build-item complete"><span class="build-item-name">${comp.icon} ${comp.name}</span><span class="build-item-status status-ok">$${comp.price}</span></div>`).join('')}
+      <div class="price-summary">
+        <div class="price-row"><span>Total Cost</span><span>$${getTotalCost()}</span></div>
+        <div class="price-row total"><span>Potential Sale</span><span>$${getPotentialSale()}</span></div>
+      </div>
+      <button class="btn btn-primary btn-block" onclick="startBuild()" ${GameState.money < getTotalCost() ? 'disabled' : ''}>START BUILD</button>
+      <button class="btn btn-secondary btn-block" style="margin-top:8px" onclick="clearBuild()">CLEAR</button>
+    </div>`;
+  } else if (currentTab === 'workshop' && GameState.currentBuild) {
+    const build = GameState.currentBuild;
+    side.innerHTML = `<div class="panel"><div class="section-title">BUILD STATUS</div>
+      ${build.steps.map((s, i) => {
+        const labels = { cpu: 'CPU', ram: 'RAM', gpu: 'GPU', cooling: 'COOLING', cables: 'CABLES' };
+        const status = i < build.currentStep ? 'complete' : i === build.currentStep ? 'active' : 'incomplete';
+        return `<div class="build-item ${status}"><span class="build-item-name">${labels[s]}</span><span class="build-item-status ${status === 'complete' ? 'status-ok' : 'status-pending'}">${status === 'complete' ? '✓' : status === 'active' ? '→' : '○'}</span></div>`;
+      }).join('')}
+    </div>`;
+  } else if (currentTab === 'sales' && GameState.inventory.pcs.length > 0) {
+    side.innerHTML = `<div class="panel"><div class="section-title">QUICK STATS</div>
+      <div class="price-row"><span>PCs in stock</span><span>${GameState.inventory.pcs.length}</span></div>
+      <div class="price-row"><span>Total value</span><span>$${GameState.inventory.pcs.reduce((s, p) => s + p.value, 0)}</span></div>
+    </div>`;
+  }
+}
+
+function renderTutorial() {
+  const step = TUTORIAL_STEPS[GameState.tutorialStep];
+  let html = `<div class="tutorial-box">
+    <div class="tutorial-title">${step.title}</div>
+    <div class="tutorial-text">${step.content}</div>`;
+  
+  step.steps.forEach(s => {
+    html += `<div class="tutorial-step"><div class="tutorial-step-num">${s.num}</div><div class="tutorial-step-text">${s.text}</div></div>`;
+  });
+  
+  html += `<div class="tutorial-tip">${step.tip}</div>`;
+  html += `<div class="tutorial-progress">`;
+  TUTORIAL_STEPS.forEach((_, i) => {
+    html += `<div class="tutorial-dot ${i === GameState.tutorialStep ? 'active' : i < GameState.tutorialStep ? 'complete' : ''}"></div>`;
+  });
+  html += `</div>`;
+  
+  html += `<div style="display:flex;gap:10px;margin-top:15px;justify-content:center">`;
+  if (GameState.tutorialStep > 0) html += `<button class="btn btn-secondary" onclick="prevTutorial()">← BACK</button>`;
+  if (GameState.tutorialStep < TUTORIAL_STEPS.length - 1) html += `<button class="btn btn-primary" onclick="nextTutorial()">NEXT →</button>`;
+  else html += `<button class="btn btn-primary" onclick="finishTutorial()">START BUILDING!</button>`;
+  html += `</div></div>`;
+  
+  return html;
+}
+
+function nextTutorial() {
+  GameState.tutorialStep++;
+  renderMainContent();
+}
+
+function prevTutorial() {
+  GameState.tutorialStep--;
+  renderMainContent();
+}
+
+function finishTutorial() {
+  GameState.tutorial = false;
+  showNotification('Tutorial complete! Good luck!', 'success');
+  renderMainContent();
+}
+
+function renderShop(container) {
+  let html = '<div class="panel">';
+  if (GameState.tutorial) html += renderTutorial();
+  
+  if (!GameState.starterKitUsed && GameState.tutorialStep >= 2) {
+    html += `<div class="starter-kit-banner">
+      <h3>🎁 STARTER KIT AVAILABLE!</h3>
+      <p style="color:var(--text-secondary);font-size:0.9em">Claim free components to help you get started!</p>
+      <div class="starter-kit-items">
+        <span class="starter-kit-item">📦 Mid Case</span>
+        <span class="starter-kit-item">💿 512GB NVMe</span>
+        <span class="starter-kit-item">📊 8GB RAM</span>
+      </div>
+      <button class="btn btn-success" style="margin-top:10px" onclick="claimStarterKit()">CLAIM FREE KIT</button>
+    </div>`;
+  }
+  
+  html += `<div class="section-title">COMPONENT SHOP</div>`;
+  html += '<div class="category-tabs">';
+  Object.keys(COMPONENTS).forEach(cat => {
+    const labels = { cpu: 'CPU', gpu: 'GPU', ram: 'RAM', storage: 'STO', psu: 'PSU', case: 'CASE', cooling: 'COOL' };
+    html += `<div class="cat-tab ${currentCategory === cat ? 'active' : ''}" onclick="currentCategory='${cat}';renderMainContent()" role="button" tabindex="0">${labels[cat]}</div>`;
+  });
+  html += '</div>';
+  html += '<div class="component-grid">';
+  COMPONENTS[currentCategory].forEach(comp => {
+    const selected = selectedComponents[currentCategory]?.id === comp.id;
+    const disabled = GameState.money < comp.price && !selected;
+    const tierLabels = { budget: 'B', mid: 'M', high: 'H', extreme: 'E' };
+    html += `<div class="component-card ${selected ? 'selected' : ''} ${disabled ? 'disabled' : ''}" onclick="${disabled ? '' : `toggleComponent('${currentCategory}','${comp.id}')`}" role="button" tabindex="${disabled ? -1 : 0}">
+      <span class="component-tier tier-${comp.tier}">${tierLabels[comp.tier]}</span>
+      <div class="component-icon">${comp.icon}</div>
+      <div class="component-name">${comp.name}</div>
+      <div class="component-specs">${comp.specs}</div>
+      <div class="component-price">$${comp.price}</div>
+      ${selected ? '<div style="color:var(--neon-green);font-size:0.8em;margin-top:5px">✓ Selected</div>' : ''}
+    </div>`;
+  });
+  html += '</div></div>';
+  container.innerHTML = html;
+}
+
+function claimStarterKit() {
+  GameState.starterKitUsed = true;
+  selectedComponents.case = { ...COMPONENTS.case[1] };
+  selectedComponents.storage = { ...COMPONENTS.storage[3] };
+  selectedComponents.ram = { ...COMPONENTS.ram[1] };
+  showNotification('Starter kit claimed! Case, Storage, and RAM added.', 'success');
+  renderMainContent();
+  renderSidePanel();
+}
+
+function toggleComponent(category, id) {
+  const comp = COMPONENTS[category].find(c => c.id === id);
+  if (selectedComponents[category]?.id === id) delete selectedComponents[category];
+  else selectedComponents[category] = {...comp};
+  renderMainContent();
+  renderSidePanel();
+}
+
+function getTotalCost() { return Object.values(selectedComponents).reduce((sum, c) => sum + c.price, 0); }
+function getPotentialSale() {
+  const perf = Object.values(selectedComponents).reduce((sum, c) => sum + (c.perf || 0), 0);
+  return Math.floor(perf * 8 + Object.values(selectedComponents).reduce((sum, c) => sum + (c.price || 0), 0) * 1.25);
+}
+
+function clearBuild() { selectedComponents = {}; renderMainContent(); renderSidePanel(); }
+
+function startBuild() {
+  if (getTotalCost() > GameState.money) { showNotification('Not enough money!', 'error'); return; }
+  if (Object.keys(selectedComponents).length < 4) { showNotification('Select at least 4 components!', 'error'); return; }
+  GameState.money -= getTotalCost();
+  GameState.currentBuild = { components: {...selectedComponents}, quality: 0, steps: ['cpu', 'ram', 'gpu', 'cooling', 'cables'], currentStep: 0 };
+  selectedComponents = {};
+  updateDisplays();
+  openBuildMiniGame();
+}
+
+function openBuildMiniGame() {
+  const step = GameState.currentBuild.steps[GameState.currentBuild.currentStep];
+  let content = '<div class="minigame-area">';
+  switch(step) {
+    case 'cpu':
+      content += `<div class="section-title">CPU INSTALLATION</div>
+        <p style="color:var(--text-secondary);margin-bottom:12px">Apply thermal paste and mount CPU</p>
+        <div class="thermal-paste-area" id="paste-area"><div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#666;font-size:0.8em">SOCKET</div></div>
+        <div class="paste-meter"><div class="paste-fill" id="paste-meter" style="width:0%"></div></div>
+        <p style="color:var(--text-secondary);font-size:0.8em;margin-bottom:8px">Tap to apply paste (40-60% optimal)</p>
+        <button class="btn btn-primary" id="apply-paste-btn" onclick="applyPaste()">APPLY PASTE</button>
+        <div id="cpu-align-section" class="hidden" style="margin-top:15px">
+          <div class="cpu-slot" id="cpu-slot" style="position:relative;display:flex;align-items:center;justify-content:center"></div>
+          <p style="color:var(--text-secondary);font-size:0.8em;margin:10px 0">Drag CPU into socket</p>
+          <div style="width:120px;height:80px;background:var(--bg-card);border:2px dashed var(--neon-cyan);border-radius:8px;margin:0 auto;position:relative;display:flex;align-items:center;justify-content:center">
+            <div class="cpu-piece" id="cpu-piece" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%)">CPU</div>
+          </div>
+          <button class="btn btn-success btn-block" style="margin-top:12px" onclick="finishCPU()">SECURE CPU</button>
+        </div>`;
+      miniGameState = { pasteAmount: 0 };
+      break;
+    case 'ram':
+      content += `<div class="section-title">RAM INSTALLATION</div>
+        <p style="color:var(--text-secondary);margin-bottom:10px">Tap RAM in shown sequence</p>
+        <div class="ram-sequence" id="ram-sequence"></div>
+        <div class="ram-slots" id="ram-slots"></div>
+        <div class="quality-bar"><div class="quality-fill" id="ram-quality" style="width:0%"></div></div>`;
+      miniGameState = { sequence: [], userSequence: [], slots: [] };
+      initRAMGame();
+      break;
+    case 'gpu':
+      content += `<div class="section-title">GPU INSTALLATION</div>
+        <p style="color:var(--text-secondary);margin-bottom:10px">Hold to insert GPU steadily</p>
+        <div class="gpu-card">GPU CARD</div>
+        <div class="stability-meter"><div class="stability-fill" id="stability-meter" style="width:50%"></div></div>
+        <p style="color:var(--text-secondary);font-size:0.85em" id="stability-label">Ready to insert</p>
+        <button class="btn btn-primary btn-block" id="gpu-start-btn" onclick="startGPUGame()">HOLD TO INSERT</button>`;
+      miniGameState = { progress: 0 };
+      break;
+    case 'cooling':
+      content += `<div class="section-title">COOLING SETUP</div>
+        <p style="color:var(--text-secondary);margin-bottom:10px">Tap components: pump → radiator → fans</p>
+        <div class="cooling-order" id="cooling-order"></div>
+        <div class="tube-puzzle" id="tube-puzzle"></div>
+        <button class="btn btn-success btn-block" style="margin-top:12px" onclick="checkCooling()">CONNECT</button>`;
+      miniGameState = { connected: [], order: ['pump', 'radiator', 'fans'] };
+      initCoolingGame();
+      break;
+    case 'cables':
+      content += `<div class="section-title">CABLE MANAGEMENT</div>
+        <p style="color:var(--text-secondary);margin-bottom:10px">Tap cable then tap matching port</p>
+        <div class="cable-active" id="cable-options"></div>
+        <div class="cable-ports" id="cable-ports"></div>
+        <div class="quality-bar"><div class="quality-fill" id="cable-quality" style="width:0%"></div></div>`;
+      miniGameState = { selectedCable: null, matched: 0, total: 4 };
+      initCableGame();
+      break;
+  }
+  content += '</div>';
+  openModal(content);
+  if (step === 'cpu') initCPUGame();
+  else if (step === 'ram') renderRAMGame();
+  else if (step === 'cooling') renderCoolingGame();
+}
+
+function initCPUGame() {
+  const area = document.getElementById('paste-area');
+  const addSwatch = (e) => {
+    const rect = area.getBoundingClientRect();
+    const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+    const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+    const swatch = document.createElement('div');
+    swatch.className = 'thermal-swatch';
+    swatch.style.left = x + 'px';
+    swatch.style.top = y + 'px';
+    area.appendChild(swatch);
+    miniGameState.pasteAmount += 8;
+    document.getElementById('paste-meter').style.width = Math.min(100, miniGameState.pasteAmount) + '%';
+  };
+  area.addEventListener('click', addSwatch);
+  area.addEventListener('touchend', (e) => { e.preventDefault(); addSwatch(e); });
+}
+
+function applyPaste() {
+  if (miniGameState.pasteAmount < 35 || miniGameState.pasteAmount > 65) { showNotification('Paste 35-65%!', 'error'); return; }
+  document.getElementById('cpu-align-section').classList.remove('hidden');
+  document.getElementById('apply-paste-btn').disabled = true;
+  const piece = document.getElementById('cpu-piece');
+  const slot = document.getElementById('cpu-slot');
+  let dragging = false, offsetX = 0, offsetY = 0;
+  const startDrag = (e) => { e.preventDefault(); dragging = true; const cx = e.touches ? e.touches[0].clientX : e.clientX; const cy = e.touches ? e.touches[0].clientY : e.clientY; offsetX = cx - piece.offsetLeft; offsetY = cy - piece.offsetTop; };
+  const onDrag = (e) => { if (!dragging) return; e.preventDefault(); const cx = e.touches ? e.touches[0].clientX : e.clientX; const cy = e.touches ? e.touches[0].clientY : e.clientY; piece.style.left = (cx - offsetX) + 'px'; piece.style.top = (cy - offsetY) + 'px'; };
+  const endDrag = () => {
+    dragging = false;
+    const slotRect = slot.getBoundingClientRect();
+    const pieceRect = piece.getBoundingClientRect();
+    const cx = pieceRect.left + pieceRect.width/2;
+    const cy = pieceRect.top + pieceRect.height/2;
+    if (Math.abs(cx - (slotRect.left + slotRect.width/2)) < 30 && Math.abs(cy - (slotRect.top + slotRect.height/2)) < 30) {
+      piece.classList.add('placed');
+      miniGameState.placed = true;
+    }
+  };
+  piece.addEventListener('mousedown', startDrag);
+  piece.addEventListener('touchstart', startDrag);
+  document.addEventListener('mousemove', onDrag);
+  document.addEventListener('touchmove', onDrag);
+  document.addEventListener('mouseup', endDrag);
+  document.addEventListener('touchend', endDrag);
+}
+
+function finishCPU() {
+  if (!miniGameState.placed) { showNotification('Align CPU in socket!', 'error'); return; }
+  GameState.currentBuild.quality += miniGameState.pasteAmount >= 40 && miniGameState.pasteAmount <= 60 ? 100 : 70;
+  showSuccess('CPU DONE!');
+  setTimeout(() => advanceStep(), 1500);
+}
+
+function initRAMGame() {
+  const seq = [];
+  for (let i = 0; i < 4; i++) seq.push(Math.floor(Math.random() * 4) + 1);
+  miniGameState.sequence = seq;
+  miniGameState.slots = [];
+  for (let i = 0; i < 4; i++) miniGameState.slots.push({ filled: false });
+}
+
+function renderRAMGame() {
+  const seqEl = document.getElementById('ram-sequence');
+  if (seqEl) seqEl.innerHTML = miniGameState.sequence.map((n, i) => {
+    const matched = miniGameState.userSequence[i] === n;
+    const error = miniGameState.userSequence[i] && !matched;
+    return `<div class="seq-box ${matched ? 'match' : error ? 'error' : ''}">${n}</div>`;
+  }).join('');
+  const slotsEl = document.getElementById('ram-slots');
+  if (slotsEl) {
+    slotsEl.innerHTML = miniGameState.slots.map((s, i) => `
+      <div class="ram-slot-box">
+        ${s.filled ? '<span class="ram-slot-false">✓</span>' : `<span class="ram-slot-false">${i+1}</span>`}
+        ${s.filled ? `<div class="ram-stick placed">RAM</div>` : `<div class="ram-stick" onclick="clickRAM(${i})">SLOT</div>`}
+      </div>`
+    ).join('');
+  }
+  const qualityEl = document.getElementById('ram-quality');
+  if (qualityEl) qualityEl.style.width = (miniGameState.userSequence.length / 4) * 100 + '%';
+}
+
+function clickRAM(slotIndex) {
+  const nextNeeded = miniGameState.sequence[miniGameState.userSequence.length];
+  if (nextNeeded === slotIndex + 1) {
+    miniGameState.slots[slotIndex] = { filled: true };
+    miniGameState.userSequence.push(slotIndex + 1);
+    renderRAMGame();
+    if (miniGameState.userSequence.length === 4) {
+      setTimeout(() => { GameState.currentBuild.quality += 100; showSuccess('RAM DONE!'); setTimeout(() => advanceStep(), 1500); }, 300);
+    }
+  } else {
+    showNotification('Wrong slot!', 'error');
+    miniGameState.slots[slotIndex] = { filled: true };
+    renderRAMGame();
+    setTimeout(() => { miniGameState.slots[slotIndex] = { filled: false }; renderRAMGame(); }, 500);
+  }
+}
+
+function startGPUGame() {
+  const btn = document.getElementById('gpu-start-btn');
+  btn.disabled = true;
+  btn.textContent = 'HOLD...';
+  btn.style.background = 'var(--neon-green)';
+  let progress = 0, stability = 50;
+  gpuInterval = setInterval(() => {
+    stability += (Math.random() - 0.5) * 25;
+    stability = Math.max(0, Math.min(100, stability));
+    document.getElementById('stability-meter').style.width = stability + '%';
+    document.getElementById('stability-label').textContent = stability > 70 ? 'STABLE ✓' : stability > 40 ? 'CAREFUL...' : 'UNSTABLE!';
+    progress += stability > 50 ? 2 : -1;
+    if (progress >= 100) {
+      clearInterval(gpuInterval);
+      GameState.currentBuild.quality += stability > 70 ? 100 : stability > 40 ? 70 : 40;
+      showSuccess('GPU DONE!');
+      setTimeout(() => advanceStep(), 1500);
+    } else if (progress < 0) {
+      clearInterval(gpuInterval);
+      btn.disabled = false;
+      btn.textContent = 'TRY AGAIN';
+      btn.style.background = '';
+      showNotification('Failed! Try again.', 'error');
+      setTimeout(() => { btn.textContent = 'HOLD TO INSERT'; progress = 0; }, 1000);
+    }
+  }, 100);
+  setTimeout(() => { if (gpuInterval) { clearInterval(gpuInterval); btn.disabled = false; btn.textContent = 'HOLD TO INSERT'; btn.style.background = ''; } }, 6000);
+}
+
+function initCoolingGame() { renderCoolingGame(); }
+
+function renderCoolingGame() {
+  const puzzle = document.getElementById('tube-puzzle');
+  if (puzzle) {
+    const nodes = [{ id: 'pump', icon: '💧', label: 'Pump' }, { id: 'radiator', icon: '🌀', label: 'Radiator' }, { id: 'fans', icon: '🫧', label: 'Fans' }, { id: 'block', icon: '❄️', label: 'Block' }];
+    puzzle.innerHTML = nodes.map(n => `<div class="tube-node ${miniGameState.connected.includes(n.id) ? 'connected' : ''}" onclick="clickCoolingNode('${n.id}')">${n.icon}<br><span>${n.label}</span></div>`).join('');
+  }
+  const order = document.getElementById('cooling-order');
+  if (order) {
+    const labels = { pump: '💧', radiator: '🌀', fans: '🫧' };
+    order.innerHTML = miniGameState.order.map(o => `<span class="${miniGameState.connected.includes(o) ? 'connected' : ''}">${labels[o]}</span>`).join(' → ');
+  }
+}
+
+function clickCoolingNode(id) {
+  const expected = miniGameState.order[miniGameState.connected.length];
+  if (id === expected) {
+    miniGameState.connected.push(id);
+    renderCoolingGame();
+    if (miniGameState.connected.length === 3) { GameState.currentBuild.quality += 100; showSuccess('COOLING DONE!'); setTimeout(() => advanceStep(), 1500); }
+  } else if (!miniGameState.connected.includes(id)) { showNotification(`Connect ${expected} first!`, 'error'); }
+}
+
+function checkCooling() { if (miniGameState.connected.length < 3) showNotification('Connect all first!', 'error'); }
+
+function initCableGame() {
+  const cables = [{ id: 'cpu8', label: 'CPU 8', target: 'cpupower' }, { id: 'gpu6', label: 'PCIe 6', target: 'gpupower' }, { id: 'sata', label: 'SATA', target: 'storage' }, { id: 'atx', label: 'ATX 24', target: 'main' }];
+  miniGameState.cables = cables;
+  const options = document.getElementById('cable-options');
+  if (options) options.innerHTML = cables.map(c => `<button class="cable-btn ${c.id}" onclick="selectCable('${c.id}')">${c.label}</button>`).join('');
+  const ports = document.getElementById('cable-ports');
+  if (ports) ports.innerHTML = [{ id: 'main', label: 'Main', icon: '⚡' }, { id: 'cpupower', label: 'CPU', icon: '🔲' }, { id: 'gpupower', label: 'GPU', icon: '🎮' }, { id: 'storage', label: 'Storage', icon: '💿' }]
+    .map(p => `<div class="cable-port" id="port-${p.id}" onclick="connectCable('${p.id}')"><div class="port-icon">${p.icon}</div><div class="port-label">${p.label}</div></div>`).join('');
+}
+
+function selectCable(cableId) { miniGameState.selectedCable = cableId; document.querySelectorAll('.cable-btn').forEach(btn => btn.classList.remove('active')); document.querySelector(`.cable-btn.${cableId}`).classList.add('active'); }
+
+function connectCable(portId) {
+  if (!miniGameState.selectedCable) { showNotification('Select cable first!', 'error'); return; }
+  const cable = miniGameState.cables.find(c => c.id === miniGameState.selectedCable);
+  if (cable.target === portId) {
+    document.getElementById(`port-${portId}`).classList.add('matched');
+    document.querySelector(`.cable-btn.${miniGameState.selectedCable}`).style.opacity = '0.3';
+    document.querySelector(`.cable-btn.${miniGameState.selectedCable}`).disabled = true;
+    miniGameState.matched++;
+    miniGameState.selectedCable = null;
+    document.getElementById('cable-quality').style.width = (miniGameState.matched / miniGameState.total) * 100 + '%';
+    if (miniGameState.matched === miniGameState.total) { GameState.currentBuild.quality += 100; showSuccess('CABLES DONE!'); setTimeout(() => advanceStep(), 1500); }
+  } else { showNotification('Wrong port!', 'error'); }
+}
+
+function advanceStep() {
+  GameState.currentBuild.currentStep++;
+  if (GameState.currentBuild.currentStep >= GameState.currentBuild.steps.length) finishBuild();
+  else openBuildMiniGame();
+}
+
+function finishBuild() {
+  const quality = GameState.currentBuild.quality / 5;
+  const components = GameState.currentBuild.components;
+  const perf = Object.values(components).reduce((sum, c) => sum + (c.perf || 0), 0);
+  const style = Object.values(components).reduce((sum, c) => sum + (c.style || 0), 0);
+  const totalPerf = Math.floor((perf + style * 0.5) * 10);
+  const value = Math.floor(Object.values(components).reduce((sum, c) => sum + c.price, 0) * (1 + quality / 100));
+  const prefixes = ['Cyber', 'Neon', 'Quantum', 'Hyper', 'Turbo', 'Nova'];
+  const suffixes = ['Pro', 'Elite', 'Max', 'Beast', 'Core'];
+  const pcName = prefixes[Math.floor(Math.random() * prefixes.length)] + ' ' + suffixes[Math.floor(Math.random() * suffixes.length)];
+  const pc = { id: Date.now(), name: pcName, components, quality: Math.floor(quality), totalPerf, value, condition: 100 };
+  GameState.inventory.pcs.push(pc);
+  GameState.buildsCompleted++;
+  GameState.currentBuild = null;
+  closeModal();
+  updateDisplays();
+  showSuccess('BUILD COMPLETE!');
+  showNotification(`"${pcName}" ready!`, 'success');
+  GameState.day++;
+  updateDisplays();
+}
+
+function renderWorkshop(container) {
+  let html = '<div class="panel"><div class="section-title">WORKSHOP</div>';
+  if (!GameState.currentBuild) {
+    html += `<div style="text-align:center;padding:30px"><div style="font-size:3em;margin-bottom:15px">🔧</div><p style="color:var(--text-secondary)">No active builds</p><p style="color:var(--text-secondary);font-size:0.85em;margin-top:10px">Go to SHOP to select parts</p></div>`;
+  } else {
+    html += `<div class="workshop-queue">`;
+    const labels = { cpu: 'CPU', ram: 'RAM', gpu: 'GPU', cooling: 'COOL', cables: 'CABLE' };
+    const icons = { cpu: '🔲', ram: '📊', gpu: '🎮', cooling: '💧', cables: '⚡' };
+    GameState.currentBuild.steps.forEach((s, i) => { html += `<div class="workshop-item ${i === GameState.currentBuild.currentStep ? 'active' : ''}">${icons[s]} ${labels[s]}</div>`; });
+    html += `</div>`;
+    const stepNames = { cpu: 'CPU Installation', ram: 'RAM Installation', gpu: 'GPU Installation', cooling: 'Cooling Setup', cables: 'Cable Management' };
+    const step = GameState.currentBuild.steps[GameState.currentBuild.currentStep];
+    html += `<div style="text-align:center;padding:15px;background:var(--bg-dark);border-radius:10px;margin-top:12px;cursor:pointer" onclick="openBuildMiniGame()" role="button" tabindex="0"><div style="font-size:1.5em;margin-bottom:8px">▶</div><div style="font-family:'Orbitron',sans-serif">${stepNames[step]}</div><button class="btn btn-primary" style="margin-top:12px">CONTINUE</button></div>`;
+    html += `<div class="quality-bar" style="margin-top:15px"><div class="quality-fill" style="width:${GameState.currentBuild.quality / 5}%"></div></div><p style="text-align:center;color:var(--text-secondary);font-size:0.8em">Quality: ${Math.floor(GameState.currentBuild.quality / 5)}%</p>`;
+  }
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+function renderContracts(container) {
+  let html = '<div class="panel"><div class="section-title">CONTRACTS</div><p style="color:var(--text-secondary);font-size:0.85em;margin-bottom:12px">Complete jobs for money & reputation</p>';
+  if (GameState.contracts.length === 0) generateContracts();
+  GameState.contracts.forEach((c, i) => {
+    const diff = c.easy ? 'easy' : c.medium ? 'medium' : 'hard';
+    const timeLeft = c.deadline - (GameState.day - c.startDay);
+    html += `<div class="contract-card contract-${diff}">
+      <div class="contract-header">${c.name}</div><div class="contract-desc">${c.desc}</div>
+      ${Object.entries(c.requirements).map(([cat, req]) => `<div class="contract-req"><span>⚡ ${cat.toUpperCase()}</span><span>≥ ${req}</span></div>`).join('')}
+      <div class="contract-reward">$${c.reward}</div><div style="font-size:0.8em;color:var(--neon-orange)">⏰ ${timeLeft} days</div>
+      <button class="btn btn-primary btn-block" style="margin-top:10px" onclick="acceptContract(${i})" ${GameState.activeContract ? 'disabled' : ''}>ACCEPT</button>
+    </div>`;
+  });
+  if (GameState.activeContract) html += `<div class="contract-card" style="border-color:var(--neon-cyan);margin-top:15px"><div class="contract-header">ACTIVE: ${GameState.activeContract.name}</div><button class="btn btn-success btn-block" onclick="deliverContract()">DELIVER PC</button></div>`;
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+function generateContracts() {
+  const shuffled = [...CONTRACT_TEMPLATES].sort(() => Math.random() - 0.5);
+  GameState.contracts = shuffled.slice(0, 3).map(c => ({ ...c, id: Date.now() + Math.random(), startDay: GameState.day, deadline: c.deadline, requirements: {...c.rewards}, reward: c.baseReward }));
+}
+
+function acceptContract(index) {
+  if (GameState.activeContract) { showNotification('Already have active contract!', 'warning'); return; }
+  GameState.activeContract = GameState.contracts[index];
+  showNotification(`Accepted: ${GameState.activeContract.name}`, 'success');
+  renderMainContent();
+}
+
+function deliverContract() {
+  if (GameState.inventory.pcs.length === 0) { showNotification('No PCs! Build one first.', 'error'); return; }
+  const pc = GameState.inventory.pcs[0];
+  const reqs = GameState.activeContract.requirements;
+  let metAll = true;
+  if (pc.components.cpu?.perf < (reqs.cpu || 0)) metAll = false;
+  if (pc.components.gpu?.perf < (reqs.gpu || 0)) metAll = false;
+  if (pc.components.ram?.perf < (reqs.ram || 0)) metAll = false;
+  if (!metAll) { showNotification('PC doesn\'t meet requirements!', 'error'); return; }
+  const bonus = pc.quality > 80 ? 1.2 : pc.quality > 50 ? 1.1 : 1;
+  const finalReward = Math.floor(GameState.activeContract.reward * bonus);
+  GameState.money += finalReward;
+  GameState.reputation += GameState.activeContract.hard ? 15 : GameState.activeContract.medium ? 8 : 5;
+  GameState.inventory.pcs.shift();
+  GameState.activeContract = null;
+  GameState.contracts = [];
+  showSuccess('CONTRACT COMPLETE!');
+  showNotification(`Earned $${finalReward}!`, 'success');
+  updateDisplays();
+  renderMainContent();
+}
+
+function renderInventory(container) {
+  let html = '<div class="panel"><div class="section-title">INVENTORY</div>';
+  if (GameState.inventory.pcs.length === 0) html += `<div style="text-align:center;padding:30px"><div style="font-size:3em;margin-bottom:15px">📦</div><p style="color:var(--text-secondary)">No completed PCs</p></div>`;
+  else {
+    html += '<div class="component-grid">';
+    GameState.inventory.pcs.forEach(pc => {
+      html += `<div class="pc-card"><div class="pc-name">${pc.name}</div><div class="pc-stats"><span class="pc-stat">⚡ ${pc.totalPerf}</span><span class="pc-stat">💰 $${pc.value}</span><span class="pc-stat">⭐ ${pc.quality}%</span></div><div style="font-size:0.8em;color:var(--text-secondary);margin-top:6px">${Object.values(pc.components).map(c => c.icon).join(' ')}</div></div>`;
+    });
+    html += '</div>';
+  }
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+function renderSales(container) {
+  let html = '<div class="panel"><div class="section-title">SALES FLOOR</div>';
+  if (!GameState.customer) {
+    if (GameState.inventory.pcs.length === 0) html += `<div style="text-align:center;padding:30px"><div style="font-size:3em;margin-bottom:15px">💵</div><p style="color:var(--text-secondary)">No PCs to sell</p></div>`;
+    else html += `<div style="text-align:center;padding:15px"><button class="btn btn-primary" onclick="spawnCustomer()">FIND CUSTOMER</button></div>`;
+  } else {
+    const c = GameState.customer;
+    html += `<div class="customer-card"><div style="font-size:2.5em;margin-bottom:8px">${c.avatar}</div><div style="font-family:'Orbitron',sans-serif">${c.name}</div><div style="font-family:'Share Tech Mono',monospace;color:var(--neon-green)">$${c.budget}</div><div style="color:var(--text-secondary);font-size:0.85em;margin:8px 0">Needs: ⚡${c.minPerf}+</div><div style="font-size:0.8em;margin:8px 0">Patience:</div><div class="patience-bar"><div class="patience-fill" id="patience-bar" style="width:${c.patience}%"></div></div></div>`;
+    html += `<div style="margin-top:12px"><div class="component-grid">`;
+    GameState.inventory.pcs.forEach((pc, i) => {
+      const canSell = pc.totalPerf >= c.minPerf;
+      html += `<div class="pc-card ${canSell ? '' : 'disabled'}" onclick="${canSell ? `sellToCustomer(${i})` : ''}"><div class="pc-name">${pc.name}</div><div class="pc-stats"><span class="pc-stat">⚡ ${pc.totalPerf}</span><span class="pc-stat">⭐ ${pc.quality}%</span></div>${canSell ? '<div style="color:var(--neon-green);font-size:0.8em">✓ Sell</div>' : '<div style="color:var(--neon-magenta);font-size:0.8em">Too weak</div>'}</div>`;
+    });
+    html += `</div></div>`;
+  }
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+function spawnCustomer() {
+  const name = CUSTOMER_NAMES[Math.floor(Math.random() * CUSTOMER_NAMES.length)];
+  const avatar = CUSTOMER_AVATARS[Math.floor(Math.random() * CUSTOMER_AVATARS.length)];
+  const minPerf = 10 + Math.floor(Math.random() * 60);
+  const budget = 200 + minPerf * 8 + Math.floor(Math.random() * 200);
+  GameState.customer = { name, avatar, minPerf, budget, patience: 100 };
+  renderMainContent();
+  customerTimer = setInterval(() => {
+    GameState.customer.patience -= 2;
+    const bar = document.getElementById('patience-bar');
+    if (bar) bar.style.width = GameState.customer.patience + '%';
+    if (GameState.customer.patience <= 0) {
+      clearInterval(customerTimer);
+      showNotification('Customer left!', 'warning');
+      GameState.customer = null;
+      renderMainContent();
+    }
+  }, 500);
+}
+
+function sellToCustomer(pcIndex) {
+  clearInterval(customerTimer);
+  const pc = GameState.inventory.pcs[pcIndex];
+  let price = pc.value;
+  if (GameState.customer.patience > 80 && pc.totalPerf > GameState.customer.minPerf) price = Math.floor(price * 1.15);
+  GameState.money += price;
+  GameState.reputation += pc.quality > 70 ? 2 : 1;
+  GameState.inventory.pcs.splice(pcIndex, 1);
+  GameState.customer = null;
+  showSuccess(`SOLD $${price}!`);
+  showNotification(`Profit: $${price - Object.values(pc.components).reduce((s, c) => s + c.price, 0)}`, 'success');
+  updateDisplays();
+  renderMainContent();
+}
+
+function renderUsePC(container) {
+  let html = '<div class="panel"><div class="section-title">USE COMPLETED PC</div><p style="color:var(--text-secondary);font-size:0.85em;margin-bottom:12px">Put PCs to work and earn money</p>';
+  if (GameState.inventory.pcs.length === 0) html += `<div style="text-align:center;padding:30px"><div style="font-size:3em;margin-bottom:15px">🖥️</div><p style="color:var(--text-secondary)">No PCs available</p></div>`;
+  else {
+    html += '<div class="component-grid" style="margin-bottom:15px">';
+    GameState.inventory.pcs.forEach((pc, i) => {
+      html += `<div class="pc-card ${pc.using ? 'disabled' : ''}" onclick="${pc.using ? '' : `usePC(${i})`}"><div class="pc-name">${pc.name}</div><div class="pc-stats"><span class="pc-stat">⚡ ${pc.totalPerf}</span><span class="pc-stat">💚 ${pc.condition}%</span></div>${pc.using ? '<div style="color:var(--neon-orange);font-size:0.8em">In use...</div>' : '<div style="color:var(--neon-cyan);font-size:0.8em">▶ Use</div>'}</div>`;
+    });
+    html += '</div>';
+    html += `<div id="use-pc-area" class="use-pc-screen hidden"><div style="font-family:'Orbitron',sans-serif;color:var(--neon-cyan);margin-bottom:10px" id="task-title">SELECT TASK</div><div id="pc-current-name" style="margin-bottom:8px;color:var(--text-secondary)"></div><div class="task-buttons"><button class="task-btn" onclick="startTask('render')">🎬 Render<span>High reward</span></button><button class="task-btn" onclick="startTask('compile')">💻 Compile<span>Medium reward</span></button><button class="task-btn" onclick="startTask('stream')">📺 Stream<span>Steady reward</span></button><button class="task-btn" onclick="startTask('gaming')">🎮 Gaming<span>Fun + reward</span></button></div><div id="bench-area" class="hidden" style="margin-top:15px"><div class="bench-progress"><div class="bench-fill" id="bench-fill" style="width:0%"></div></div><div class="bench-cycles" id="bench-cycles"></div><p style="color:var(--text-secondary);font-size:0.85em;text-align:center" id="bench-status">Running...</p></div></div>`;
+  }
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+let currentPCIndex = -1;
+function usePC(index) {
+  currentPCIndex = index;
+  const pc = GameState.inventory.pcs[index];
+  pc.using = true;
+  document.getElementById('use-pc-area').classList.remove('hidden');
+  document.getElementById('pc-current-name').textContent = `${pc.name} (⚡${pc.totalPerf})`;
+  document.getElementById('task-title').textContent = 'SELECT TASK';
+  document.getElementById('bench-area').classList.add('hidden');
+  renderMainContent();
+}
+
+function startTask(task) {
+  const pc = GameState.inventory.pcs[currentPCIndex];
+  const perf = pc.totalPerf;
+  const taskData = { render: { cycles: 8, reward: 150 + perf * 3, time: 500 }, compile: { cycles: 6, reward: 80 + perf * 2, time: 400 }, stream: { cycles: 10, reward: 100 + perf * 2, time: 450 }, gaming: { cycles: 12, reward: 120 + perf * 2.5, time: 350 } };
+  const data = taskData[task];
+  document.getElementById('task-title').textContent = task.toUpperCase();
+  const cyclesEl = document.getElementById('bench-cycles');
+  cyclesEl.innerHTML = '';
+  for (let i = 0; i < data.cycles; i++) cyclesEl.innerHTML += `<div class="cycle-circle" id="cycle-${i}">${i + 1}</div>`;
+  document.getElementById('bench-area').classList.remove('hidden');
+  let currentCycle = 0, taskProgress = 0;
+  benchTimer = setInterval(() => {
+    taskProgress += 100 / data.cycles;
+    document.getElementById('bench-fill').style.width = Math.min(100, taskProgress) + '%';
+    if (taskProgress >= (currentCycle + 1) * (100 / data.cycles)) {
+      document.getElementById(`cycle-${currentCycle}`).classList.add('complete');
+      document.getElementById(`cycle-${currentCycle}`).classList.remove('active');
+      currentCycle++;
+      if (currentCycle < data.cycles) document.getElementById(`cycle-${currentCycle}`).classList.add('active');
+    }
+    if (taskProgress >= 100) {
+      clearInterval(benchTimer);
+      const bonus = pc.totalPerf > 50 ? 1.2 : pc.totalPerf > 30 ? 1.1 : 1;
+      const finalReward = Math.floor(data.reward * bonus);
+      pc.condition -= 5 + Math.floor(Math.random() * 10);
+      if (pc.condition < 0) pc.condition = 0;
+      GameState.money += finalReward;
+      pc.using = false;
+      document.getElementById('task-title').textContent = 'DONE!';
+      document.getElementById('bench-status').textContent = `Earned $${finalReward}!`;
+      showNotification(`Task complete! +$${finalReward}`, 'success');
+      updateDisplays();
+      setTimeout(() => { document.getElementById('bench-area').classList.add('hidden'); document.getElementById('task-title').textContent = 'SELECT TASK'; }, 3000);
+    }
+  }, data.time / data.cycles);
+}
+
+function startNewGame() {
+  document.getElementById('start-screen').style.display = 'none';
+  document.getElementById('game-container').style.display = 'grid';
+  Object.assign(GameState, { money: 1500, reputation: 5, day: 1, buildsCompleted: 0, currentBuild: null, inventory: { components: [], pcs: [] }, contracts: [], activeContract: null, customer: null, tutorial: true, tutorialStep: 0, starterKitUsed: false });
+  selectedComponents = {};
+  applySettings();
+  updateDisplays();
+  renderMainContent();
+  renderSidePanel();
+}
+
+function saveGame() { localStorage.setItem('pcBuilderTycoon', JSON.stringify(GameState)); }
+
+function loadGame() {
+  const saved = localStorage.getItem('pcBuilderTycoon');
+  if (saved) {
+    Object.assign(GameState, JSON.parse(saved));
+    if (!GameState.settings) GameState.settings = { colorblind: 'none', highContrast: false, reducedMotion: false };
+    document.getElementById('start-screen').style.display = 'none';
+    document.getElementById('game-container').style.display = 'grid';
+    applySettings();
+    updateDisplays();
+    renderMainContent();
+    renderSidePanel();
+    showNotification('Game loaded!', 'success');
+  } else showNotification('No save found!', 'warning');
+}
+
+document.getElementById('btn-new-game').addEventListener('click', startNewGame);
+document.getElementById('btn-continue').addEventListener('click', loadGame);
+
+const saved = localStorage.getItem('pcBuilderTycoon');
+if (saved) document.getElementById('btn-continue').textContent = 'CONTINUE';
+</script>
+</body>
+</html>
