@@ -1,0 +1,1924 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aetheria Forge • AI Crafting</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600&amp;display=swap');
+        
+        :root {
+            --primary: #10b981;
+        }
+        
+        body {
+            font-family: 'Inter', system_ui, sans-serif;
+        }
+        
+        .font-display {
+            font-family: 'Space Grotesk', 'Inter', sans-serif;
+            font-weight: 600;
+        }
+
+        .game-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .crafting-grid {
+            display: grid;
+            gap: 6px;
+            background: #1f2937;
+            padding: 12px;
+            border-radius: 16px;
+            border: 2px solid #374151;
+        }
+
+        .grid-cell {
+            background: #111827;
+            border: 2px solid #374151;
+            border-radius: 12px;
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            cursor: pointer;
+            overflow: hidden;
+            min-width: 56px;
+            min-height: 56px;
+        }
+        
+        .grid-cell:hover {
+            border-color: #10b981;
+            transform: scale(1.02);
+        }
+        
+        .grid-cell.has-item {
+            border-color: #10b981;
+            background: #064e3b;
+        }
+
+        .inventory-item {
+            transition: all 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
+        }
+        
+        .inventory-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+
+        .item-card {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        .item-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        }
+
+        .generator-btn {
+            transition: all 0.1s ease;
+        }
+        
+        .generator-btn:active {
+            transform: scale(0.95);
+        }
+
+        .tab-button {
+            transition: all 0.2s ease;
+        }
+        
+        .tab-button.active {
+            background-color: #10b981;
+            color: white;
+            border-color: #10b981;
+        }
+
+        .modal {
+            animation: modalPop 0.3s ease forwards;
+        }
+
+        @keyframes modalPop {
+            from {
+                opacity: 0;
+                transform: scale(0.8) translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .crafting-grid .grid-cell img,
+        .crafting-grid .grid-cell .emoji {
+            max-width: 70%;
+            max-height: 70%;
+            object-fit: contain;
+        }
+
+        .item-img {
+            width: 56px;
+            height: 56px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+
+        .stat-value {
+            font-variant-numeric: tabular-nums;
+        }
+
+        .game-toast {
+            animation: toastSlide 0.3s ease forwards;
+        }
+
+        .section-header {
+            font-size: 1.1rem;
+            letter-spacing: -.025em;
+        }
+    </style>
+</head>
+<body class="bg-zinc-950 text-zinc-200">
+    <div class="game-container min-h-screen p-4 md:p-6">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-8">
+            <div class="flex items-center gap-x-4">
+                <div class="w-14 h-14 bg-emerald-600 rounded-2xl flex items-center justify-center">
+                    <i class="fa-solid fa-hammer text-3xl text-white"></i>
+                </div>
+                <div>
+                    <h1 class="font-display text-4xl font-semibold tracking-tighter">Aetheria Forge</h1>
+                    <p class="text-emerald-400 text-sm -mt-1">AI-Powered Crafting Empire</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-x-8">
+                <!-- Money -->
+                <div class="bg-zinc-900 border border-zinc-800 rounded-3xl px-6 py-3 flex items-center gap-x-3">
+                    <div class="flex items-center gap-x-2">
+                        <i class="fa-solid fa-coins text-amber-400 text-xl"></i>
+                        <div>
+                            <div class="text-xs text-zinc-400 tracking-wider">BALANCE</div>
+                            <div id="money-display" class="font-display text-3xl font-semibold text-amber-400 stat-value">0</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Grid Info -->
+                <div class="bg-zinc-900 border border-zinc-800 rounded-3xl px-5 py-3 flex items-center gap-x-3">
+                    <div>
+                        <div class="text-xs text-zinc-400">CRAFTING GRID</div>
+                        <div id="grid-info" class="font-display text-2xl font-semibold">2×2</div>
+                    </div>
+                    <div class="w-8 h-8 bg-emerald-900 rounded-2xl flex items-center justify-center">
+                        <i class="fa-solid fa-th-large text-emerald-400"></i>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-x-2">
+                    <button onclick="showHFTokenModal()" 
+                            class="px-4 py-2.5 bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 rounded-2xl text-sm flex items-center gap-x-2 transition-colors">
+                        <i class="fa-solid fa-key"></i>
+                        <span class="hidden md:inline">AI Key</span>
+                    </button>
+                    <button onclick="saveGame()" 
+                            class="px-4 py-2.5 bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 rounded-2xl text-sm flex items-center gap-x-2 transition-colors">
+                        <i class="fa-solid fa-save"></i>
+                        <span class="hidden md:inline">Save</span>
+                    </button>
+                    <button onclick="exportSave()" 
+                            class="px-4 py-2.5 bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 rounded-2xl text-sm flex items-center gap-x-2 transition-colors">
+                        <i class="fa-solid fa-download"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="flex border-b border-zinc-800 mb-6">
+            <button onclick="switchTab('generators')" id="tab-generators"
+                    class="tab-button active flex-1 md:flex-none px-6 py-4 text-sm font-medium border-b-2 border-emerald-500 flex items-center justify-center gap-x-2">
+                <i class="fa-solid fa-bolt-lightning"></i>
+                <span class="font-semibold">Generators</span>
+            </button>
+            <button onclick="switchTab('crafting')" id="tab-crafting"
+                    class="tab-button flex-1 md:flex-none px-6 py-4 text-sm font-medium flex items-center justify-center gap-x-2 hover:text-emerald-400">
+                <i class="fa-solid fa-hammer"></i>
+                <span class="font-semibold">Crafting</span>
+            </button>
+            <button onclick="switchTab('inventory')" id="tab-inventory"
+                    class="tab-button flex-1 md:flex-none px-6 py-4 text-sm font-medium flex items-center justify-center gap-x-2 hover:text-emerald-400">
+                <i class="fa-solid fa-box"></i>
+                <span class="font-semibold">Inventory</span>
+            </button>
+            <button onclick="switchTab('upgrades')" id="tab-upgrades"
+                    class="tab-button flex-1 md:flex-none px-6 py-4 text-sm font-medium flex items-center justify-center gap-x-2 hover:text-emerald-400">
+                <i class="fa-solid fa-arrow-up"></i>
+                <span class="font-semibold">Upgrades</span>
+            </button>
+        </div>
+
+        <!-- GENERATORS TAB -->
+        <div id="section-generators" class="tab-section">
+            <div class="mb-6">
+                <h2 class="section-header font-semibold mb-1 flex items-center gap-x-2">
+                    <i class="fa-solid fa-bolt-lightning text-emerald-400"></i>
+                    Material Generators
+                </h2>
+                <p class="text-zinc-400 text-sm">Click to gather resources. Each click yields materials instantly.</p>
+            </div>
+            
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="generators-container">
+                <!-- Populated by JS -->
+            </div>
+            
+            <div class="mt-8 bg-zinc-900 border border-zinc-800 rounded-3xl p-5">
+                <div class="flex items-center justify-between text-sm">
+                    <div>
+                        <span class="text-zinc-400">Tip:</span> 
+                        <span class="text-emerald-300">Generators are the foundation of your empire.</span>
+                    </div>
+                    <div class="text-xs px-3 py-1 bg-zinc-800 rounded-full">Click repeatedly for faster progress</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CRAFTING TAB -->
+        <div id="section-crafting" class="tab-section hidden">
+            <div class="flex flex-col lg:flex-row gap-8">
+                <!-- Crafting Grid -->
+                <div class="flex-1">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-y-3 mb-4">
+                    <div>
+                        <h2 class="section-header font-semibold">Crafting Grid</h2>
+                        <p class="text-sm text-zinc-400">Place materials to discover new recipes</p>
+                    </div>
+                    
+                    <!-- Craft Type Selector -->
+                    <div class="flex items-center gap-x-2">
+                        <select id="craft-mode" onchange="changeCraftMode()" 
+                                class="bg-zinc-800 border border-zinc-700 text-sm rounded-2xl px-3 py-1.5 focus:outline-none text-xs md:text-sm">
+                            <option value="tools">Tools</option>
+                            <option value="materials">Materials</option>
+                            <option value="armor">Armor</option>
+                            <option value="machines">Machines</option>
+                        </select>
+                        
+                        <button onclick="clearGrid()" 
+                                class="px-3 md:px-4 py-2 text-xs md:text-sm bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-2xl flex items-center gap-x-2">
+                            <i class="fa-solid fa-trash text-xs"></i>
+                            <span class="hidden md:inline">Clear</span>
+                        </button>
+                        <button onclick="craftItem()" 
+                                class="px-4 md:px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 transition-colors text-white font-semibold rounded-2xl flex items-center gap-x-2 text-sm">
+                            <i class="fa-solid fa-hammer"></i>
+                            <span>CRAFT</span>
+                        </button>
+                    </div>
+                </div>
+                    
+                    <div id="crafting-grid-section">
+                        <div id="crafting-grid" class="crafting-grid mx-auto max-w-[420px]">
+                            <!-- Grid populated by JS -->
+                        </div>
+                        
+                        <div class="mt-3 text-center">
+                            <div id="recipe-preview" class="text-xs text-zinc-400 font-mono"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Machines Interface (hidden by default) -->
+                    <div id="machines-section" style="display: none;" class="max-w-[520px] mx-auto">
+                        <div class="bg-zinc-900 border border-zinc-700 rounded-3xl p-6">
+                            <h3 class="font-semibold mb-1">Machine Workshop</h3>
+                            <p class="text-sm text-zinc-400 mb-5">Build machines to unlock advanced capabilities.</p>
+                            
+                            <div id="machines-list" class="space-y-3">
+                                <!-- Populated by JS -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Materials Inventory (Draggable) -->
+                <div class="lg:w-80 flex-shrink-0">
+                    <div class="bg-zinc-900 border border-zinc-800 rounded-3xl p-5 sticky top-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-semibold flex items-center gap-x-2">
+                                <i class="fa-solid fa-box text-emerald-400"></i>
+                                <span>Materials</span>
+                            </h3>
+                            <div class="text-xs px-2 py-0.5 bg-zinc-800 rounded-full text-emerald-400" id="crafting-inv-count">0</div>
+                        </div>
+                        
+                        <div id="crafting-inventory" class="grid grid-cols-3 gap-3 max-h-[420px] overflow-y-auto pr-1">
+                            <!-- Populated dynamically with draggable items -->
+                        </div>
+                        
+                        <div class="mt-4 pt-4 border-t border-zinc-800 text-xs text-zinc-400">
+                            Drag items into the grid. Click grid slots to remove.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- INVENTORY TAB -->
+        <div id="section-inventory" class="tab-section hidden">
+            <div class="mb-6 flex items-end justify-between">
+                <div>
+                    <h2 class="section-header font-semibold">Your Inventory</h2>
+                    <p class="text-sm text-zinc-400">Sell items to earn money for upgrades</p>
+                </div>
+                <div class="text-xs px-3 py-1.5 bg-zinc-900 border border-zinc-700 rounded-2xl text-emerald-400">
+                    <span id="inventory-count">0</span> items owned
+                </div>
+            </div>
+            
+            <!-- Inventory Items -->
+            <div class="mb-10">
+                <h3 class="text-sm font-semibold mb-3 text-zinc-400 px-1">CURRENT STOCK</h3>
+                <div id="inventory-list" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+            
+            <!-- Discovered Items -->
+            <div>
+                <h3 class="text-sm font-semibold mb-3 text-zinc-400 px-1 flex items-center gap-x-2">
+                    <span>DISCOVERED ITEMS</span>
+                    <span class="text-xs bg-zinc-800 px-2 py-0.5 rounded-full" id="discovered-count">0</span>
+                </h3>
+                <div id="discovered-list" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- UPGRADES TAB -->
+        <div id="section-upgrades" class="tab-section hidden">
+            <div class="mb-6">
+                <h2 class="section-header font-semibold">Workshop Upgrades</h2>
+                <p class="text-sm text-zinc-400">Spend your earnings to expand your crafting capabilities</p>
+            </div>
+            
+            <div class="grid md:grid-cols-2 gap-4 max-w-3xl" id="upgrades-container">
+                <!-- Populated by JS -->
+            </div>
+            
+            <div class="mt-8 max-w-md bg-zinc-900 border border-zinc-800 p-5 rounded-3xl text-sm">
+                <div class="flex items-center gap-x-3">
+                    <i class="fa-solid fa-info-circle text-emerald-400"></i>
+                    <div>
+                        <div class="font-medium">Pro Tip</div>
+                        <div class="text-zinc-400 text-xs mt-0.5">Larger grids allow for more complex recipes and higher value items.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="mt-12 text-center text-xs text-zinc-500 flex items-center justify-center gap-x-2">
+            <div id="footer-ai-status">Emoji-based items</div>
+            <span class="text-zinc-700">•</span>
+            <button onclick="resetGame()" class="hover:text-zinc-400 transition-colors">Reset Progress</button>
+        </div>
+    </div>
+
+    <!-- Hugging Face Token Modal -->
+    <div id="hf-modal" onclick="if (event.target.id === 'hf-modal') closeHFTokenModal()" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-6">
+        <div onclick="event.stopImmediatePropagation()" class="modal bg-zinc-900 border border-zinc-700 rounded-3xl max-w-md w-full p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-semibold text-xl">Hugging Face API Key</h3>
+                <button onclick="closeHFTokenModal()" class="text-zinc-400 hover:text-white"><i class="fa-solid fa-times text-xl"></i></button>
+            </div>
+            
+            <div class="text-sm text-zinc-400 mb-4">
+                Paste your Hugging Face token to use higher-quality AI image generation.<br>
+                Get your token at <a href="https://huggingface.co/settings/tokens" target="_blank" class="text-emerald-400 underline">huggingface.co/settings/tokens</a>
+            </div>
+            
+            <input id="hf-token-input" type="password" placeholder="hf_xxxxxxxxxxxxxxxxxxxxxxxx" 
+                   class="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-4 py-3 text-sm font-mono focus:outline-none focus:border-emerald-500">
+            
+            <div class="flex gap-x-3 mt-5">
+                <button onclick="saveHFTokenFromInput()" class="flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 rounded-2xl font-medium">Save Key</button>
+                <button onclick="clearHFToken()" class="flex-1 py-3 bg-zinc-800 hover:bg-zinc-700 rounded-2xl">Remove Key</button>
+            </div>
+
+            <div class="mt-5 pt-4 border-t border-zinc-700">
+                <div class="text-xs text-zinc-400 mb-2">Image Style</div>
+                <div class="flex gap-x-2">
+                    <button onclick="setPromptStyle('minecraft'); this.classList.add('bg-emerald-600'); this.nextElementSibling.classList.remove('bg-emerald-600');" 
+                            class="flex-1 py-2 text-sm rounded-2xl ${promptStyle === 'minecraft' ? 'bg-emerald-600' : 'bg-zinc-800'}">Minecraft</button>
+                    <button onclick="setPromptStyle('realistic'); this.classList.add('bg-emerald-600'); this.previousElementSibling.classList.remove('bg-emerald-600');" 
+                            class="flex-1 py-2 text-sm rounded-2xl ${promptStyle === 'realistic' ? 'bg-emerald-600' : 'bg-zinc-800'}">Realistic</button>
+                </div>
+            </div>
+            
+            <div class="text-xs text-center text-zinc-500 mt-4">Your key is stored only in your browser (localStorage).</div>
+        </div>
+    </div>
+
+    <!-- New Item Modal -->
+    <div id="new-item-modal" onclick="if (event.target.id === 'new-item-modal') closeNewItemModal()" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-6">
+        <div onclick="event.stopImmediatePropagation()" class="modal bg-zinc-900 border border-zinc-700 rounded-3xl max-w-md w-full overflow-hidden shadow-2xl">
+            <div class="p-6">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <div class="px-3 py-1 text-xs font-bold tracking-wider bg-emerald-900 text-emerald-400 rounded-full w-fit">NEW DISCOVERY</div>
+                        <h3 id="modal-item-name" class="font-display text-3xl mt-3 font-semibold"></h3>
+                    </div>
+                    <button onclick="closeNewItemModal()" class="text-zinc-400 hover:text-white">
+                        <i class="fa-solid fa-times text-xl"></i>
+                    </button>
+                </div>
+                
+                <div class="mt-5 flex justify-center">
+                    <div id="modal-item-image" class="w-40 h-40 bg-zinc-800 border border-zinc-700 rounded-2xl flex items-center justify-center overflow-hidden">
+                        <!-- Image populated by JS -->
+                    </div>
+                </div>
+                
+                <div class="mt-5">
+                    <div class="text-xs uppercase tracking-widest text-emerald-400 mb-1">DESCRIPTION</div>
+                    <p id="modal-item-desc" class="text-zinc-300 leading-relaxed"></p>
+                </div>
+                
+                <div class="mt-6 flex items-center justify-between border-t border-zinc-700 pt-5">
+                    <div>
+                        <div class="text-xs text-zinc-400">SELL VALUE</div>
+                        <div id="modal-item-price" class="font-display text-2xl font-semibold text-amber-400"></div>
+                        <div id="modal-model-used" class="text-[10px] text-emerald-400 mt-1"></div>
+                    </div>
+                    <button onclick="closeNewItemModal()" 
+                            class="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-2xl text-sm flex items-center gap-x-2">
+                        <span>ADD TO INVENTORY</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tailwind script
+        function initTailwind() {
+            document.documentElement.style.setProperty('--accent', '#10b981');
+        }
+        
+        // Game State
+        let money = 0;
+        let gridSize = 2;
+        let inventory = {};
+        let knownItems = {};
+        let knownRecipes = {};
+        let gridState = [];
+        let generatorYields = {
+            'wood': 3,
+            'stone': 2,
+            'fiber': 4,
+            'iron_ore': 1
+        };
+        let hfToken = localStorage.getItem('hfToken') || '';
+        let promptStyle = localStorage.getItem('promptStyle') || 'minecraft';
+        let craftMode = 'tools'; // tools, materials, armor, machines
+        let builtMachines = {}; // {machineId: true}
+        
+        const EMOJIS = {
+            'wood': '🪵',
+            'stone': '🪨',
+            'fiber': '🧵',
+            'iron_ore': '⛏️',
+            'wooden_plank': '🪵',
+            'stone_pickaxe': '⛏️',
+            'rope': '🪢',
+            'stone_block': '🧱',
+            'iron_ingot': '🔩'
+        };
+        
+        // Initialize game data
+        function initGameData() {
+            // Basic materials
+            knownItems['wood'] = {
+                name: "Wood",
+                desc: "A sturdy piece of lumber harvested from the ancient forests of Aetheria.",
+                imageUrl: null,
+                sellPrice: 2
+            };
+            
+            knownItems['stone'] = {
+                name: "Stone",
+                desc: "Solid rock quarried from the mountains. Essential for building.",
+                imageUrl: null,
+                sellPrice: 3
+            };
+            
+            knownItems['fiber'] = {
+                name: "Fiber",
+                desc: "Tough plant fibers perfect for weaving and binding.",
+                imageUrl: null,
+                sellPrice: 1
+            };
+            
+            knownItems['iron_ore'] = {
+                name: "Iron Ore",
+                desc: "Raw iron ore rich with metallic potential. Requires processing.",
+                imageUrl: null,
+                sellPrice: 6
+            };
+            
+            // Predefined recipes and items
+            knownItems['wooden_plank'] = {
+                name: "Wooden Plank",
+                desc: "Smooth, processed wood boards. Great for construction and crafting.",
+                imageUrl: null,
+                sellPrice: 4
+            };
+            knownRecipes['wood,wood'] = 'wooden_plank';
+            
+            knownItems['stone_pickaxe'] = {
+                name: "Stone Pickaxe",
+                desc: "A basic mining tool made from stone and wood. Increases gathering efficiency.",
+                imageUrl: null,
+                sellPrice: 15
+            };
+            knownRecipes['wood,stone'] = 'stone_pickaxe';
+            
+            knownItems['rope'] = {
+                name: "Rope",
+                desc: "Strong twisted fiber rope. Useful for tying, climbing, and crafting.",
+                imageUrl: null,
+                sellPrice: 7
+            };
+            knownRecipes['fiber,wood'] = 'rope';
+            
+            knownItems['stone_block'] = {
+                name: "Stone Block",
+                desc: "A heavy, durable block of cut stone. Perfect for foundations.",
+                imageUrl: null,
+                sellPrice: 12
+            };
+            knownRecipes['stone,stone,stone'] = 'stone_block';
+            
+            knownItems['iron_ingot'] = {
+                name: "Iron Ingot",
+                desc: "Refined iron ready for advanced crafting and weapon making.",
+                imageUrl: null,
+                sellPrice: 22
+            };
+            knownRecipes['iron_ore,stone'] = 'iron_ingot';
+
+            // Additional starting recipes for immediate gameplay
+            knownItems['wooden_axe'] = {
+                name: "Wooden Axe",
+                desc: "A simple wooden axe for chopping. Better than bare hands.",
+                imageUrl: null,
+                sellPrice: 18
+            };
+            knownRecipes['wood,wood,stone'] = 'wooden_axe';
+
+            knownItems['fiber_cloth'] = {
+                name: "Fiber Cloth",
+                desc: "Woven cloth made from plant fibers. Useful for clothing and bags.",
+                imageUrl: null,
+                sellPrice: 9
+            };
+            knownRecipes['fiber,fiber,fiber'] = 'fiber_cloth';
+
+            knownItems['stone_sword'] = {
+                name: "Stone Sword",
+                desc: "A crude but effective stone blade for defense.",
+                imageUrl: null,
+                sellPrice: 27
+            };
+            knownRecipes['stone,stone,wood'] = 'stone_sword';
+
+            knownItems['iron_nail'] = {
+                name: "Iron Nail",
+                desc: "Basic iron fastener. Essential for advanced construction.",
+                imageUrl: null,
+                sellPrice: 14
+            };
+            knownRecipes['iron_ore,iron_ore'] = 'iron_nail';
+
+            knownItems['leather_strap'] = {
+                name: "Leather Strap",
+                desc: "Tough leather binding. Can be used to reinforce tools.",
+                imageUrl: null,
+                sellPrice: 11
+            };
+            knownRecipes['fiber,stone'] = 'leather_strap';
+
+            // Even more starting recipes
+            knownItems['wooden_pickaxe'] = {
+                name: "Wooden Pickaxe",
+                desc: "Basic wooden pickaxe for mining stone and ore.",
+                imageUrl: null,
+                sellPrice: 16
+            };
+            knownRecipes['wood,wood,wood'] = 'wooden_pickaxe';
+
+            knownItems['stone_shovel'] = {
+                name: "Stone Shovel",
+                desc: "Useful for digging dirt and sand quickly.",
+                imageUrl: null,
+                sellPrice: 13
+            };
+            knownRecipes['stone,wood,fiber'] = 'stone_shovel';
+
+            knownItems['iron_helmet'] = {
+                name: "Iron Helmet",
+                desc: "Basic iron head protection.",
+                imageUrl: null,
+                sellPrice: 35
+            };
+            knownRecipes['iron_ingot,iron_ingot,iron_ingot'] = 'iron_helmet';
+
+            knownItems['fiber_backpack'] = {
+                name: "Fiber Backpack",
+                desc: "Increases carrying capacity for materials.",
+                imageUrl: null,
+                sellPrice: 24
+            };
+            knownRecipes['fiber_cloth,fiber_cloth,leather_strap'] = 'fiber_backpack';
+            
+            // Starting inventory
+            inventory = {
+                'wood': 12,
+                'stone': 8,
+                'fiber': 15,
+                'iron_ore': 4
+            };
+            
+            money = 75;
+            gridSize = 2;
+            gridState = Array(gridSize * gridSize).fill(null);
+        }
+        
+        // Save / Load
+        function saveGame() {
+            const saveData = {
+                money,
+                gridSize,
+                inventory,
+                knownItems,
+                knownRecipes,
+                gridState,
+                generatorYields,
+                craftMode,
+                builtMachines,
+                timestamp: Date.now()
+            };
+            localStorage.setItem('aetheriaForgeSave', JSON.stringify(saveData));
+            
+            showToast('Game saved successfully!', 'success');
+        }
+        
+        function loadGame() {
+            const saved = localStorage.getItem('aetheriaForgeSave');
+            if (!saved) {
+                initGameData();
+                return false;
+            }
+            
+            try {
+                const data = JSON.parse(saved);
+                money = data.money || 0;
+                gridSize = data.gridSize || 2;
+                inventory = data.inventory || {};
+                knownItems = data.knownItems || {};
+                knownRecipes = data.knownRecipes || {};
+                gridState = data.gridState || Array(gridSize * gridSize).fill(null);
+                generatorYields = data.generatorYields || { wood: 3, stone: 2, fiber: 4, iron_ore: 1 };
+                craftMode = data.craftMode || 'tools';
+                builtMachines = data.builtMachines || {};
+                
+                // Ensure gridState matches current size
+                if (gridState.length !== gridSize * gridSize) {
+                    gridState = Array(gridSize * gridSize).fill(null);
+                }
+                
+                return true;
+            } catch (e) {
+                console.error("Failed to load save:", e);
+                initGameData();
+                return false;
+            }
+        }
+        
+        function exportSave() {
+            const saveData = {
+                money, gridSize, inventory, knownItems, knownRecipes, gridState, generatorYields, craftMode, builtMachines
+            };
+            const dataStr = JSON.stringify(saveData, null, 2);
+            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+            
+            const exportFileDefaultName = 'aetheria_forge_save.json';
+            
+            const linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', exportFileDefaultName);
+            linkElement.click();
+            
+            showToast('Save exported!', 'success');
+        }
+        
+        function resetGame() {
+            if (!confirm("Reset all progress? This cannot be undone.")) return;
+            localStorage.removeItem('aetheriaForgeSave');
+            location.reload();
+        }
+        
+        // UI Helpers
+        function updateMoneyDisplay() {
+            const el = document.getElementById('money-display');
+            el.textContent = Math.floor(money).toLocaleString();
+        }
+        
+        function updateGridInfo() {
+            const el = document.getElementById('grid-info');
+            el.textContent = `${gridSize}×${gridSize}`;
+        }
+        
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `game-toast fixed bottom-6 right-6 px-5 py-3.5 rounded-2xl shadow-xl flex items-center gap-x-3 text-sm z-50 ${type === 'success' ? 'bg-emerald-600' : 'bg-zinc-800 border border-zinc-700'}`;
+            toast.innerHTML = `
+                <div class="flex items-center gap-x-3">
+                    <i class="fa-solid ${type === 'success' ? 'fa-check-circle' : 'fa-info-circle'}"></i>
+                    <span>${message}</span>
+                </div>
+            `;
+            
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.transition = 'all 0.3s ease';
+                toast.style.opacity = '0';
+                setTimeout(() => toast.parentNode.removeChild(toast), 300);
+            }, 2800);
+        }
+        
+        // Tab switching
+        let currentTab = 'generators';
+        
+        function switchTab(tab) {
+            // Hide all sections
+            document.querySelectorAll('.tab-section').forEach(el => el.classList.add('hidden'));
+            
+            // Show target
+            document.getElementById('section-' + tab).classList.remove('hidden');
+            
+            // Update active tab styles
+            document.querySelectorAll('.tab-button').forEach(el => el.classList.remove('active', 'border-emerald-500'));
+            const activeBtn = document.getElementById('tab-' + tab);
+            activeBtn.classList.add('active', 'border-emerald-500');
+            
+            currentTab = tab;
+            
+            // Refresh specific sections
+            if (tab === 'inventory') {
+                renderInventory();
+                renderDiscovered();
+            } else if (tab === 'crafting') {
+                renderCraftingGrid();
+                renderCraftingInventory();
+            } else if (tab === 'upgrades') {
+                renderUpgrades();
+            }
+        }
+        
+        // Generators
+        const generators = [
+            { id: 'wood', name: 'Wood Grove', desc: 'Harvest timber', icon: 'fa-tree', color: 'emerald' },
+            { id: 'stone', name: 'Stone Quarry', desc: 'Mine stone', icon: 'fa-mountain', color: 'slate' },
+            { id: 'fiber', name: 'Fiber Patch', desc: 'Gather fibers', icon: 'fa-leaf', color: 'lime' },
+            { id: 'iron_ore', name: 'Ore Vein', desc: 'Extract ore', icon: 'fa-gem', color: 'amber' }
+        ];
+        
+        function renderGenerators() {
+            const container = document.getElementById('generators-container');
+            container.innerHTML = '';
+            
+            generators.forEach(gen => {
+                const yieldVal = generatorYields[gen.id] || 1;
+                
+                const div = document.createElement('div');
+                div.className = `generator-btn bg-zinc-900 border border-zinc-800 hover:border-${gen.color}-600 rounded-3xl p-5 cursor-pointer group`;
+                div.innerHTML = `
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <div class="flex items-center gap-x-3">
+                                <div class="w-11 h-11 rounded-2xl bg-zinc-800 flex items-center justify-center group-hover:bg-zinc-700 transition-colors">
+                                    <i class="fa-solid ${gen.icon} text-2xl text-${gen.color}-400"></i>
+                                </div>
+                                <div>
+                                    <div class="font-semibold">${gen.name}</div>
+                                    <div class="text-xs text-zinc-400">${gen.desc}</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="text-right">
+                            <div class="text-xs text-zinc-400">YIELD</div>
+                            <div class="font-display text-3xl font-semibold text-${gen.color}-400">+${yieldVal}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 pt-4 border-t border-zinc-800 flex items-center justify-center">
+                        <div class="text-xs font-medium px-4 py-1.5 bg-zinc-800 group-hover:bg-zinc-700 transition-colors rounded-2xl flex items-center gap-x-2">
+                            <span>CLICK TO GATHER</span>
+                            <i class="fa-solid fa-hand-pointer text-xs"></i>
+                        </div>
+                    </div>
+                `;
+                
+                div.onclick = () => {
+                    if (!inventory[gen.id]) inventory[gen.id] = 0;
+                    inventory[gen.id] += yieldVal;
+                    
+                    showToast(`+${yieldVal} ${knownItems[gen.id].name}`, 'success');
+                    updateMoneyDisplay();
+                    saveGame();
+                    
+                    // If on inventory tab, refresh
+                    if (currentTab === 'inventory') {
+                        renderInventory();
+                    }
+                };
+                
+                container.appendChild(div);
+            });
+        }
+        
+        // Crafting Grid
+        function renderCraftingGrid() {
+            const container = document.getElementById('crafting-grid');
+            container.innerHTML = '';
+            container.style.gridTemplateColumns = `repeat(${gridSize}, minmax(0, 1fr))`;
+            
+            for (let i = 0; i < gridSize * gridSize; i++) {
+                const cell = document.createElement('div');
+                cell.className = `grid-cell w-[56px] h-[56px] md:w-20 md:h-20`;
+                cell.dataset.index = i;
+                
+                const itemId = gridState[i];
+                
+                if (itemId && knownItems[itemId]) {
+                    const item = knownItems[itemId];
+                    cell.classList.add('has-item');
+                    
+                cell.innerHTML = `<div class="text-5xl">${getEmojiForItem(itemId)}</div>`;
+                    
+                    // Click to remove
+                    cell.onclick = () => {
+                        gridState[i] = null;
+                        renderCraftingGrid();
+                        updateRecipePreview();
+                    };
+                } else {
+                    cell.innerHTML = `<div class="text-zinc-600 text-xs font-medium">EMPTY</div>`;
+                    
+                    cell.onclick = () => {
+                        // Optional: could add a picker, but drag is primary
+                    };
+                }
+                
+                // Drag and drop handlers
+                cell.ondragover = (e) => {
+                    e.preventDefault();
+                    cell.style.borderColor = '#10b981';
+                };
+                
+                cell.ondragleave = () => {
+                    cell.style.borderColor = itemId ? '#10b981' : '#374151';
+                };
+                
+                cell.ondrop = (e) => {
+                    e.preventDefault();
+                    cell.style.borderColor = '#374151';
+                    
+                    const draggedItemId = e.dataTransfer.getData('text/plain');
+                    if (!draggedItemId || gridState[i] !== null) return;
+                    
+                    // Check if player has the item
+                    if ((inventory[draggedItemId] || 0) > 0) {
+                        gridState[i] = draggedItemId;
+                        renderCraftingGrid();
+                        updateRecipePreview();
+                    } else {
+                        showToast("You don't have any of that item!", 'error');
+                    }
+                };
+                
+                container.appendChild(cell);
+            }
+            
+            updateRecipePreview();
+            renderCraftingInventory();
+        }
+
+        function renderCraftingInventory() {
+            const container = document.getElementById('crafting-inventory');
+            if (!container) return;
+            container.innerHTML = '';
+
+            const owned = Object.keys(inventory).filter(id => (inventory[id] || 0) > 0);
+            const countEl = document.getElementById('crafting-inv-count');
+            if (countEl) countEl.textContent = owned.length;
+
+            if (owned.length === 0) {
+                container.innerHTML = `<div class="col-span-3 text-center py-6 text-xs text-zinc-500">No materials yet. Use generators!</div>`;
+                return;
+            }
+
+            owned.forEach(itemId => {
+                const item = knownItems[itemId];
+                if (!item) return;
+
+                const qty = inventory[itemId];
+                const emoji = getEmojiForItem(itemId);
+
+                const div = document.createElement('div');
+                div.className = `bg-zinc-800 border border-zinc-700 hover:border-emerald-600 rounded-2xl p-2 cursor-grab active:cursor-grabbing flex flex-col items-center text-center transition-all`;
+                div.draggable = true;
+                div.dataset.itemId = itemId;
+
+                const imgHTML = `<div class="text-3xl mb-1">${emoji}</div>`;
+
+                div.innerHTML = `
+                    ${imgHTML}
+                    <div class="text-xs font-medium leading-tight">${item.name}</div>
+                    <div class="text-[10px] text-emerald-400 mt-0.5">${qty}</div>
+                `;
+
+                // Drag start
+                div.ondragstart = (e) => {
+                    e.dataTransfer.setData('text/plain', itemId);
+                };
+
+                // Click to quick-add to first empty slot
+                div.onclick = () => {
+                    const emptyIndex = gridState.findIndex(slot => slot === null);
+                    if (emptyIndex !== -1 && (inventory[itemId] || 0) > 0) {
+                        gridState[emptyIndex] = itemId;
+                        renderCraftingGrid();
+                    }
+                };
+
+                container.appendChild(div);
+            });
+        }
+
+        function renderMachinesInterface() {
+            const container = document.getElementById('machines-list');
+            if (!container) return;
+            container.innerHTML = '';
+
+            machineDefinitions.forEach(machine => {
+                const isBuilt = builtMachines[machine.id];
+                const canAfford = Object.keys(machine.cost).every(key => 
+                    (inventory[key] || 0) >= machine.cost[key]
+                );
+
+                const div = document.createElement('div');
+                div.className = `p-4 rounded-2xl border ${isBuilt ? 'bg-emerald-900/30 border-emerald-700' : 'bg-zinc-800 border-zinc-700'}`;
+
+                let costHTML = '';
+                Object.keys(machine.cost).forEach(key => {
+                    const item = knownItems[key];
+                    const have = inventory[key] || 0;
+                    const needed = machine.cost[key];
+                    costHTML += `<div class="text-xs flex justify-between"><span>${item ? item.name : key}</span> <span class="${have >= needed ? 'text-emerald-400' : 'text-red-400'}">${have}/${needed}</span></div>`;
+                });
+
+                div.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <div class="font-semibold">${machine.name}</div>
+                            <div class="text-xs text-zinc-400 mt-0.5">${machine.desc}</div>
+                        </div>
+                        ${isBuilt ? 
+                            `<div class="px-3 py-1 text-xs bg-emerald-600 rounded-2xl font-medium">BUILT</div>` : 
+                            `<button onclick="buildMachine('${machine.id}')" class="px-4 py-1.5 text-xs bg-emerald-600 hover:bg-emerald-500 rounded-2xl font-medium ${!canAfford ? 'opacity-50 cursor-not-allowed' : ''}" ${!canAfford ? 'disabled' : ''}>Build</button>`
+                        }
+                    </div>
+                    
+                    ${!isBuilt ? `<div class="mt-3 pt-3 border-t border-zinc-700 text-xs space-y-0.5">${costHTML}</div>` : ''}
+                    
+                    ${machine.isFinal && isBuilt ? 
+                        `<button onclick="openCustomItemGenerator()" class="mt-4 w-full py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-2xl text-sm font-medium">Generate Custom Item</button>` : ''
+                    }
+                `;
+
+                container.appendChild(div);
+            });
+        }
+
+        function buildMachine(machineId) {
+            const machine = machineDefinitions.find(m => m.id === machineId);
+            if (!machine || builtMachines[machineId]) return;
+
+            // Check cost
+            let canBuild = true;
+            Object.keys(machine.cost).forEach(key => {
+                if ((inventory[key] || 0) < machine.cost[key]) canBuild = false;
+            });
+
+            if (!canBuild) {
+                showToast("Not enough materials!", 'error');
+                return;
+            }
+
+            // Deduct cost
+            Object.keys(machine.cost).forEach(key => {
+                inventory[key] -= machine.cost[key];
+                if (inventory[key] <= 0) delete inventory[key];
+            });
+
+            builtMachines[machineId] = true;
+            saveGame();
+
+            showToast(`${machine.name} built!`, 'success');
+            renderMachinesInterface();
+            renderInventory();
+        }
+
+        function openCustomItemGenerator() {
+            const modal = document.createElement('div');
+            modal.className = `fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-6`;
+            modal.innerHTML = `
+                <div class="modal bg-zinc-900 border border-zinc-700 rounded-3xl max-w-lg w-full p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-semibold text-xl">AI Custom Item Generator</h3>
+                        <button class="text-zinc-400 hover:text-white" onclick="this.closest('.fixed').remove()">×</button>
+                    </div>
+                    
+                    <div class="text-sm text-zinc-400 mb-3">Describe any item you want. The AI will generate it.</div>
+                    
+                    <textarea id="custom-prompt" placeholder="A glowing red sword made of dragon bone and obsidian..." 
+                              class="w-full h-28 bg-zinc-800 border border-zinc-700 rounded-2xl p-4 text-sm resize-y"></textarea>
+                    
+                    <div class="flex gap-x-3 mt-4">
+                        <button onclick="generateCustomItem(this)" class="flex-1 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-medium rounded-2xl">Generate Item</button>
+                        <button onclick="this.closest('.fixed').remove()" class="flex-1 py-3 bg-zinc-800 rounded-2xl">Cancel</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+
+        async function generateCustomItem(btn) {
+            const textarea = document.getElementById('custom-prompt');
+            const prompt = textarea.value.trim();
+            if (!prompt) {
+                showToast("Please enter a description.", 'error');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = 'Generating...';
+
+            try {
+                // Generate a simple name from the user's description
+                let name = prompt
+                    .replace(/[^a-zA-Z0-9 ]/g, ' ')
+                    .split(' ')
+                    .filter(w => w.length > 2)
+                    .slice(0, 5)
+                    .join(' ')
+                    .trim();
+
+                // Make it even simpler and title-case
+                if (name.length > 28) name = name.substring(0, 28);
+                name = name.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+
+                if (!name) name = "Custom Item";
+
+                const itemId = `custom_${Date.now()}`;
+                const sellPrice = Math.floor(30 + Math.random() * 40);
+
+                knownItems[itemId] = {
+                    name: name,
+                    desc: prompt,
+                    imageUrl: null,
+                    sellPrice: sellPrice
+                };
+
+                inventory[itemId] = (inventory[itemId] || 0) + 1;
+
+                saveGame();
+                showToast("Custom item generated!", 'success');
+
+                // Close modal
+                btn.closest('.fixed').remove();
+
+                // Show the new item
+                showNewItemModal(knownItems[itemId]);
+
+            } catch (e) {
+                console.error(e);
+                showToast("Generation failed. Try again.", 'error');
+                btn.disabled = false;
+                btn.innerHTML = 'Generate Item';
+            }
+        }
+
+        function updateRecipePreview() {
+            const previewEl = document.getElementById('recipe-preview');
+            const used = gridState.filter(Boolean);
+            
+            if (used.length === 0) {
+                previewEl.innerHTML = '';
+                return;
+            }
+            
+            const key = [...used].sort().join(',');
+            const resultId = knownRecipes[key];
+            
+            if (resultId && knownItems[resultId]) {
+                previewEl.innerHTML = `<span class="text-emerald-400">→ ${knownItems[resultId].name}</span>`;
+            } else {
+                previewEl.innerHTML = `<span class="text-amber-400">→ New recipe! AI will generate item.</span>`;
+            }
+        }
+        
+        function getEmojiForItem(itemId) {
+            if (EMOJIS[itemId]) return EMOJIS[itemId];
+            
+            // Generate simple emoji based on item name
+            const item = knownItems[itemId];
+            if (!item) return '✨';
+            
+            const name = item.name.toLowerCase();
+            if (name.includes('pickaxe')) return '⛏️';
+            if (name.includes('axe')) return '🪓';
+            if (name.includes('sword')) return '⚔️';
+            if (name.includes('shovel')) return '🪣';
+            if (name.includes('helmet')) return '⛑️';
+            if (name.includes('boots')) return '👢';
+            if (name.includes('chestplate')) return '🛡️';
+            if (name.includes('ingot')) return '🔩';
+            if (name.includes('plank')) return '🪵';
+            if (name.includes('cloth') || name.includes('fabric')) return '🧵';
+            if (name.includes('nail')) return '📍';
+            if (name.includes('strap')) return '🪢';
+            if (name.includes('block')) return '🧱';
+            if (name.includes('rod')) return '🪵';
+            if (name.includes('plate')) return '🔲';
+            if (name.includes('tool')) return '🔧';
+            if (name.includes('hammer')) return '🔨';
+            if (name.includes('knife')) return '🔪';
+            return '📦';
+        }
+
+        // Hugging Face Integration
+        function saveHFToken(token) {
+            hfToken = token.trim();
+            if (hfToken) {
+                localStorage.setItem('hfToken', hfToken);
+            } else {
+                localStorage.removeItem('hfToken');
+            }
+            updateAIBackendIndicator();
+        }
+
+        function setPromptStyle(style) {
+            promptStyle = style;
+            localStorage.setItem('promptStyle', promptStyle);
+        }
+
+        function changeCraftMode() {
+            const select = document.getElementById('craft-mode');
+            craftMode = select.value;
+            
+            const gridSection = document.getElementById('crafting-grid-section');
+            const machinesSection = document.getElementById('machines-section');
+            
+            if (craftMode === 'machines') {
+                if (gridSection) gridSection.style.display = 'none';
+                if (machinesSection) machinesSection.style.display = 'block';
+                renderMachinesInterface();
+            } else {
+                if (gridSection) gridSection.style.display = 'block';
+                if (machinesSection) machinesSection.style.display = 'none';
+                
+                // Optional: give a hint based on mode
+                const preview = document.getElementById('recipe-preview');
+                if (craftMode === 'materials') {
+                    preview.innerHTML = `<span class="text-emerald-400">Materials mode — craft ingots, fabric, planks, etc.</span>`;
+                } else if (craftMode === 'armor') {
+                    preview.innerHTML = `<span class="text-emerald-400">Armor & Gear mode</span>`;
+                } else {
+                    preview.innerHTML = '';
+                }
+            }
+        }
+
+        // Machine definitions
+        const machineDefinitions = [
+            {
+                id: 'basic_furnace',
+                name: "Basic Furnace",
+                desc: "Smelts ore into ingots more efficiently.",
+                cost: { iron_ore: 8, stone: 12 },
+                effect: "Unlocks better material recipes"
+            },
+            {
+                id: 'loom',
+                name: "Loom",
+                desc: "Weaves fiber into high-quality fabric.",
+                cost: { fiber: 20, wood: 10 },
+                effect: "Better cloth production"
+            },
+            {
+                id: 'anvil',
+                name: "Anvil",
+                desc: "Allows advanced metalworking.",
+                cost: { iron_ingot: 6, stone: 15 },
+                effect: "Unlocks advanced tools"
+            },
+            {
+                id: 'ai_customizer',
+                name: "AI Customizer",
+                desc: "The ultimate machine. Generate any item from text description.",
+                cost: { iron_ingot: 12, fiber_cloth: 8, stone_block: 5 },
+                effect: "Custom text-to-item generation",
+                isFinal: true
+            }
+        ];
+
+        function updateAIBackendIndicator() {
+            const footer = document.querySelector('#footer-ai-status');
+            if (!footer) return;
+            
+            if (hfToken) {
+                footer.innerHTML = `Using <span class="text-emerald-400 font-medium">Hugging Face</span> • <button onclick="showHFTokenModal()" class="underline hover:text-emerald-300">Change key</button>`;
+            } else {
+                footer.innerHTML = `Using <span class="text-amber-400 font-medium">Pollinations</span> (free) • <button onclick="showHFTokenModal()" class="underline hover:text-emerald-300">Add Hugging Face key</button>`;
+            }
+        }
+
+        async function generateImage(prompt) {
+            if (hfToken) {
+                // Use Hugging Face
+                try {
+                    const model = "black-forest-labs/FLUX.1-schnell"; // Best free-tier quality
+                    const response = await fetch(
+                        `https://api-inference.huggingface.co/models/${model}`,
+                        {
+                            method: "POST",
+                            headers: {
+                                "Authorization": `Bearer ${hfToken}`,
+                                "Content-Type": "application/json"
+                            },
+                            body: JSON.stringify({
+                                inputs: prompt,
+                                parameters: {
+                                    num_inference_steps: 20,
+                                    guidance_scale: 7.5
+                                }
+                            })
+                        }
+                    );
+
+                    if (!response.ok) {
+                        const err = await response.json().catch(() => ({}));
+                        console.warn("HF error, falling back to Pollinations:", err);
+                        throw new Error("HF failed");
+                    }
+
+                    const blob = await response.blob();
+                    return URL.createObjectURL(blob);
+                } catch (e) {
+                    console.warn("Hugging Face failed, using Pollinations fallback");
+                }
+            }
+
+            // Fallback: Pollinations (always works, no key)
+            const encoded = encodeURIComponent(prompt);
+            return `https://image.pollinations.ai/${encoded}?width=256&height=256&safe=true&nologo=true`;
+        }
+        
+        function clearGrid() {
+            gridState = Array(gridSize * gridSize).fill(null);
+            renderCraftingGrid();
+            updateRecipePreview();
+        }
+        
+        // Generate new AI item (now async for HF support)
+        async function generateNewItem(materials) {
+            const shortMats = materials.slice(0, 2).map(m => m.split(' ')[0]);
+            
+            let name;
+            
+            if (craftMode === 'materials') {
+                const words = ["Refined", "Processed", "Smelted", "Woven", "Cut", "Forged", "Treated", "Basic"];
+                const nouns = ["Ingot", "Plank", "Fabric", "Cloth", "Nail", "Rod", "Plate", "Block"];
+                name = `${words[Math.floor(Math.random()*words.length)]} ${shortMats[0]} ${nouns[Math.floor(Math.random()*nouns.length)]}`;
+            } else if (craftMode === 'armor') {
+                const words = ["Reinforced", "Heavy", "Light", "Sturdy", "Protective", "Thick", "Durable", "Basic"];
+                const nouns = ["Helmet", "Chestplate", "Leggings", "Boots", "Gloves", "Shield"];
+                name = `${words[Math.floor(Math.random()*words.length)]} ${shortMats[0]} ${nouns[Math.floor(Math.random()*nouns.length)]}`;
+            } else {
+                // Tools & Weapons - simple names
+                const words = ["Basic", "Sturdy", "Heavy", "Sharp", "Tough", "Reinforced", "Simple", "Strong"];
+                const nouns = ["Pickaxe", "Sword", "Axe", "Shovel", "Hammer", "Knife", "Tool", "Blade"];
+                name = `${words[Math.floor(Math.random()*words.length)]} ${shortMats[0]} ${nouns[Math.floor(Math.random()*nouns.length)]}`;
+            }
+            
+            // Keep names short and clean
+            name = name.split(' ').slice(0, 4).join(' ');
+            
+            let desc = `A ${name.toLowerCase()} crafted from ${materials.join(", ")}. Simple and effective.`;
+
+            if (craftMode === 'materials') {
+                desc = `Processed material: ${name}. Useful for further crafting.`;
+            } else if (craftMode === 'armor') {
+                desc = `Protective gear: ${name}. Provides basic defense.`;
+            }
+            
+            // Create AI image prompt based on user preference
+            let promptText;
+            if (promptStyle === 'minecraft') {
+                promptText = `minecraft style item icon, pixel art, 32x32 resolution, blocky clean design, ${name}, vibrant colors, simple and recognizable, dark background, game asset, no text`;
+            } else {
+                promptText = `highly detailed realistic fantasy game item, ${name}, intricate design, photorealistic textures, vibrant colors, professional game asset, dark background`;
+            }
+            
+            const sellPrice = Math.floor(12 + (materials.length * 7) + Math.random() * 25);
+            
+            const itemId = `custom_${Date.now()}`;
+            
+            return {
+                itemId,
+                name,
+                desc,
+                imageUrl: null,
+                sellPrice
+            };
+        }
+        
+        async function craftItem() {
+            const usedItems = gridState.filter(Boolean);
+            
+            if (usedItems.length === 0) {
+                showToast("Place some materials in the grid first!", 'error');
+                return;
+            }
+            
+            const recipeKey = [...usedItems].sort().join(',');
+            
+            // Check if we have enough materials
+            const needed = {};
+            usedItems.forEach(id => {
+                needed[id] = (needed[id] || 0) + 1;
+            });
+            
+            let canCraft = true;
+            let missing = [];
+            
+            for (const id in needed) {
+                if ((inventory[id] || 0) < needed[id]) {
+                    canCraft = false;
+                    missing.push(knownItems[id].name);
+                }
+            }
+            
+            if (!canCraft) {
+                showToast(`Not enough: ${missing.join(", ")}`, 'error');
+                return;
+            }
+            
+            let resultId;
+            let isNewRecipe = false;
+            let newItemData = null;
+            
+            if (knownRecipes[recipeKey]) {
+                resultId = knownRecipes[recipeKey];
+            } else {
+                // Generate NEW AI item (async for HF)
+                isNewRecipe = true;
+                const materialNames = usedItems.map(id => knownItems[id].name);
+                newItemData = await generateNewItem(materialNames);
+                
+                // Store the new item
+                knownItems[newItemData.itemId] = {
+                    name: newItemData.name,
+                    desc: newItemData.desc,
+                    imageUrl: newItemData.imageUrl,
+                    sellPrice: newItemData.sellPrice
+                };
+                
+                knownRecipes[recipeKey] = newItemData.itemId;
+                resultId = newItemData.itemId;
+            }
+            
+            // Deduct materials
+            for (const id in needed) {
+                inventory[id] -= needed[id];
+                if (inventory[id] <= 0) delete inventory[id];
+            }
+            
+            // Add result
+            if (!inventory[resultId]) inventory[resultId] = 0;
+            inventory[resultId] += 1;
+            
+            // Clear grid
+            gridState = Array(gridSize * gridSize).fill(null);
+            
+            // Save
+            saveGame();
+            
+            // Update UI
+            renderCraftingGrid();
+            updateMoneyDisplay();
+            
+            if (currentTab === 'inventory') {
+                renderInventory();
+                renderDiscovered();
+            }
+            
+            const resultItem = knownItems[resultId];
+            
+            if (isNewRecipe) {
+                // Show beautiful new item modal
+                showNewItemModal(resultItem);
+            } else {
+                showToast(`Crafted ${resultItem.name}!`, 'success');
+            }
+        }
+        
+        function showNewItemModal(item) {
+            const modal = document.getElementById('new-item-modal');
+            document.getElementById('modal-item-name').textContent = item.name;
+            document.getElementById('modal-item-desc').textContent = item.desc;
+            document.getElementById('modal-item-price').innerHTML = `<span class="font-display">${item.sellPrice}</span> <span class="text-sm text-amber-400">coins</span>`;
+            
+            const modelEl = document.getElementById('modal-model-used');
+            const modelName = hfToken ? 'FLUX.1-schnell (HF)' : 'Pollinations (free)';
+            const styleName = promptStyle === 'minecraft' ? 'Minecraft' : 'Realistic';
+            modelEl.innerHTML = `${modelName} • ${styleName} style`;
+            
+            const imgContainer = document.getElementById('modal-item-image');
+            imgContainer.innerHTML = '';
+            
+            imgContainer.innerHTML = `<div class="text-6xl flex items-center justify-center h-full">${getEmojiForItem(item.itemId || '')}</div>`;
+            
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+        
+        function closeNewItemModal() {
+            const modal = document.getElementById('new-item-modal');
+            modal.classList.remove('flex');
+            modal.classList.add('hidden');
+            
+            // Refresh inventory if needed
+            if (currentTab === 'inventory') {
+                renderInventory();
+                renderDiscovered();
+            }
+        }
+
+        function showHFTokenModal() {
+            const modal = document.getElementById('hf-modal');
+            const input = document.getElementById('hf-token-input');
+            input.value = hfToken || '';
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            setTimeout(() => input.focus(), 100);
+        }
+
+        function closeHFTokenModal() {
+            const modal = document.getElementById('hf-modal');
+            modal.classList.remove('flex');
+            modal.classList.add('hidden');
+        }
+
+        function saveHFTokenFromInput() {
+            const input = document.getElementById('hf-token-input');
+            saveHFToken(input.value);
+            closeHFTokenModal();
+            showToast(hfToken ? 'Hugging Face key saved!' : 'Using free Pollinations', 'success');
+        }
+
+        function clearHFToken() {
+            saveHFToken('');
+            closeHFTokenModal();
+            showToast('Hugging Face key removed. Using free Pollinations.', 'success');
+        }
+        
+        // Inventory rendering
+        function renderInventory() {
+            const container = document.getElementById('inventory-list');
+            container.innerHTML = '';
+            
+            const ownedItems = Object.keys(inventory).filter(id => inventory[id] > 0);
+            
+            document.getElementById('inventory-count').textContent = ownedItems.length;
+            
+            if (ownedItems.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full text-center py-8 text-zinc-400">
+                        <i class="fa-solid fa-box-open text-4xl mb-3"></i>
+                        <p>Your inventory is empty. Start generating materials!</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            ownedItems.forEach(itemId => {
+                const item = knownItems[itemId];
+                if (!item) return;
+                
+                const qty = inventory[itemId];
+                const emoji = getEmojiForItem(itemId);
+                
+                const card = document.createElement('div');
+                card.className = `item-card bg-zinc-900 border border-zinc-700 rounded-3xl p-4 flex flex-col`;
+                
+                let imageHTML = '';
+                if (item.imageUrl) {
+                    imageHTML = `<img src="${item.imageUrl}" class="w-14 h-14 object-cover rounded-2xl mb-3" alt="${item.name}" onerror="this.outerHTML = '<div class=\\'w-14 h-14 flex items-center justify-center text-4xl mb-3\\'>${emoji}</div>'">`;
+                } else {
+                    imageHTML = `<div class="w-14 h-14 flex items-center justify-center text-4xl mb-3">${emoji}</div>`;
+                }
+                
+                card.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                            ${imageHTML}
+                            <div class="font-semibold leading-tight">${item.name}</div>
+                            <div class="text-xs text-emerald-400 mt-0.5">${qty} owned</div>
+                        </div>
+                        
+                        <div class="text-right">
+                            <div class="text-xs text-amber-400 font-medium">${item.sellPrice}</div>
+                            <div class="text-[10px] text-zinc-500">each</div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-auto pt-4 flex gap-x-1.5">
+                        <button onclick="sellItem('${itemId}', 1)" class="flex-1 text-xs py-2 bg-zinc-800 hover:bg-zinc-700 transition-colors rounded-2xl">Sell 1</button>
+                        <button onclick="sellItem('${itemId}', 10)" class="flex-1 text-xs py-2 bg-zinc-800 hover:bg-zinc-700 transition-colors rounded-2xl">Sell 10</button>
+                        <button onclick="sellItem('${itemId}', ${qty})" class="flex-1 text-xs py-2 bg-amber-600 hover:bg-amber-500 text-white transition-colors rounded-2xl font-medium">Sell All</button>
+                    </div>
+                `;
+                
+                // Add tooltip
+                card.title = item.desc;
+                
+                container.appendChild(card);
+            });
+        }
+        
+        function renderDiscovered() {
+            const container = document.getElementById('discovered-list');
+            container.innerHTML = '';
+            
+            const allItems = Object.keys(knownItems);
+            document.getElementById('discovered-count').textContent = allItems.length;
+            
+            allItems.forEach(itemId => {
+                const item = knownItems[itemId];
+                const isOwned = inventory[itemId] && inventory[itemId] > 0;
+                const emoji = getEmojiForItem(itemId);
+                
+                const card = document.createElement('div');
+                card.className = `item-card bg-zinc-900 border border-zinc-700 rounded-3xl p-4 flex flex-col ${isOwned ? 'ring-1 ring-emerald-900' : ''}`;
+                
+                let imageHTML = '';
+                if (item.imageUrl) {
+                    imageHTML = `<img src="${item.imageUrl}" class="w-14 h-14 object-cover rounded-2xl mb-3" alt="${item.name}" onerror="this.outerHTML = '<div class=\\'w-14 h-14 flex items-center justify-center text-4xl mb-3\\'>${emoji}</div>'">`;
+                } else {
+                    imageHTML = `<div class="w-14 h-14 flex items-center justify-center text-4xl mb-3">${emoji}</div>`;
+                }
+                
+                card.innerHTML = `
+                    <div>
+                        ${imageHTML}
+                        <div class="font-semibold leading-tight text-sm">${item.name}</div>
+                        <div class="flex justify-between items-baseline mt-2">
+                            <div class="text-xs text-amber-400 font-medium">${item.sellPrice} coins</div>
+                            ${isOwned ? `<div class="text-xs bg-emerald-900 text-emerald-300 px-2 py-px rounded">OWNED</div>` : ''}
+                        </div>
+                    </div>
+                `;
+                
+                card.title = item.desc;
+                
+                // Click to view details
+                card.onclick = () => {
+                    const modal = document.getElementById('new-item-modal');
+                    document.getElementById('modal-item-name').textContent = item.name;
+                    document.getElementById('modal-item-desc').textContent = item.desc;
+                    document.getElementById('modal-item-price').innerHTML = `<span class="font-display">${item.sellPrice}</span> <span class="text-sm text-amber-400">coins</span>`;
+                    
+                    const imgContainer = document.getElementById('modal-item-image');
+                    imgContainer.innerHTML = '';
+                    
+                    if (item.imageUrl) {
+                        const img = document.createElement('img');
+                        img.src = item.imageUrl;
+                        img.className = 'w-full h-full object-cover';
+                        img.alt = item.name;
+                        img.onerror = () => {
+                            imgContainer.innerHTML = `<div class="text-6xl flex items-center justify-center h-full">${emoji}</div>`;
+                        };
+                        imgContainer.appendChild(img);
+                    } else {
+                        imgContainer.innerHTML = `<div class="text-6xl flex items-center justify-center h-full">${emoji}</div>`;
+                    }
+                    
+                    modal.classList.remove('hidden');
+                    modal.classList.add('flex');
+                };
+                
+                container.appendChild(card);
+            });
+        }
+        
+        function sellItem(itemId, amount) {
+            const item = knownItems[itemId];
+            if (!item || !inventory[itemId]) return;
+            
+            const actualAmount = Math.min(amount, inventory[itemId]);
+            if (actualAmount <= 0) return;
+            
+            const earnings = actualAmount * item.sellPrice;
+            money += earnings;
+            inventory[itemId] -= actualAmount;
+            
+            if (inventory[itemId] <= 0) {
+                delete inventory[itemId];
+            }
+            
+            updateMoneyDisplay();
+            saveGame();
+            
+            showToast(`Sold ${actualAmount} × ${item.name} for ${earnings} coins`, 'success');
+            
+            renderInventory();
+            renderDiscovered();
+        }
+        
+        // Upgrades
+        function renderUpgrades() {
+            const container = document.getElementById('upgrades-container');
+            container.innerHTML = '';
+            
+            const upgrades = [
+                {
+                    id: 'grid3',
+                    name: "Expand to 3×3 Grid",
+                    desc: "Unlock larger crafting combinations",
+                    cost: 120,
+                    effect: () => {
+                        if (gridSize < 3) {
+                            gridSize = 3;
+                            gridState = Array(gridSize * gridSize).fill(null);
+                            updateGridInfo();
+                            renderCraftingGrid();
+                        }
+                    },
+                    condition: () => gridSize < 3
+                },
+                {
+                    id: 'grid4',
+                    name: "Expand to 4×4 Grid",
+                    desc: "Access even more powerful recipes",
+                    cost: 450,
+                    effect: () => {
+                        if (gridSize < 4) {
+                            gridSize = 4;
+                            gridState = Array(gridSize * gridSize).fill(null);
+                            updateGridInfo();
+                            renderCraftingGrid();
+                        }
+                    },
+                    condition: () => gridSize < 4
+                },
+                {
+                    id: 'grid5',
+                    name: "Expand to 5×5 Grid",
+                    desc: "Master complex multi-material crafts",
+                    cost: 1650,
+                    effect: () => {
+                        if (gridSize < 5) {
+                            gridSize = 5;
+                            gridState = Array(gridSize * gridSize).fill(null);
+                            updateGridInfo();
+                            renderCraftingGrid();
+                        }
+                    },
+                    condition: () => gridSize < 5
+                },
+                {
+                    id: 'efficiency',
+                    name: "Generator Efficiency",
+                    desc: "All generators yield +1 material",
+                    cost: 380,
+                    effect: () => {
+                        Object.keys(generatorYields).forEach(key => {
+                            generatorYields[key] += 1;
+                        });
+                        renderGenerators();
+                    },
+                    condition: () => true,
+                    bought: false
+                },
+                {
+                    id: 'sellboost',
+                    name: "Merchant License",
+                    desc: "+25% sell price on all items",
+                    cost: 920,
+                    effect: () => {
+                        Object.keys(knownItems).forEach(id => {
+                            knownItems[id].sellPrice = Math.floor(knownItems[id].sellPrice * 1.25);
+                        });
+                        renderInventory();
+                        renderDiscovered();
+                    },
+                    condition: () => true,
+                    bought: false
+                }
+            ];
+            
+            upgrades.forEach(up => {
+                if (!up.condition()) return;
+                
+                const canAfford = money >= up.cost;
+                
+                const div = document.createElement('div');
+                div.className = `bg-zinc-900 border border-zinc-700 rounded-3xl p-5 flex flex-col`;
+                
+                div.innerHTML = `
+                    <div class="flex-1">
+                        <div class="font-semibold">${up.name}</div>
+                        <div class="text-sm text-zinc-400 mt-1">${up.desc}</div>
+                    </div>
+                    
+                    <div class="mt-5 flex items-center justify-between">
+                        <div>
+                            <div class="text-xs text-zinc-400">COST</div>
+                            <div class="font-display text-xl font-semibold text-amber-400">${up.cost}</div>
+                        </div>
+                        
+                        <button onclick="buyUpgrade('${up.id}', ${up.cost}, this)" 
+                                class="px-5 py-2 text-sm font-medium transition-all rounded-2xl ${canAfford ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-zinc-700 cursor-not-allowed'} text-white">
+                            ${canAfford ? 'BUY' : 'LOCKED'}
+                        </button>
+                    </div>
+                `;
+                
+                container.appendChild(div);
+            });
+        }
+        
+        function buyUpgrade(upgradeId, cost, btnElement) {
+            if (money < cost) {
+                showToast("Not enough coins!", 'error');
+                return;
+            }
+            
+            money -= cost;
+            updateMoneyDisplay();
+            
+            // Apply effect
+            const upgradesMap = {
+                'grid3': () => { gridSize = 3; gridState = Array(9).fill(null); updateGridInfo(); renderCraftingGrid(); },
+                'grid4': () => { gridSize = 4; gridState = Array(16).fill(null); updateGridInfo(); renderCraftingGrid(); },
+                'grid5': () => { gridSize = 5; gridState = Array(25).fill(null); updateGridInfo(); renderCraftingGrid(); },
+                'efficiency': () => {
+                    Object.keys(generatorYields).forEach(k => generatorYields[k] += 1);
+                    renderGenerators();
+                },
+                'sellboost': () => {
+                    Object.keys(knownItems).forEach(id => {
+                        knownItems[id].sellPrice = Math.floor(knownItems[id].sellPrice * 1.25);
+                    });
+                }
+            };
+            
+            if (upgradesMap[upgradeId]) {
+                upgradesMap[upgradeId]();
+            }
+            
+            saveGame();
+            
+            // Refresh UI
+            btnElement.outerHTML = `<div class="px-5 py-2 text-sm font-medium bg-emerald-900 text-emerald-300 rounded-2xl flex items-center gap-x-1.5"><i class="fa-solid fa-check"></i> <span>PURCHASED</span></div>`;
+            
+            setTimeout(() => {
+                if (currentTab === 'upgrades') renderUpgrades();
+            }, 1200);
+            
+            showToast('Upgrade purchased!', 'success');
+        }
+        
+        // Main render function
+        function renderAll() {
+            updateMoneyDisplay();
+            updateGridInfo();
+            
+            renderGenerators();
+            renderCraftingGrid();
+            renderInventory();
+            renderDiscovered();
+            renderUpgrades();
+            
+            // Initial tab
+            switchTab('generators');
+        }
+        
+        // Keyboard shortcuts
+        function setupKeyboardShortcuts() {
+            document.addEventListener('keydown', function(e) {
+                if (e.key === '?') {
+                    e.preventDefault();
+                    const craftingSection = document.getElementById('section-crafting');
+                    if (!craftingSection.classList.contains('hidden')) {
+                        craftItem();
+                    }
+                }
+                
+                if (e.metaKey && e.key === 's') {
+                    e.preventDefault();
+                    saveGame();
+                }
+            });
+            
+            // Easter egg
+            let konami = 0;
+            const konamiCode = [38,38,40,40,37,39,37,39,66,65];
+            document.addEventListener('keyup', function(e) {
+                if (e.keyCode === konamiCode[konami]) {
+                    konami++;
+                    if (konami === konamiCode.length) {
+                        konami = 0;
+                        money += 500;
+                        updateMoneyDisplay();
+                        showToast("Cheat code activated! +500 coins", 'success');
+                        saveGame();
+                    }
+                } else {
+                    konami = 0;
+                }
+            });
+        }
+        
+        // Initialize everything
+        function initializeGame() {
+            initTailwind();
+            
+            const hasSave = loadGame();
+            
+            if (!hasSave) {
+                initGameData();
+                showToast('Welcome to Aetheria Forge! Start by clicking generators.', 'success');
+            } else {
+                showToast('Save loaded successfully.', 'success');
+            }
+            
+            // Render everything
+            renderAll();
+            
+            // Show current AI backend
+            updateAIBackendIndicator();
+
+            // Prompt for HF key on first launch if none set
+            if (!hfToken) {
+                setTimeout(() => {
+                    const modal = document.getElementById('hf-modal');
+                    if (modal) {
+                        showHFTokenModal();
+                        // Add a welcome message
+                        const header = modal.querySelector('h3');
+                        if (header) header.innerHTML = 'Welcome! Add Hugging Face Key <span class="text-xs">(Recommended)</span>';
+                    }
+                }, 1200);
+            }
+            
+            // Auto-save every 30 seconds
+            setInterval(() => {
+                saveGame();
+            }, 30000);
+            
+            setupKeyboardShortcuts();
+            
+            // Easter egg hint in console
+            console.log('%c[Aetheria Forge] Press the Konami code (↑↑↓↓←→←→BA) for a surprise!', 'color:#444');
+            
+            // Make sure money display is correct
+            updateMoneyDisplay();
+        }
+        
+        // Boot the game
+        window.onload = initializeGame;
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a092f4311f0fe910',t:'MTc4MTAzNzY1Mg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
